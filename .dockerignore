@@ -1,0 +1,9 @@
+.git
+.gitignore
+.DS_Store
+__pycache__/
+*.pyc
+*.log
+*.md
+!requirements.txt
+vietnamese_legal_documents.db

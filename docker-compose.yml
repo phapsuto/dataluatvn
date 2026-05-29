@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  dataluat-api:
+    build: .
+    container_name: dataluat-api
+    ports:
+      - "2004:2004"
+    volumes:
+      # Mount database file from host (persistent data)
+      - ./vietnamese_legal_documents.db:/app/vietnamese_legal_documents.db
+      # Mount sync log
+      - ./sync.log:/app/sync.log
+    environment:
+      - API_PORT=2004
+      - DB_PATH=vietnamese_legal_documents.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2004/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

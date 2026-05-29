@@ -1,89 +1,197 @@
-# 🚀 dataluatvn — Máy Chủ Dữ Liệu Pháp Luật Việt Nam (API & Data Engine)
+# 🚀 dataluatvn — API Dữ Liệu Pháp Luật Việt Nam
 
-> REST API hiệu năng cao và Trình cập nhật dữ liệu tự động cho hơn **153.420 văn bản pháp luật Việt Nam** cùng **897.890 mối liên kết pháp lý**. Giải pháp tối ưu nhất để xây dựng Chatbot RAG (AI) và Website tra cứu luật chuyên nghiệp.
+> REST API hiệu năng cao cho hơn **153.420 văn bản pháp luật Việt Nam** cùng **897.890 mối liên kết pháp lý**.
+> Giải pháp tối ưu nhất để xây dựng Chatbot RAG (AI) và Website tra cứu luật chuyên nghiệp.
 
 ---
 
 ## 🌟 Tính Năng Nổi Bật
 
-1.  **Dữ liệu 100% Toàn Diện:** Tích hợp đầy đủ văn bản pháp luật Việt Nam (Luật, Nghị định, Thông tư, Án lệ...) từ trung ương đến địa phương từ trước đến nay.
-2.  **Cập nhật tự động (Data Engine):** Quy trình chạy ngầm hàng đêm tự động đồng bộ hóa các văn bản mới ban hành từ cổng thông tin gốc của Chính phủ (`vbpl.vn`).
-3.  **REST API Sẵn Sàng (FastAPI):** Cung cấp các API tìm kiếm siêu tốc, lấy toàn văn chi tiết dạng HTML, thống kê dữ liệu và thiết lập sẵn tài liệu tương tác tự động tại `/docs` (Swagger UI).
-4.  **Hỗ trợ RAG & AI Chatbot:** Cấu trúc dữ liệu tối ưu hóa cho việc cắt nhỏ điều khoản (Semantic Chunking) và tạo Vector DB phục vụ chatbot LLM.
-5.  **CORS Mở Rộng (`*`):** Cho phép kết nối trực tiếp và dễ dàng từ bất kỳ ứng dụng Frontend nào (React, Vue, Next.js...) chạy trên cổng bất kỳ.
+| Tính năng | Mô tả |
+|---|---|
+| 🔍 **Tìm kiếm nhanh** | Tìm theo từ khóa, loại văn bản, lĩnh vực, tình trạng hiệu lực, cơ quan ban hành |
+| 📄 **Chi tiết toàn văn** | Lấy toàn bộ nội dung HTML và metadata đầy đủ |
+| 🔗 **Quan hệ pháp lý** | Tra cứu sửa đổi, bổ sung, thay thế giữa các văn bản |
+| 📊 **Thống kê** | Phân tích tổng quan theo loại, trạng thái, cơ quan ban hành |
+| 🏷️ **Danh mục** | Liệt kê loại văn bản, lĩnh vực, cơ quan ban hành |
+| 📚 **Tài liệu tự động** | Swagger UI tại `/docs` và ReDoc tại `/redoc` |
+| 🐳 **Docker Ready** | Triển khai 1 lệnh với Docker Compose |
 
 ---
 
 ## 📂 Cấu Trúc Dự Án
 
-*   `server.py`: Mã nguồn máy chủ REST API viết bằng FastAPI, phục vụ truy vấn dữ liệu.
-*   `sync_new_laws.py`: Tiến trình chạy ngầm định kỳ hàng ngày để quét và tải các văn bản luật mới ban hành.
-*   `download_all_to_sqlite.py`: Script dùng để tải bộ dữ liệu ban đầu (~153.420 văn bản) từ HuggingFace và dựng tệp cơ sở dữ liệu SQLite `vietnamese_legal_documents.db` (3.2 GB).
-*   `huongdan.md`: Tài liệu hướng dẫn lập trình kết nối API & Database (dành cho lập trình viên Backend/Frontend).
-*   `KE_HOACH_XAY_DUNG_DATA_PHAP_LUAT.md`: Bản quy hoạch kiến trúc dữ liệu và lộ trình xây dựng hệ thống chatbot AI.
+```
+dataluatvn/
+├── server.py                 # REST API server (FastAPI) — Port 2004
+├── download_all_to_sqlite.py # Tải bộ dữ liệu gốc từ HuggingFace
+├── sync_new_laws.py          # Đồng bộ văn bản mới hàng đêm
+├── requirements.txt          # Python dependencies (pinned versions)
+├── Dockerfile                # Docker image build
+├── docker-compose.yml        # Docker Compose deployment
+├── huongdan.md               # Hướng dẫn kết nối API & Database
+└── KE_HOACH_XAY_DUNG_DATA_PHAP_LUAT.md  # Kiến trúc & lộ trình
+```
 
 ---
 
-## 🛠️ Hướng Dẫn Vận Hành & Triển Khai Trên Máy Chủ (Server/VPS)
+## 📡 API Endpoints
 
-Dưới đây là các bước chi tiết để thiết lập và chạy máy chủ dữ liệu này trên Cloud VPS (Ubuntu/Linux hoặc Windows Server).
+API chạy trên **port 2004**. Tài liệu tương tác đầy đủ tại `/docs` (Swagger) và `/redoc`.
 
-### Bước 1: Chuẩn bị Môi trường
-Đảm bảo máy chủ của bạn đã cài đặt **Python 3.9+** và **pip**.
+### 🏠 General
 
-Cài đặt các thư viện cần thiết bằng câu lệnh:
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET`  | `/` | Health-check, thông tin hệ thống |
+
+### 🔍 Tìm kiếm & Tra cứu
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET`  | `/laws/search` | Tìm kiếm + lọc văn bản (hỗ trợ phân trang) |
+| `GET`  | `/laws/{law_id}` | Lấy chi tiết toàn văn HTML + metadata |
+
+**Tham số tìm kiếm `/laws/search`:**
+
+| Tham số | Kiểu | Mô tả | Ví dụ |
+|---------|------|-------|-------|
+| `q` | string | Từ khóa tìm kiếm | `đất đai` |
+| `loai_van_ban` | string | Lọc theo loại | `Luật`, `Nghị định` |
+| `co_quan_ban_hanh` | string | Lọc theo cơ quan | `Quốc hội` |
+| `tinh_trang` | string | Lọc theo hiệu lực | `Còn hiệu lực` |
+| `linh_vuc` | string | Lọc theo lĩnh vực | `Đất đai` |
+| `limit` | int | Số lượng tối đa (1–100) | `20` |
+| `offset` | int | Vị trí bắt đầu | `0` |
+
+### 🔗 Quan hệ pháp lý
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET`  | `/laws/{law_id}/relationships` | Xem tất cả liên kết pháp lý |
+
+### 📊 Thống kê
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET`  | `/laws/stats` | Thống kê tổng quan CSDL |
+
+### 🏷️ Danh mục
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET`  | `/laws/categories/types` | Danh sách loại văn bản |
+| `GET`  | `/laws/categories/fields` | Danh sách lĩnh vực |
+| `GET`  | `/laws/categories/agencies` | Danh sách cơ quan ban hành |
+
+---
+
+## 🛠️ Cài Đặt & Chạy
+
+### Yêu cầu
+- **Python 3.9+**
+- **Docker** (nếu dùng Docker)
+
+### Cách 1: Chạy trực tiếp
+
 ```bash
-pip install fastapi uvicorn requests beautifulsoup4 pyarrow huggingface_hub
+# 1. Cài đặt dependencies
+pip install -r requirements.txt
+
+# 2. Tải database gốc (~153.420 văn bản, ~3.2 GB)
+python download_all_to_sqlite.py
+
+# 3. Khởi chạy API server (port 2004)
+python server.py
 ```
 
-### Bước 2: Khởi tạo Cơ sở dữ liệu gốc (Base Database)
-Do tệp database có dung lượng lớn (3.2 GB), chúng ta không commit trực tiếp lên Git để tránh quá tải. Hãy chạy script khởi tạo sau trên máy chủ để tự động tải và dựng database:
+**Truy cập:**
+- API: `http://localhost:2004`
+- Swagger Docs: `http://localhost:2004/docs`
+- ReDoc: `http://localhost:2004/redoc`
+
+### Cách 2: Chạy bằng Docker 🐳 (Khuyên dùng)
 
 ```bash
-python3 download_all_to_sqlite.py
+# 1. Tải database trước (chạy 1 lần)
+pip install pyarrow huggingface_hub
+python download_all_to_sqlite.py
+
+# 2. Build & Run bằng Docker Compose
+docker compose up -d --build
+
+# Hoặc dùng Docker trực tiếp
+docker build -t dataluat-api .
+docker run -d \
+  -p 2004:2004 \
+  -v $(pwd)/vietnamese_legal_documents.db:/app/vietnamese_legal_documents.db \
+  --name dataluat-api \
+  dataluat-api
 ```
-> Tiến trình này sẽ tự động tải các tệp Parquet nén tốc độ cao từ HuggingFace và lập chỉ mục SQLite. Quá trình mất khoảng vài phút và sẽ sinh ra tệp dữ liệu duy nhất: `vietnamese_legal_documents.db`.
 
-### Bước 3: Khởi chạy Máy chủ REST API
-Chạy máy chủ API bằng Uvicorn trên cổng `8080` (hoặc cổng bất kỳ tùy chọn):
+**Kiểm tra container:**
+```bash
+# Xem log
+docker logs dataluat-api
+
+# Kiểm tra health
+curl http://localhost:2004/
+
+# Dừng container
+docker compose down
+```
+
+---
+
+## ⏰ Cập Nhật Tự Động (Cron Job)
+
+Để hệ thống tự cập nhật luật mới mỗi đêm lúc **00:00**:
 
 ```bash
-# Chạy thủ công
-python3 server.py
+# Mở bảng cron
+crontab -e
 
-# Hoặc chạy ngầm vĩnh viễn trên Linux bằng PM2
+# Thêm dòng sau:
+0 0 * * * cd /path/to/dataluatvn && /usr/bin/python3 sync_new_laws.py >> sync.log 2>&1
+```
+
+Hoặc sử dụng PM2:
+```bash
 pm2 start "python3 server.py" --name "dataluat-api"
 ```
 
-*   **Địa chỉ truy cập API:** `http://<IP-MÁY-CHỦ>:8080`
-*   **Trang tài liệu tương tác tự động:** `http://<IP-MÁY-CHỦ>:8080/docs`
-
-### Bước 4: Thiết lập lịch trình tự động cập nhật hàng đêm (Cron Job)
-Để hệ thống tự cập nhật các luật mới ban hành mỗi đêm lúc **00:00**, hãy thiết lập một Cron Job trên máy chủ Linux:
-
-1.  Mở bảng Cron Job:
-    ```bash
-    crontab -e
-    ```
-2.  Thêm dòng sau ở cuối tệp tin và lưu lại:
-    ```bash
-    0 0 * * * cd /path/to/dataluatvn && /usr/bin/python3 sync_new_laws.py >> sync.log 2>&1
-    ```
-
 ---
 
-## 🐳 Triển Khai Bằng Docker (Khuyên Dùng Cho Production)
+## 📝 Ví Dụ Sử Dụng (cURL)
 
-Nếu bạn muốn chạy dự án này trên môi trường container hóa Docker cực kỳ hiện đại:
+```bash
+# 1. Kiểm tra hệ thống
+curl http://localhost:2004/
 
-1.  **Dựng Docker Image:**
-    ```bash
-    docker build -t dataluat-engine .
-    ```
-2.  **Khởi chạy Container:**
-    ```bash
-    docker run -d -p 8080:8080 --name dataluat-container -v $(pwd):/app dataluat-engine
-    ```
+# 2. Tìm kiếm "đất đai"
+curl "http://localhost:2004/laws/search?q=đất đai&limit=5"
+
+# 3. Lọc Nghị định còn hiệu lực
+curl "http://localhost:2004/laws/search?loai_van_ban=Nghị định&tinh_trang=Còn hiệu lực"
+
+# 4. Lấy chi tiết văn bản ID 38920
+curl http://localhost:2004/laws/38920
+
+# 5. Xem quan hệ pháp lý
+curl http://localhost:2004/laws/38920/relationships
+
+# 6. Thống kê tổng quan
+curl http://localhost:2004/laws/stats
+
+# 7. Danh sách loại văn bản
+curl http://localhost:2004/laws/categories/types
+
+# 8. Danh sách lĩnh vực
+curl http://localhost:2004/laws/categories/fields
+
+# 9. Danh sách cơ quan ban hành
+curl http://localhost:2004/laws/categories/agencies
+```
 
 ---
 
