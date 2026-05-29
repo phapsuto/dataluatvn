@@ -1,0 +1,16 @@
+# Ignore database
+vietnamese_legal_documents.db
+
+# Ignore test documents
+Bo_luat_To_tung_Dan_su_2015.doc
+
+# Ignore logs
+*.log
+sync.log
+
+# Ignore python cache
+__pycache__/
+*.pyc
+
+# Ignore macOS system files
+.DS_Store
