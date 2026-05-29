@@ -1,117 +1,320 @@
 import os
 import sqlite3
+import secrets
+import hashlib
 from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 
-from fastapi import FastAPI, HTTPException, Query, Path
+import jwt as pyjwt
+from fastapi import FastAPI, HTTPException, Query, Path, Depends, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
 from pydantic import BaseModel, Field
 
-# --- Configuration ---
-DB_NAME = os.environ.get("DB_PATH", "vietnamese_legal_documents.db")
-API_PORT = int(os.environ.get("API_PORT", 2004))
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                     CONFIGURATION                           ║
+# ╚══════════════════════════════════════════════════════════════╝
 
-# --- Lifespan (startup / shutdown) ---
+DB_NAME = os.environ.get("DB_PATH", "vietnamese_legal_documents.db")
+ADMIN_DB = os.environ.get("ADMIN_DB_PATH", "admin.db")
+API_PORT = int(os.environ.get("API_PORT", 2004))
+JWT_SECRET = os.environ.get("JWT_SECRET", "dlvn-jwt-secret-2024-phapsuto-internal")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_HOURS = 24 * 7  # 7 days
+
+# --- Fixed Accounts (Internal Use Only) ---
+ACCOUNTS = {
+    "phamkhoa3092003@gmail.com": hashlib.sha256("Apple0202".encode()).hexdigest(),
+    "phapsuto@gmail.com": hashlib.sha256("Apple0202".encode()).hexdigest(),
+}
+
+# --- Security Schemes ---
+bearer_scheme = HTTPBearer(auto_error=False)
+api_key_header_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                   DATABASE HELPERS                          ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+def get_db_connection():
+    """Connect to the main legal documents database."""
+    if not os.path.exists(DB_NAME):
+        raise HTTPException(
+            status_code=500,
+            detail="Database file not found. Please run download_all_to_sqlite.py first.",
+        )
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def get_admin_db():
+    """Connect to the admin database (API keys)."""
+    conn = sqlite3.connect(ADMIN_DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_admin_db():
+    """Initialize admin database with api_keys table."""
+    conn = sqlite3.connect(ADMIN_DB)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key_value TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            created_by TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            last_used_at TEXT,
+            is_active INTEGER DEFAULT 1,
+            request_count INTEGER DEFAULT 0
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_key_value ON api_keys(key_value)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON api_keys(is_active)")
+    conn.commit()
+    conn.close()
+    print("✅ Admin database initialized")
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                     JWT HELPERS                             ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+def create_jwt_token(email: str) -> str:
+    """Create a JWT token for admin access."""
+    payload = {
+        "sub": email,
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS),
+    }
+    return pyjwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def decode_jwt_token(token: str) -> dict:
+    """Decode and validate a JWT token."""
+    try:
+        return pyjwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except pyjwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token đã hết hạn. Vui lòng đăng nhập lại.")
+    except pyjwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token không hợp lệ.")
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                 SECURITY DEPENDENCIES                       ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+async def require_jwt(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    """Dependency: require valid JWT token (for admin endpoints)."""
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Chưa đăng nhập. Vui lòng đăng nhập tại /admin")
+    return decode_jwt_token(credentials.credentials)
+
+
+async def require_api_key(
+    x_api_key: Optional[str] = Depends(api_key_header_scheme),
+    api_key_query: Optional[str] = Query(None, alias="api_key", include_in_schema=False),
+):
+    """Dependency: require valid API key (for law data endpoints)."""
+    key = x_api_key or api_key_query
+    if not key:
+        raise HTTPException(
+            status_code=401,
+            detail="Yêu cầu API Key. Vui lòng đăng nhập tại /admin để tạo API key.",
+        )
+
+    conn = get_admin_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM api_keys WHERE key_value = ? AND is_active = 1", (key,))
+    row = cursor.fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=403, detail="API Key không hợp lệ hoặc đã bị vô hiệu hóa.")
+
+    # Update usage stats
+    cursor.execute(
+        "UPDATE api_keys SET last_used_at = ?, request_count = request_count + 1 WHERE key_value = ?",
+        (datetime.now(timezone.utc).isoformat(), key),
+    )
+    conn.commit()
+    conn.close()
+
+    return dict(row)
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                    PYDANTIC MODELS                          ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# --- Auth Models ---
+class LoginRequest(BaseModel):
+    email: str = Field(..., example="phapsuto@gmail.com")
+    password: str = Field(..., example="••••••••")
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    email: str
+    expires_in_hours: int
+
+class UserInfo(BaseModel):
+    email: str
+
+# --- API Key Models ---
+class ApiKeyCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, example="My App Key")
+
+class ApiKeyResponse(BaseModel):
+    id: int
+    key_value: str
+    name: str
+    created_by: str
+    created_at: str
+    last_used_at: Optional[str] = None
+    is_active: bool
+    request_count: int
+
+class ApiKeyCreated(BaseModel):
+    id: int
+    key_value: str
+    name: str
+    created_by: str
+    created_at: str
+    message: str = "API Key đã tạo thành công. Hãy lưu lại key này — bạn sẽ không thể xem lại toàn bộ key sau này."
+
+# --- Law Models ---
+class HealthResponse(BaseModel):
+    status: str
+    message: str
+    total_documents_loaded: int
+    docs_url: str
+    redoc_url: str
+    admin_url: str
+
+class LawBrief(BaseModel):
+    id: int
+    title: str
+    so_ky_hieu: Optional[str] = None
+    ngay_ban_hanh: Optional[str] = None
+    loai_van_ban: Optional[str] = None
+    co_quan_ban_hanh: Optional[str] = None
+    tinh_trang_hieu_luc: Optional[str] = None
+
+class LawDetail(LawBrief):
+    ngay_co_hieu_luc: Optional[str] = None
+    ngay_het_hieu_luc: Optional[str] = None
+    nguon_thu_thap: Optional[str] = None
+    ngay_dang_cong_bao: Optional[str] = None
+    nganh: Optional[str] = None
+    linh_vuc: Optional[str] = None
+    chuc_danh: Optional[str] = None
+    nguoi_ky: Optional[str] = None
+    pham_vi: Optional[str] = None
+    thong_tin_ap_dung: Optional[str] = None
+    content_html: Optional[str] = None
+
+class RelationshipInfo(BaseModel):
+    doc_id: int
+    other_doc_id: int
+    relationship: str
+    other_doc_title: str
+    other_doc_so_ky_hieu: Optional[str] = None
+
+class StatsResponse(BaseModel):
+    total_documents: int
+    total_relationships: int
+    by_document_type: Dict[str, int]
+    by_effectiveness_status: Dict[str, int]
+
+class PaginatedSearchResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    results: List[LawBrief]
+
+class CategoryItem(BaseModel):
+    name: str
+    count: int
+
+class ErrorResponse(BaseModel):
+    detail: str
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                      APP SETUP                              ║
+# ╚══════════════════════════════════════════════════════════════╝
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Validate database exists on startup."""
-    if not os.path.exists(DB_NAME):
-        print(f"⚠️  Database file '{DB_NAME}' not found.")
-        print("   Please run: python download_all_to_sqlite.py")
-    else:
+    """Startup: init admin DB, validate main DB."""
+    init_admin_db()
+    if os.path.exists(DB_NAME):
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute("SELECT count(*) FROM documents")
         total = cursor.fetchone()[0]
         conn.close()
-        print(f"✅ Database loaded: {total:,} documents")
+        print(f"✅ Legal database loaded: {total:,} documents")
+    else:
+        print(f"⚠️  Legal database '{DB_NAME}' not found. Run download_all_to_sqlite.py first.")
     print(f"🚀 API server starting on port {API_PORT}")
     yield
 
 
-# --- FastAPI App ---
 DESCRIPTION = """
 ## 🇻🇳 API Dữ Liệu Pháp Luật Việt Nam
 
-REST API hiệu năng cao cho kho dữ liệu **153.420+ văn bản pháp luật** và **897.890+ mối liên kết pháp lý** của Việt Nam.
+REST API hiệu năng cao cho kho dữ liệu **153.420+ văn bản pháp luật** và **897.890+ mối liên kết pháp lý**.
+
+### 🔐 Xác thực API
+Tất cả endpoints `/laws/*` yêu cầu **API Key** trong header:
+```
+X-API-Key: dlvn_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Hoặc qua query parameter: `?api_key=dlvn_xxx...`
+
+👉 **Đăng nhập tại [/admin](/admin)** để tạo API Key.
 
 ### ✨ Tính năng chính
-
 | Tính năng | Mô tả |
 |---|---|
 | 🔍 **Tìm kiếm nhanh** | Tìm theo từ khóa, loại văn bản, lĩnh vực, tình trạng hiệu lực |
-| 📄 **Chi tiết toàn văn** | Lấy toàn bộ nội dung HTML và metadata của bất kỳ văn bản nào |
-| 🔗 **Quan hệ pháp lý** | Xem sửa đổi, bổ sung, thay thế giữa các văn bản |
-| 📊 **Thống kê** | Phân tích tổng quan theo loại, trạng thái, cơ quan ban hành |
-| 🏷️ **Danh mục** | Liệt kê tất cả loại văn bản và lĩnh vực có trong CSDL |
-
-### 🚀 Bắt đầu nhanh
-
-```bash
-# Tìm kiếm từ khóa
-GET /laws/search?q=đất đai&limit=5
-
-# Lấy chi tiết văn bản
-GET /laws/123
-
-# Xem quan hệ pháp lý
-GET /laws/123/relationships
-
-# Thống kê tổng quan
-GET /laws/stats
-```
-
-### 📝 Lưu ý
-- API hỗ trợ **CORS mở** (`*`) — kết nối trực tiếp từ mọi frontend.
-- Dữ liệu ngày tháng theo định dạng **dd/MM/yyyy** (ví dụ: `15/06/2023`).
-- Nội dung HTML (`content_html`) có thể lớn — chỉ gọi endpoint chi tiết khi cần.
+| 📄 **Chi tiết toàn văn** | Lấy toàn bộ nội dung HTML và metadata |
+| 🔗 **Quan hệ pháp lý** | Sửa đổi, bổ sung, thay thế giữa các văn bản |
+| 📊 **Thống kê** | Phân tích tổng quan theo loại, trạng thái |
+| 🏷️ **Danh mục** | Liệt kê loại văn bản, lĩnh vực, cơ quan ban hành |
 """
 
 TAGS_METADATA = [
-    {
-        "name": "🏠 General",
-        "description": "Kiểm tra trạng thái hệ thống và thông tin chung về API.",
-    },
-    {
-        "name": "🔍 Tìm kiếm & Tra cứu",
-        "description": "Tìm kiếm, lọc và lấy chi tiết văn bản pháp luật.",
-    },
-    {
-        "name": "🔗 Quan hệ pháp lý",
-        "description": "Tra cứu các mối liên kết giữa các văn bản (sửa đổi, bổ sung, thay thế, hướng dẫn...).",
-    },
-    {
-        "name": "📊 Thống kê",
-        "description": "Thống kê, phân tích tổng quan dữ liệu trong cơ sở dữ liệu.",
-    },
-    {
-        "name": "🏷️ Danh mục",
-        "description": "Liệt kê danh mục loại văn bản, lĩnh vực, cơ quan ban hành có trong CSDL.",
-    },
+    {"name": "🏠 General", "description": "Kiểm tra trạng thái hệ thống."},
+    {"name": "🔐 Authentication", "description": "Đăng nhập và quản lý phiên làm việc."},
+    {"name": "🔑 API Keys", "description": "Tạo, xem và quản lý API Keys (yêu cầu đăng nhập)."},
+    {"name": "🔍 Tìm kiếm & Tra cứu", "description": "Tìm kiếm và lấy chi tiết văn bản (yêu cầu API Key)."},
+    {"name": "🔗 Quan hệ pháp lý", "description": "Tra cứu liên kết giữa các văn bản (yêu cầu API Key)."},
+    {"name": "📊 Thống kê", "description": "Thống kê tổng quan dữ liệu (yêu cầu API Key)."},
+    {"name": "🏷️ Danh mục", "description": "Danh mục loại văn bản, lĩnh vực, cơ quan (yêu cầu API Key)."},
 ]
 
 app = FastAPI(
     title="Vietnamese Legal Documents API",
     description=DESCRIPTION,
-    version="1.0.0",
+    version="1.1.0",
     openapi_tags=TAGS_METADATA,
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
-    contact={
-        "name": "Pháp sư Tô — dataluatvn",
-        "url": "https://github.com/phapsuto/dataluatvn",
-    },
-    license_info={
-        "name": "MIT",
-    },
-    responses={
-        500: {"description": "Lỗi máy chủ nội bộ — thường do chưa khởi tạo database."},
-    },
+    contact={"name": "Pháp sư Tô — dataluatvn"},
+    license_info={"name": "MIT"},
+    swagger_ui_parameters={"persistAuthorization": True},
 )
 
-# Enable CORS (Allows connection from any frontend or external app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -121,130 +324,13 @@ app.add_middleware(
 )
 
 
-# --- Helpers ---
-def get_db_connection():
-    if not os.path.exists(DB_NAME):
-        raise HTTPException(
-            status_code=500,
-            detail="Database file not found. Please run download_all_to_sqlite.py first.",
-        )
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row  # Returns results as dict-like objects
-    return conn
-
-
-# --- Pydantic Models ---
-
-class HealthResponse(BaseModel):
-    """Thông tin trạng thái hệ thống."""
-    status: str = Field(..., example="online", description="Trạng thái API")
-    message: str = Field(..., example="Chào mừng đến với API Dữ Liệu Pháp Luật Việt Nam!")
-    database_file: str = Field(..., example="/app/vietnamese_legal_documents.db")
-    total_documents_loaded: int = Field(..., example=153420, description="Tổng số văn bản trong CSDL")
-    docs_url: str = Field("/docs", description="Đường dẫn tài liệu Swagger UI")
-    redoc_url: str = Field("/redoc", description="Đường dẫn tài liệu ReDoc")
-
-class LawBrief(BaseModel):
-    """Thông tin tóm tắt của một văn bản pháp luật (không bao gồm nội dung HTML)."""
-    id: int = Field(..., example=38920, description="ID duy nhất của văn bản")
-    title: str = Field(..., example="Luật Đất đai 2024", description="Tiêu đề văn bản")
-    so_ky_hieu: Optional[str] = Field(None, example="31/2024/QH15", description="Số ký hiệu")
-    ngay_ban_hanh: Optional[str] = Field(None, example="18/01/2024", description="Ngày ban hành (dd/MM/yyyy)")
-    loai_van_ban: Optional[str] = Field(None, example="Luật", description="Loại văn bản")
-    co_quan_ban_hanh: Optional[str] = Field(None, example="Quốc hội", description="Cơ quan ban hành")
-    tinh_trang_hieu_luc: Optional[str] = Field(None, example="Còn hiệu lực", description="Tình trạng hiệu lực")
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "id": 38920,
-                    "title": "Luật Đất đai 2024",
-                    "so_ky_hieu": "31/2024/QH15",
-                    "ngay_ban_hanh": "18/01/2024",
-                    "loai_van_ban": "Luật",
-                    "co_quan_ban_hanh": "Quốc hội",
-                    "tinh_trang_hieu_luc": "Còn hiệu lực",
-                }
-            ]
-        }
-    }
-
-
-class LawDetail(LawBrief):
-    """Thông tin chi tiết đầy đủ của một văn bản, bao gồm toàn văn HTML."""
-    ngay_co_hieu_luc: Optional[str] = Field(None, example="01/01/2025", description="Ngày có hiệu lực")
-    ngay_het_hieu_luc: Optional[str] = Field(None, description="Ngày hết hiệu lực (nếu có)")
-    nguon_thu_thap: Optional[str] = Field(None, description="Nguồn thu thập")
-    ngay_dang_cong_bao: Optional[str] = Field(None, description="Ngày đăng công báo")
-    nganh: Optional[str] = Field(None, example="Tài nguyên - Môi trường", description="Ngành")
-    linh_vuc: Optional[str] = Field(None, example="Đất đai", description="Lĩnh vực")
-    chuc_danh: Optional[str] = Field(None, description="Chức danh người ký")
-    nguoi_ky: Optional[str] = Field(None, example="Vương Đình Huệ", description="Người ký")
-    pham_vi: Optional[str] = Field(None, description="Phạm vi áp dụng")
-    thong_tin_ap_dung: Optional[str] = Field(None, description="Thông tin áp dụng bổ sung")
-    content_html: Optional[str] = Field(None, description="Toàn văn HTML của văn bản (có thể rất lớn)")
-
-
-class RelationshipInfo(BaseModel):
-    """Thông tin mối liên kết pháp lý giữa hai văn bản."""
-    doc_id: int = Field(..., example=38920, description="ID văn bản gốc")
-    other_doc_id: int = Field(..., example=12345, description="ID văn bản liên quan")
-    relationship: str = Field(..., example="Được sửa đổi bởi", description="Loại quan hệ")
-    other_doc_title: str = Field(..., example="Nghị định 43/2014/NĐ-CP", description="Tiêu đề văn bản liên quan")
-    other_doc_so_ky_hieu: Optional[str] = Field(None, example="43/2014/NĐ-CP", description="Số ký hiệu văn bản liên quan")
-
-
-class StatsResponse(BaseModel):
-    """Thống kê tổng quan cơ sở dữ liệu."""
-    total_documents: int = Field(..., example=153420, description="Tổng số văn bản")
-    total_relationships: int = Field(..., example=897890, description="Tổng số mối liên kết pháp lý")
-    by_document_type: Dict[str, int] = Field(..., description="Phân bổ theo loại văn bản")
-    by_effectiveness_status: Dict[str, int] = Field(..., description="Phân bổ theo tình trạng hiệu lực")
-
-
-class PaginatedSearchResponse(BaseModel):
-    """Kết quả tìm kiếm có phân trang."""
-    total: int = Field(..., example=2450, description="Tổng số kết quả khớp")
-    limit: int = Field(..., example=20, description="Số lượng tối đa trả về")
-    offset: int = Field(..., example=0, description="Vị trí bắt đầu")
-    results: List[LawBrief] = Field(..., description="Danh sách văn bản")
-
-
-class CategoryItem(BaseModel):
-    """Một mục trong danh mục."""
-    name: str = Field(..., example="Luật", description="Tên danh mục")
-    count: int = Field(..., example=850, description="Số lượng văn bản")
-
-
-class ErrorResponse(BaseModel):
-    """Thông tin lỗi trả về."""
-    detail: str = Field(..., example="Không tìm thấy văn bản có ID 999999")
-
-
 # ╔══════════════════════════════════════════════════════════════╗
-# ║                      API ENDPOINTS                          ║
+# ║                   GENERAL ENDPOINTS                         ║
 # ╚══════════════════════════════════════════════════════════════╝
 
-
-# ─────────────────── GENERAL ───────────────────
-
-@app.get(
-    "/",
-    response_model=HealthResponse,
-    tags=["🏠 General"],
-    summary="Kiểm tra trạng thái hệ thống",
-    description="Trả về trạng thái hoạt động của API, đường dẫn database, tổng số văn bản đã tải và link tới tài liệu.",
-)
+@app.get("/", response_model=HealthResponse, tags=["🏠 General"], summary="Health Check")
 def welcome():
-    """
-    **Health-check & Welcome endpoint.**
-
-    Sử dụng endpoint này để:
-    - Kiểm tra API đang hoạt động.
-    - Xem tổng số văn bản đã tải vào CSDL.
-    - Truy cập nhanh tới trang tài liệu.
-    """
+    """Kiểm tra trạng thái hệ thống (không yêu cầu API Key)."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT count(*) FROM documents")
@@ -254,57 +340,171 @@ def welcome():
     return {
         "status": "online",
         "message": "Chào mừng đến với API Dữ Liệu Pháp Luật Việt Nam!",
-        "database_file": os.path.abspath(DB_NAME),
         "total_documents_loaded": total_docs,
         "docs_url": "/docs",
         "redoc_url": "/redoc",
+        "admin_url": "/admin",
     }
 
 
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                  AUTH ENDPOINTS                             ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+@app.post("/auth/login", response_model=LoginResponse, tags=["🔐 Authentication"], summary="Đăng nhập")
+def login(body: LoginRequest):
+    """
+    Đăng nhập bằng email và mật khẩu.
+    Chỉ các tài khoản nội bộ được phép đăng nhập.
+    Trả về JWT token dùng để quản lý API Keys.
+    """
+    email = body.email.strip().lower()
+    password_hash = hashlib.sha256(body.password.encode()).hexdigest()
+
+    expected_hash = ACCOUNTS.get(email)
+    if not expected_hash or password_hash != expected_hash:
+        raise HTTPException(status_code=401, detail="Email hoặc mật khẩu không đúng.")
+
+    token = create_jwt_token(email)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "email": email,
+        "expires_in_hours": JWT_EXPIRE_HOURS,
+    }
+
+
+@app.get("/auth/me", response_model=UserInfo, tags=["🔐 Authentication"], summary="Thông tin người dùng")
+def get_current_user(user=Depends(require_jwt)):
+    """Lấy thông tin tài khoản đang đăng nhập (yêu cầu JWT token)."""
+    return {"email": user["sub"]}
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                API KEY MANAGEMENT                           ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+@app.get("/admin/api-keys", response_model=List[ApiKeyResponse], tags=["🔑 API Keys"], summary="Danh sách API Keys")
+def list_api_keys(user=Depends(require_jwt)):
+    """Lấy danh sách tất cả API Keys (yêu cầu đăng nhập)."""
+    conn = get_admin_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM api_keys ORDER BY created_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+
+    results = []
+    for row in rows:
+        d = dict(row)
+        d["is_active"] = bool(d["is_active"])
+        results.append(d)
+    return results
+
+
+@app.post("/admin/api-keys", response_model=ApiKeyCreated, tags=["🔑 API Keys"], summary="Tạo API Key mới")
+def create_api_key(body: ApiKeyCreate, user=Depends(require_jwt)):
+    """
+    Tạo một API Key mới. Key có dạng `dlvn_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`.
+    **Lưu ý:** Hãy lưu key ngay sau khi tạo.
+    """
+    key_value = f"dlvn_{secrets.token_hex(24)}"
+    now = datetime.now(timezone.utc).isoformat()
+
+    conn = get_admin_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO api_keys (key_value, name, created_by, created_at) VALUES (?, ?, ?, ?)",
+        (key_value, body.name.strip(), user["sub"], now),
+    )
+    conn.commit()
+    key_id = cursor.lastrowid
+    conn.close()
+
+    return {
+        "id": key_id,
+        "key_value": key_value,
+        "name": body.name.strip(),
+        "created_by": user["sub"],
+        "created_at": now,
+    }
+
+
+@app.put("/admin/api-keys/{key_id}/toggle", tags=["🔑 API Keys"], summary="Bật/tắt API Key")
+def toggle_api_key(key_id: int, user=Depends(require_jwt)):
+    """Bật hoặc tắt trạng thái hoạt động của một API Key."""
+    conn = get_admin_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM api_keys WHERE id = ?", (key_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Không tìm thấy API Key.")
+
+    new_status = 0 if row["is_active"] else 1
+    cursor.execute("UPDATE api_keys SET is_active = ? WHERE id = ?", (new_status, key_id))
+    conn.commit()
+    conn.close()
+
+    return {"message": "Đã cập nhật trạng thái", "is_active": bool(new_status)}
+
+
+@app.delete("/admin/api-keys/{key_id}", tags=["🔑 API Keys"], summary="Xóa API Key")
+def delete_api_key(key_id: int, user=Depends(require_jwt)):
+    """Xóa vĩnh viễn một API Key."""
+    conn = get_admin_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM api_keys WHERE id = ?", (key_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Không tìm thấy API Key.")
+
+    cursor.execute("DELETE FROM api_keys WHERE id = ?", (key_id,))
+    conn.commit()
+    conn.close()
+
+    return {"message": "Đã xóa API Key thành công."}
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║              ADMIN PORTAL (HTML PAGE)                       ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+@app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
+def admin_page():
+    """Serve the admin portal HTML page."""
+    html_path = os.path.join(os.path.dirname(__file__), "static", "admin.html")
+    if not os.path.exists(html_path):
+        raise HTTPException(status_code=500, detail="Admin page not found.")
+    with open(html_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║          LAW DATA ENDPOINTS (API KEY REQUIRED)              ║
+# ╚══════════════════════════════════════════════════════════════╝
+
 # ─────────────────── STATISTICS ───────────────────
 
-@app.get(
-    "/laws/stats",
-    response_model=StatsResponse,
-    tags=["📊 Thống kê"],
-    summary="Thống kê tổng quan cơ sở dữ liệu",
-    description="Trả về tổng số văn bản, tổng mối liên kết, phân bổ theo loại văn bản và theo tình trạng hiệu lực.",
-)
-def get_stats():
-    """
-    **Phân tích tổng quan kho dữ liệu.**
-
-    Kết quả bao gồm:
-    - `total_documents`: Tổng số văn bản pháp luật.
-    - `total_relationships`: Tổng số mối liên kết pháp lý.
-    - `by_document_type`: Số lượng theo từng loại (Luật, Nghị định, Thông tư…).
-    - `by_effectiveness_status`: Số lượng theo tình trạng (Còn hiệu lực, Hết hiệu lực…).
-    """
+@app.get("/laws/stats", response_model=StatsResponse, tags=["📊 Thống kê"], summary="Thống kê tổng quan")
+def get_stats(_key=Depends(require_api_key)):
+    """Thống kê tổng quan cơ sở dữ liệu. **Yêu cầu API Key.**"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Total documents
     cursor.execute("SELECT count(*) FROM documents")
     total_docs = cursor.fetchone()[0]
 
-    # Total relationships
     cursor.execute("SELECT count(*) FROM relationships")
     total_rels = cursor.fetchone()[0]
 
-    # Count by type
-    cursor.execute(
-        "SELECT loai_van_ban, count(*) FROM documents GROUP BY loai_van_ban ORDER BY count(*) DESC"
-    )
+    cursor.execute("SELECT loai_van_ban, count(*) FROM documents GROUP BY loai_van_ban ORDER BY count(*) DESC")
     types_count = {row[0] or "Khác": row[1] for row in cursor.fetchall()}
 
-    # Count by status
-    cursor.execute(
-        "SELECT tinh_trang_hieu_luc, count(*) FROM documents GROUP BY tinh_trang_hieu_luc ORDER BY count(*) DESC"
-    )
+    cursor.execute("SELECT tinh_trang_hieu_luc, count(*) FROM documents GROUP BY tinh_trang_hieu_luc ORDER BY count(*) DESC")
     status_count = {row[0] or "Không xác định": row[1] for row in cursor.fetchall()}
 
     conn.close()
-
     return {
         "total_documents": total_docs,
         "total_relationships": total_rels,
@@ -315,86 +515,18 @@ def get_stats():
 
 # ─────────────────── SEARCH & RETRIEVAL ───────────────────
 
-@app.get(
-    "/laws/search",
-    response_model=PaginatedSearchResponse,
-    tags=["🔍 Tìm kiếm & Tra cứu"],
-    summary="Tìm kiếm văn bản pháp luật",
-    description=(
-        "Tìm kiếm nhanh trong toàn bộ kho dữ liệu. Hỗ trợ:\n"
-        "- Từ khóa tự do (tìm trong tiêu đề + số ký hiệu).\n"
-        "- Lọc theo loại văn bản, tình trạng hiệu lực, lĩnh vực.\n"
-        "- Phân trang bằng `limit` + `offset`."
-    ),
-    responses={
-        200: {
-            "description": "Danh sách văn bản khớp điều kiện",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "total": 2450,
-                        "limit": 20,
-                        "offset": 0,
-                        "results": [
-                            {
-                                "id": 38920,
-                                "title": "Luật Đất đai 2024",
-                                "so_ky_hieu": "31/2024/QH15",
-                                "ngay_ban_hanh": "18/01/2024",
-                                "loai_van_ban": "Luật",
-                                "co_quan_ban_hanh": "Quốc hội",
-                                "tinh_trang_hieu_luc": "Còn hiệu lực",
-                            }
-                        ],
-                    }
-                }
-            },
-        }
-    },
-)
+@app.get("/laws/search", response_model=PaginatedSearchResponse, tags=["🔍 Tìm kiếm & Tra cứu"], summary="Tìm kiếm văn bản")
 def search_laws(
-    q: Optional[str] = Query(
-        None,
-        description="Từ khóa tìm kiếm (trong tiêu đề hoặc số ký hiệu)",
-        examples=["đất đai", "thuế GTGT", "45/2019/QH14"],
-    ),
-    loai_van_ban: Optional[str] = Query(
-        None,
-        description="Lọc theo loại văn bản",
-        examples=["Luật", "Nghị định", "Thông tư"],
-    ),
-    co_quan_ban_hanh: Optional[str] = Query(
-        None,
-        description="Lọc theo cơ quan ban hành",
-        examples=["Quốc hội", "Chính phủ", "Bộ Tài chính"],
-    ),
-    status: Optional[str] = Query(
-        None,
-        alias="tinh_trang",
-        description="Lọc theo tình trạng hiệu lực",
-        examples=["Còn hiệu lực", "Hết hiệu lực"],
-    ),
-    linh_vuc: Optional[str] = Query(
-        None,
-        description="Lọc theo lĩnh vực hoặc ngành",
-        examples=["Hình sự", "Đất đai", "Thuế - Phí - Lệ phí"],
-    ),
-    limit: int = Query(20, ge=1, le=100, description="Số lượng kết quả tối đa trả về (1–100)"),
-    offset: int = Query(0, ge=0, description="Vị trí bắt đầu (dùng cho phân trang)"),
+    q: Optional[str] = Query(None, description="Từ khóa tìm kiếm"),
+    loai_van_ban: Optional[str] = Query(None, description="Lọc theo loại văn bản"),
+    co_quan_ban_hanh: Optional[str] = Query(None, description="Lọc theo cơ quan ban hành"),
+    status: Optional[str] = Query(None, alias="tinh_trang", description="Lọc theo tình trạng hiệu lực"),
+    linh_vuc: Optional[str] = Query(None, description="Lọc theo lĩnh vực"),
+    limit: int = Query(20, ge=1, le=100, description="Số lượng tối đa (1–100)"),
+    offset: int = Query(0, ge=0, description="Vị trí bắt đầu"),
+    _key=Depends(require_api_key),
 ):
-    """
-    **Tìm kiếm và lọc văn bản pháp luật.**
-
-    ### Ví dụ sử dụng
-
-    | Mục đích | URL |
-    |---|---|
-    | Tìm "đất đai" | `/laws/search?q=đất đai` |
-    | Chỉ lấy Luật | `/laws/search?loai_van_ban=Luật` |
-    | Còn hiệu lực | `/laws/search?tinh_trang=Còn hiệu lực` |
-    | Trang 2 | `/laws/search?q=thuế&limit=20&offset=20` |
-    | Kết hợp | `/laws/search?q=lao động&loai_van_ban=Nghị định&tinh_trang=Còn hiệu lực` |
-    """
+    """Tìm kiếm và lọc văn bản pháp luật. **Yêu cầu API Key.**"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -404,139 +536,97 @@ def search_laws(
     if q:
         where_clauses.append("(title LIKE ? OR so_ky_hieu LIKE ?)")
         params.extend([f"%{q}%", f"%{q}%"])
-
     if loai_van_ban:
         where_clauses.append("loai_van_ban = ?")
         params.append(loai_van_ban)
-
     if co_quan_ban_hanh:
         where_clauses.append("co_quan_ban_hanh LIKE ?")
         params.append(f"%{co_quan_ban_hanh}%")
-
     if status:
         where_clauses.append("tinh_trang_hieu_luc = ?")
         params.append(status)
-
     if linh_vuc:
         where_clauses.append("(linh_vuc LIKE ? OR nganh LIKE ?)")
         params.extend([f"%{linh_vuc}%", f"%{linh_vuc}%"])
 
     where_sql = " AND ".join(where_clauses)
 
-    # Count total matching results
-    count_query = f"SELECT count(*) FROM documents WHERE {where_sql}"
-    cursor.execute(count_query, params)
+    cursor.execute(f"SELECT count(*) FROM documents WHERE {where_sql}", params)
     total = cursor.fetchone()[0]
 
-    # Fetch paginated results
-    data_query = f"""
-        SELECT id, title, so_ky_hieu, ngay_ban_hanh, loai_van_ban, co_quan_ban_hanh, tinh_trang_hieu_luc
-        FROM documents
-        WHERE {where_sql}
-        ORDER BY id DESC
-        LIMIT ? OFFSET ?
-    """
-    cursor.execute(data_query, params + [limit, offset])
+    cursor.execute(
+        f"SELECT id, title, so_ky_hieu, ngay_ban_hanh, loai_van_ban, co_quan_ban_hanh, tinh_trang_hieu_luc "
+        f"FROM documents WHERE {where_sql} ORDER BY id DESC LIMIT ? OFFSET ?",
+        params + [limit, offset],
+    )
     rows = cursor.fetchall()
     conn.close()
 
-    return {
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "results": [dict(row) for row in rows],
-    }
+    return {"total": total, "limit": limit, "offset": offset, "results": [dict(r) for r in rows]}
 
 
-@app.get(
-    "/laws/{law_id}",
-    response_model=LawDetail,
-    tags=["🔍 Tìm kiếm & Tra cứu"],
-    summary="Lấy chi tiết một văn bản",
-    description="Trả về toàn bộ metadata và nội dung HTML (toàn văn) của một văn bản pháp luật theo ID.",
-    responses={
-        404: {
-            "model": ErrorResponse,
-            "description": "Không tìm thấy văn bản với ID đã cho.",
-        }
-    },
-)
-def get_law_detail(
-    law_id: int = Path(..., description="ID duy nhất của văn bản pháp luật", example=38920),
-):
-    """
-    **Lấy chi tiết toàn văn HTML và siêu dữ liệu đầy đủ.**
-
-    ⚠️ **Lưu ý:** Trường `content_html` có thể chứa nội dung HTML rất lớn (hàng trăm KB).
-    Chỉ gọi endpoint này khi thực sự cần toàn văn.
-
-    ### Ví dụ
-    ```
-    GET /laws/38920
-    ```
-    """
+@app.get("/laws/categories/types", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Loại văn bản")
+def get_document_types(_key=Depends(require_api_key)):
+    """Danh sách loại văn bản. **Yêu cầu API Key.**"""
     conn = get_db_connection()
     cursor = conn.cursor()
+    cursor.execute("SELECT loai_van_ban, count(*) as cnt FROM documents GROUP BY loai_van_ban ORDER BY cnt DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"name": row[0] or "Khác", "count": row[1]} for row in rows]
 
+
+@app.get("/laws/categories/fields", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Lĩnh vực")
+def get_fields(_key=Depends(require_api_key)):
+    """Danh sách lĩnh vực pháp luật. **Yêu cầu API Key.**"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT linh_vuc, count(*) as cnt FROM documents WHERE linh_vuc IS NOT NULL AND linh_vuc != '' GROUP BY linh_vuc ORDER BY cnt DESC"
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"name": row[0], "count": row[1]} for row in rows]
+
+
+@app.get("/laws/categories/agencies", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Cơ quan ban hành")
+def get_agencies(_key=Depends(require_api_key)):
+    """Danh sách cơ quan ban hành. **Yêu cầu API Key.**"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT co_quan_ban_hanh, count(*) as cnt FROM documents WHERE co_quan_ban_hanh IS NOT NULL AND co_quan_ban_hanh != '' GROUP BY co_quan_ban_hanh ORDER BY cnt DESC"
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"name": row[0], "count": row[1]} for row in rows]
+
+
+@app.get("/laws/{law_id}", response_model=LawDetail, tags=["🔍 Tìm kiếm & Tra cứu"], summary="Chi tiết văn bản")
+def get_law_detail(
+    law_id: int = Path(..., description="ID văn bản"),
+    _key=Depends(require_api_key),
+):
+    """Lấy toàn văn HTML và metadata đầy đủ. **Yêu cầu API Key.**"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.execute("SELECT * FROM documents WHERE id = ?", (law_id,))
     row = cursor.fetchone()
     conn.close()
 
     if not row:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Không tìm thấy văn bản có ID {law_id}",
-        )
-
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy văn bản có ID {law_id}")
     return dict(row)
 
 
 # ─────────────────── RELATIONSHIPS ───────────────────
 
-@app.get(
-    "/laws/{law_id}/relationships",
-    response_model=List[RelationshipInfo],
-    tags=["🔗 Quan hệ pháp lý"],
-    summary="Xem quan hệ pháp lý của văn bản",
-    description=(
-        "Trả về danh sách tất cả các mối liên kết pháp lý liên quan đến văn bản, bao gồm: "
-        "sửa đổi, bổ sung, thay thế, hướng dẫn thi hành, bãi bỏ..."
-    ),
-    responses={
-        200: {
-            "description": "Danh sách quan hệ pháp lý",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {
-                            "doc_id": 38920,
-                            "other_doc_id": 12345,
-                            "relationship": "Được sửa đổi bởi",
-                            "other_doc_title": "Nghị định 43/2014/NĐ-CP hướng dẫn thi hành Luật Đất đai",
-                            "other_doc_so_ky_hieu": "43/2014/NĐ-CP",
-                        }
-                    ]
-                }
-            },
-        }
-    },
-)
+@app.get("/laws/{law_id}/relationships", response_model=List[RelationshipInfo], tags=["🔗 Quan hệ pháp lý"], summary="Quan hệ pháp lý")
 def get_law_relationships(
-    law_id: int = Path(..., description="ID văn bản cần xem quan hệ", example=38920),
+    law_id: int = Path(..., description="ID văn bản"),
+    _key=Depends(require_api_key),
 ):
-    """
-    **Tra cứu mạng lưới liên kết pháp lý.**
-
-    Endpoint này trả về tất cả các mối quan hệ mà văn bản tham gia
-    (cả chiều đi lẫn chiều đến). Ví dụ:
-    - Văn bản A **sửa đổi** văn bản B
-    - Văn bản A **được hướng dẫn bởi** văn bản C
-
-    ### Ví dụ
-    ```
-    GET /laws/38920/relationships
-    ```
-    """
+    """Tra cứu mạng lưới liên kết pháp lý. **Yêu cầu API Key.**"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -557,112 +647,14 @@ def get_law_relationships(
     cursor.execute(query, (law_id, law_id))
     rows = cursor.fetchall()
     conn.close()
-
     return [dict(row) for row in rows]
 
 
-# ─────────────────── CATEGORIES ───────────────────
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                       MAIN                                 ║
+# ╚══════════════════════════════════════════════════════════════╝
 
-@app.get(
-    "/laws/categories/types",
-    response_model=List[CategoryItem],
-    tags=["🏷️ Danh mục"],
-    summary="Danh sách loại văn bản",
-    description="Liệt kê tất cả loại văn bản có trong CSDL (Luật, Nghị định, Thông tư…) cùng số lượng.",
-)
-def get_document_types():
-    """
-    **Lấy danh sách tất cả loại văn bản.**
-
-    Hữu ích để xây dựng bộ lọc dropdown trên giao diện frontend.
-
-    ### Ví dụ kết quả
-    ```json
-    [
-      {"name": "Nghị định", "count": 15420},
-      {"name": "Thông tư", "count": 12830},
-      {"name": "Luật", "count": 850}
-    ]
-    ```
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT loai_van_ban, count(*) as cnt FROM documents GROUP BY loai_van_ban ORDER BY cnt DESC"
-    )
-    rows = cursor.fetchall()
-    conn.close()
-
-    return [{"name": row[0] or "Khác", "count": row[1]} for row in rows]
-
-
-@app.get(
-    "/laws/categories/fields",
-    response_model=List[CategoryItem],
-    tags=["🏷️ Danh mục"],
-    summary="Danh sách lĩnh vực",
-    description="Liệt kê tất cả lĩnh vực pháp luật có trong CSDL (Đất đai, Hình sự, Thuế…) cùng số lượng.",
-)
-def get_fields():
-    """
-    **Lấy danh sách tất cả lĩnh vực pháp luật.**
-
-    ### Ví dụ kết quả
-    ```json
-    [
-      {"name": "Thuế - Phí - Lệ phí", "count": 8520},
-      {"name": "Đất đai - Nhà ở", "count": 5430}
-    ]
-    ```
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT linh_vuc, count(*) as cnt FROM documents WHERE linh_vuc IS NOT NULL AND linh_vuc != '' GROUP BY linh_vuc ORDER BY cnt DESC"
-    )
-    rows = cursor.fetchall()
-    conn.close()
-
-    return [{"name": row[0], "count": row[1]} for row in rows]
-
-
-@app.get(
-    "/laws/categories/agencies",
-    response_model=List[CategoryItem],
-    tags=["🏷️ Danh mục"],
-    summary="Danh sách cơ quan ban hành",
-    description="Liệt kê tất cả cơ quan ban hành có trong CSDL (Quốc hội, Chính phủ, Bộ Tài chính…) cùng số lượng.",
-)
-def get_agencies():
-    """
-    **Lấy danh sách tất cả cơ quan ban hành.**
-
-    ### Ví dụ kết quả
-    ```json
-    [
-      {"name": "Chính phủ", "count": 18520},
-      {"name": "Quốc hội", "count": 1230}
-    ]
-    ```
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT co_quan_ban_hanh, count(*) as cnt FROM documents WHERE co_quan_ban_hanh IS NOT NULL AND co_quan_ban_hanh != '' GROUP BY co_quan_ban_hanh ORDER BY cnt DESC"
-    )
-    rows = cursor.fetchall()
-    conn.close()
-
-    return [{"name": row[0], "count": row[1]} for row in rows]
-
-
-# --- Startup / Run Config ---
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "server:app",
-        host="0.0.0.0",
-        port=API_PORT,
-        reload=True,
-    )
+    uvicorn.run("server:app", host="0.0.0.0", port=API_PORT, reload=True)

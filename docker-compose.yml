@@ -7,13 +7,13 @@ services:
     ports:
       - "2004:2004"
     volumes:
-      # Mount database file from host (persistent data)
       - ./vietnamese_legal_documents.db:/app/vietnamese_legal_documents.db
-      # Mount sync log
+      - ./admin.db:/app/admin.db
       - ./sync.log:/app/sync.log
     environment:
       - API_PORT=2004
       - DB_PATH=vietnamese_legal_documents.db
+      - ADMIN_DB_PATH=admin.db
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:2004/"]

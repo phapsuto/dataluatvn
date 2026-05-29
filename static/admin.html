@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataLuatVN — Admin Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-200: #bfdbfe;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --teal-50: #f0fdfa;
+            --teal-400: #2dd4bf;
+            --teal-500: #14b8a6;
+            --teal-600: #0d9488;
+            --green-50: #f0fdf4;
+            --green-500: #22c55e;
+            --green-600: #16a34a;
+            --red-50: #fef2f2;
+            --red-500: #ef4444;
+            --red-600: #dc2626;
+            --amber-50: #fffbeb;
+            --amber-500: #f59e0b;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -4px rgba(0,0,0,0.04);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --radius-full: 9999px;
+            --transition: all 0.2s ease;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── LOGIN PAGE ── */
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 30%, #f0fdfa 60%, #ecfdf5 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: 14px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 380px;
+            padding: 32px 28px;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .login-logo .icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--blue-500), var(--teal-500));
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .login-logo .icon svg {
+            width: 22px;
+            height: 22px;
+            fill: white;
+        }
+
+        .login-logo h1 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .login-logo p {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray-600);
+            margin-bottom: 5px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap svg {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 15px;
+            fill: var(--gray-400);
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 9px 12px 9px 32px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: inherit;
+            color: var(--gray-800);
+            background: var(--white);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-input:focus {
+            border-color: var(--blue-400);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--gray-400);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            line-height: 1.4;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
+            color: white;
+            width: 100%;
+            padding: 10px;
+        }
+
+        .btn-primary:hover { background: linear-gradient(135deg, var(--blue-600), var(--blue-700)); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-create {
+            background: linear-gradient(135deg, var(--teal-500), var(--teal-600));
+            color: white;
+        }
+
+        .btn-create:hover { background: linear-gradient(135deg, var(--teal-600), var(--teal-600)); }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 5px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--gray-600);
+            border: 1px solid var(--gray-200);
+        }
+
+        .btn-ghost:hover { background: var(--gray-50); border-color: var(--gray-300); }
+
+        .btn-danger-ghost {
+            background: transparent;
+            color: var(--red-500);
+            border: 1px solid var(--red-500);
+        }
+
+        .btn-danger-ghost:hover { background: var(--red-50); }
+
+        .btn-copy {
+            background: var(--blue-50);
+            color: var(--blue-600);
+            border: 1px solid var(--blue-200);
+        }
+
+        .btn-copy:hover { background: var(--blue-100); }
+
+        .login-error {
+            display: none;
+            background: var(--red-50);
+            color: var(--red-600);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            margin-bottom: 14px;
+            border: 1px solid #fecaca;
+        }
+
+        .login-error.show { display: block; animation: shake 0.3s ease; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* ── DASHBOARD ── */
+        .dashboard { display: none; min-height: 100vh; }
+        .dashboard.active { display: block; }
+
+        /* Nav */
+        .nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 24px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .nav-brand .dot {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--blue-500), var(--teal-500));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-brand .dot svg { width: 14px; height: 14px; fill: white; }
+
+        .nav-brand span {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--gray-50);
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            color: var(--gray-600);
+        }
+
+        .nav-user .avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue-400), var(--teal-400));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            padding: 5px 10px;
+            font-size: 12px;
+            background: transparent;
+            color: var(--gray-500);
+            border: 1px solid var(--gray-200);
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .btn-logout:hover { color: var(--red-500); border-color: var(--red-500); background: var(--red-50); }
+
+        /* Main content */
+        .main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 24px;
+        }
+
+        /* Quick Links */
+        .quick-links {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .quick-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            color: var(--gray-600);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .quick-link:hover { border-color: var(--blue-300); color: var(--blue-600); background: var(--blue-50); }
+
+        .quick-link svg { width: 12px; height: 12px; fill: currentColor; }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+        .stat-card .stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 4px;
+            line-height: 1.2;
+        }
+
+        .stat-card:nth-child(1) .stat-value { color: var(--blue-600); }
+        .stat-card:nth-child(2) .stat-value { color: var(--green-600); }
+        .stat-card:nth-child(3) .stat-value { color: var(--teal-600); }
+
+        /* Section */
+        .section {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .section-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        /* Table */
+        .keys-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .keys-table th {
+            padding: 8px 14px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .keys-table td {
+            padding: 10px 14px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: middle;
+        }
+
+        .keys-table tr:last-child td { border-bottom: none; }
+
+        .keys-table tr:hover td { background: var(--blue-50); }
+
+        .key-name {
+            font-weight: 500;
+            color: var(--gray-800);
+        }
+
+        .key-value-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .key-value {
+            font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+            font-size: 11.5px;
+            color: var(--gray-600);
+            background: var(--gray-50);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--gray-200);
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-active { background: var(--green-50); color: var(--green-600); border: 1px solid #bbf7d0; }
+        .badge-inactive { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-200); }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .badge-active .badge-dot { background: var(--green-500); }
+        .badge-inactive .badge-dot { background: var(--gray-400); }
+
+        .td-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .meta-text {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray-400);
+        }
+
+        .empty-state svg { width: 36px; height: 36px; fill: var(--gray-300); margin-bottom: 10px; }
+        .empty-state p { font-size: 13px; }
+        .empty-state .sub { font-size: 12px; margin-top: 4px; }
+
+        /* ── MODAL ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+            width: 100%;
+            max-width: 420px;
+            animation: modalIn 0.25s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: var(--gray-100);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-500);
+            transition: var(--transition);
+        }
+
+        .modal-close:hover { background: var(--gray-200); }
+
+        .modal-body { padding: 16px 20px; }
+
+        .modal-footer {
+            padding: 12px 20px 16px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Key created result */
+        .key-result {
+            display: none;
+            margin-top: 12px;
+        }
+
+        .key-result.show { display: block; animation: slideUp 0.3s ease; }
+
+        .key-result-box {
+            background: var(--green-50);
+            border: 1px solid #bbf7d0;
+            border-radius: var(--radius-sm);
+            padding: 12px;
+        }
+
+        .key-result-box .label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--green-600);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .key-result-box .value {
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 12px;
+            color: var(--gray-800);
+            background: var(--white);
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid #bbf7d0;
+            word-break: break-all;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .key-result-box .warning {
+            font-size: 11px;
+            color: var(--amber-500);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ── TOAST ── */
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: toastIn 0.3s ease;
+            max-width: 320px;
+        }
+
+        .toast.removing { animation: toastOut 0.3s ease forwards; }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(20px); }
+        }
+
+        .toast-success { background: var(--green-600); color: white; }
+        .toast-error { background: var(--red-600); color: white; }
+        .toast-info { background: var(--blue-600); color: white; }
+
+        /* ── LOADING ── */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .btn.loading { pointer-events: none; opacity: 0.7; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .main { padding: 14px; }
+            .keys-table th:nth-child(4),
+            .keys-table td:nth-child(4),
+            .keys-table th:nth-child(5),
+            .keys-table td:nth-child(5) { display: none; }
+            .nav { padding: 0 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="login-section" class="login-wrapper">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="icon">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h5v7h7v9H6z"/></svg>
+            </div>
+            <h1>DataLuatVN</h1>
+            <p>Hệ thống quản lý API nội bộ</p>
+        </div>
+
+        <div id="login-error" class="login-error"></div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <div class="input-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                    <input type="email" id="email" class="form-input" placeholder="you@email.com" required autocomplete="email">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <div class="input-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+            </div>
+            <button type="submit" id="login-btn" class="btn btn-primary">
+                <span id="login-btn-text">Đăng nhập</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ═══════════ DASHBOARD ═══════════ -->
+<div id="dashboard-section" class="dashboard">
+    <!-- Nav -->
+    <nav class="nav">
+        <div class="nav-brand">
+            <div class="dot">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h5v7h7v9H6z"/></svg>
+            </div>
+            <span>DataLuatVN</span>
+        </div>
+        <div class="nav-right">
+            <div class="nav-user">
+                <div class="avatar" id="user-avatar"></div>
+                <span id="user-email"></span>
+            </div>
+            <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <div class="main">
+        <!-- Quick Links -->
+        <div class="quick-links">
+            <a href="/docs" target="_blank" class="quick-link">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                Swagger Docs
+            </a>
+            <a href="/redoc" target="_blank" class="quick-link">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                ReDoc
+            </a>
+            <a href="/" target="_blank" class="quick-link">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                Health Check
+            </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Tổng API Keys</div>
+                <div class="stat-value" id="stat-total">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Đang hoạt động</div>
+                <div class="stat-value" id="stat-active">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tổng Requests</div>
+                <div class="stat-value" id="stat-requests">—</div>
+            </div>
+        </div>
+
+        <!-- Keys Table -->
+        <div class="section">
+            <div class="section-header">
+                <h2>🔑 API Keys</h2>
+                <button class="btn btn-create btn-sm" onclick="openCreateModal()">+ Tạo Key mới</button>
+            </div>
+            <div id="keys-container">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                    <p>Chưa có API Key nào</p>
+                    <p class="sub">Tạo key mới để bắt đầu sử dụng API</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ CREATE MODAL ═══════════ -->
+<div id="create-modal" class="modal-overlay" onclick="closeModalOutside(event)">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Tạo API Key mới</h3>
+            <button class="modal-close" onclick="closeCreateModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="key-name">Tên (mô tả mục đích sử dụng)</label>
+                <div class="input-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                    <input type="text" id="key-name" class="form-input" placeholder="Ví dụ: Chatbot RAG, Frontend App..." maxlength="100">
+                </div>
+            </div>
+
+            <div id="key-result" class="key-result">
+                <div class="key-result-box">
+                    <div class="label">✅ API Key đã tạo</div>
+                    <div class="value">
+                        <code id="created-key-value"></code>
+                        <button class="btn btn-copy btn-sm" onclick="copyCreatedKey()">Copy</button>
+                    </div>
+                    <div class="warning">⚠️ Hãy lưu lại key này ngay — bạn sẽ không thấy lại toàn bộ key.</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" id="modal-footer">
+            <button class="btn btn-ghost btn-sm" onclick="closeCreateModal()">Hủy</button>
+            <button class="btn btn-create btn-sm" id="create-btn" onclick="createKey()">Tạo Key</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+    const API_BASE = '';
+    let jwt = localStorage.getItem('dlvn_jwt');
+    let currentUser = localStorage.getItem('dlvn_user');
+
+    // ── INIT ──
+    document.addEventListener('DOMContentLoaded', () => {
+        if (jwt && currentUser) {
+            verifyAndShowDashboard();
+        } else {
+            showLogin();
+        }
+    });
+
+    function showLogin() {
+        document.getElementById('login-section').style.display = 'flex';
+        document.getElementById('dashboard-section').classList.remove('active');
+    }
+
+    function showDashboard() {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('dashboard-section').classList.add('active');
+        document.getElementById('user-email').textContent = currentUser;
+        document.getElementById('user-avatar').textContent = currentUser.charAt(0).toUpperCase();
+        loadKeys();
+    }
+
+    async function verifyAndShowDashboard() {
+        try {
+            const res = await fetch(`${API_BASE}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${jwt}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                currentUser = data.email;
+                localStorage.setItem('dlvn_user', currentUser);
+                showDashboard();
+            } else {
+                logout();
+            }
+        } catch {
+            logout();
+        }
+    }
+
+    // ── LOGIN ──
+    async function handleLogin(e) {
+        e.preventDefault();
+        const btn = document.getElementById('login-btn');
+        const btnText = document.getElementById('login-btn-text');
+        const errorEl = document.getElementById('login-error');
+
+        errorEl.classList.remove('show');
+        btn.classList.add('loading');
+        btnText.textContent = 'Đang đăng nhập...';
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: document.getElementById('email').value.trim(),
+                    password: document.getElementById('password').value
+                })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                jwt = data.access_token;
+                currentUser = data.email;
+                localStorage.setItem('dlvn_jwt', jwt);
+                localStorage.setItem('dlvn_user', currentUser);
+                showDashboard();
+                toast('Đăng nhập thành công', 'success');
+            } else {
+                errorEl.textContent = data.detail || 'Đăng nhập thất bại';
+                errorEl.classList.add('show');
+            }
+        } catch (err) {
+            errorEl.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
+            errorEl.classList.add('show');
+        } finally {
+            btn.classList.remove('loading');
+            btnText.textContent = 'Đăng nhập';
+        }
+    }
+
+    function logout() {
+        jwt = null;
+        currentUser = null;
+        localStorage.removeItem('dlvn_jwt');
+        localStorage.removeItem('dlvn_user');
+        showLogin();
+    }
+
+    // ── LOAD KEYS ──
+    async function loadKeys() {
+        try {
+            const res = await fetch(`${API_BASE}/admin/api-keys`, {
+                headers: { 'Authorization': `Bearer ${jwt}` }
+            });
+
+            if (res.status === 401) { logout(); return; }
+            const keys = await res.json();
+            renderKeys(keys);
+            updateStats(keys);
+        } catch (err) {
+            console.error('Failed to load keys:', err);
+        }
+    }
+
+    function updateStats(keys) {
+        document.getElementById('stat-total').textContent = keys.length;
+        document.getElementById('stat-active').textContent = keys.filter(k => k.is_active).length;
+        document.getElementById('stat-requests').textContent =
+            keys.reduce((sum, k) => sum + (k.request_count || 0), 0).toLocaleString();
+    }
+
+    function maskKey(key) {
+        if (key.length <= 14) return key;
+        return key.substring(0, 10) + '••••••••' + key.substring(key.length - 6);
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        } catch { return iso; }
+    }
+
+    function renderKeys(keys) {
+        const container = document.getElementById('keys-container');
+
+        if (!keys.length) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                    <p>Chưa có API Key nào</p>
+                    <p class="sub">Tạo key mới để bắt đầu sử dụng API</p>
+                </div>`;
+            return;
+        }
+
+        let html = `<table class="keys-table">
+            <thead>
+                <tr>
+                    <th>Tên</th>
+                    <th>API Key</th>
+                    <th>Trạng thái</th>
+                    <th>Requests</th>
+                    <th>Sử dụng gần nhất</th>
+                    <th style="width:1%"></th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        for (const k of keys) {
+            const active = k.is_active;
+            html += `
+                <tr>
+                    <td>
+                        <div class="key-name">${esc(k.name)}</div>
+                        <div class="meta-text">${formatDate(k.created_at)}</div>
+                    </td>
+                    <td>
+                        <div class="key-value-wrap">
+                            <span class="key-value" title="${esc(k.key_value)}">${maskKey(k.key_value)}</span>
+                            <button class="btn btn-copy btn-sm" onclick="copyKey('${esc(k.key_value)}')">Copy</button>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge ${active ? 'badge-active' : 'badge-inactive'}" style="cursor:pointer" onclick="toggleKey(${k.id})">
+                            <span class="badge-dot"></span>
+                            ${active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td class="meta-text">${(k.request_count || 0).toLocaleString()}</td>
+                    <td class="meta-text">${k.last_used_at ? formatDate(k.last_used_at) : '—'}</td>
+                    <td>
+                        <div class="td-actions">
+                            <button class="btn btn-danger-ghost btn-sm" onclick="deleteKey(${k.id}, '${esc(k.name)}')">Xóa</button>
+                        </div>
+                    </td>
+                </tr>`;
+        }
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+    }
+
+    function esc(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    }
+
+    // ── CREATE KEY ──
+    function openCreateModal() {
+        document.getElementById('create-modal').classList.add('active');
+        document.getElementById('key-name').value = '';
+        document.getElementById('key-result').classList.remove('show');
+        document.getElementById('modal-footer').style.display = 'flex';
+        document.getElementById('key-name').focus();
+    }
+
+    function closeCreateModal() {
+        document.getElementById('create-modal').classList.remove('active');
+        loadKeys();
+    }
+
+    function closeModalOutside(e) {
+        if (e.target === document.getElementById('create-modal')) {
+            closeCreateModal();
+        }
+    }
+
+    async function createKey() {
+        const name = document.getElementById('key-name').value.trim();
+        if (!name) {
+            toast('Vui lòng nhập tên cho API Key', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('create-btn');
+        btn.classList.add('loading');
+        btn.textContent = 'Đang tạo...';
+
+        try {
+            const res = await fetch(`${API_BASE}/admin/api-keys`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${jwt}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name })
+            });
+
+            if (res.status === 401) { logout(); return; }
+            const data = await res.json();
+
+            if (res.ok) {
+                document.getElementById('created-key-value').textContent = data.key_value;
+                document.getElementById('key-result').classList.add('show');
+                document.getElementById('modal-footer').style.display = 'none';
+                toast('API Key đã tạo thành công!', 'success');
+            } else {
+                toast(data.detail || 'Lỗi tạo key', 'error');
+            }
+        } catch {
+            toast('Lỗi kết nối', 'error');
+        } finally {
+            btn.classList.remove('loading');
+            btn.textContent = 'Tạo Key';
+        }
+    }
+
+    function copyCreatedKey() {
+        const key = document.getElementById('created-key-value').textContent;
+        copyToClipboard(key);
+    }
+
+    // ── TOGGLE / DELETE ──
+    async function toggleKey(id) {
+        try {
+            const res = await fetch(`${API_BASE}/admin/api-keys/${id}/toggle`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${jwt}` }
+            });
+            if (res.status === 401) { logout(); return; }
+            if (res.ok) {
+                toast('Đã cập nhật trạng thái', 'success');
+                loadKeys();
+            }
+        } catch {
+            toast('Lỗi kết nối', 'error');
+        }
+    }
+
+    async function deleteKey(id, name) {
+        if (!confirm(`Xóa API Key "${name}"?\nHành động này không thể hoàn tác.`)) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/admin/api-keys/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${jwt}` }
+            });
+            if (res.status === 401) { logout(); return; }
+            if (res.ok) {
+                toast('Đã xóa API Key', 'success');
+                loadKeys();
+            }
+        } catch {
+            toast('Lỗi kết nối', 'error');
+        }
+    }
+
+    // ── CLIPBOARD ──
+    async function copyKey(key) {
+        await copyToClipboard(key);
+    }
+
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast('Đã copy vào clipboard', 'success');
+        } catch {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            toast('Đã copy vào clipboard', 'success');
+        }
+    }
+
+    // ── TOAST ──
+    function toast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = `toast toast-${type}`;
+        el.textContent = message;
+        container.appendChild(el);
+
+        setTimeout(() => {
+            el.classList.add('removing');
+            setTimeout(() => el.remove(), 300);
+        }, 2500);
+    }
+</script>
+
+</body>
+</html>

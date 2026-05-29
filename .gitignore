@@ -1,5 +1,6 @@
-# Ignore database
+# Ignore databases
 vietnamese_legal_documents.db
+admin.db
 
 # Ignore test documents
 Bo_luat_To_tung_Dan_su_2015.doc
