@@ -108,38 +108,37 @@ def import_metadata(conn, meta_parquet_path):
     print(f"✅ Metadata import completed in {time.time() - start_time:.1f}s!\n")
 
 def import_content(conn, content_parquet_path):
-    print("📥 Importing document contents (HTML) from Parquet... This might take some time...")
+    print("📥 Importing document contents (HTML) from Parquet...")
+    print("   Using low-memory mode (200 docs per batch)...")
     cursor = conn.cursor()
     pf = pq.ParquetFile(content_parquet_path)
-    total_row_groups = pf.metadata.num_row_groups
+    total_rows = pf.metadata.num_rows
     
-    print(f"   Total Row Groups in content parquet: {total_row_groups}")
+    print(f"   Total documents to import: {total_rows:,}")
     
     start_time = time.time()
     total_updated = 0
     
-    for rg_idx in range(total_row_groups):
-        rg_start = time.time()
-        rg_table = pf.read_row_group(rg_idx)
-        rg_len = len(rg_table)
+    # Read in very small batches to avoid OOM on low-memory servers
+    for batch in pf.iter_batches(batch_size=200, columns=["id", "content_html"]):
+        updates = []
+        for i in range(len(batch)):
+            doc_id = batch.column("id")[i].as_py()
+            content_html = batch.column("content_html")[i].as_py()
+            updates.append((content_html, doc_id))
         
-        batch = []
-        for j in range(rg_len):
-            doc_id = rg_table.column("id")[j].as_py()
-            content_html = rg_table.column("content_html")[j].as_py()
-            batch.append((content_html, doc_id))
-            
-        cursor.executemany("UPDATE documents SET content_html = ? WHERE id = ?", batch)
+        cursor.executemany("UPDATE documents SET content_html = ? WHERE id = ?", updates)
         conn.commit()
         
-        total_updated += rg_len
-        rg_elapsed = time.time() - rg_start
-        total_elapsed = time.time() - start_time
-        print(f"   Row group {rg_idx+1}/{total_row_groups} processed: {rg_len} docs in {rg_elapsed:.1f}s. "
-              f"Total processed: {total_updated} docs (Overall Speed: {(total_updated/total_elapsed):.1f} docs/s)")
+        total_updated += len(batch)
+        elapsed = time.time() - start_time
+        speed = total_updated / elapsed if elapsed > 0 else 0
         
-        del rg_table # Free memory
+        if total_updated % 2000 == 0 or total_updated >= total_rows:
+            print(f"   {total_updated:,}/{total_rows:,} docs ({(total_updated/total_rows*100):.1f}%) | {speed:.0f} docs/s")
         
+        del batch, updates  # Free memory immediately
+    
     print(f"✅ Contents import completed in {time.time() - start_time:.1f}s!\n")
 
 def import_relationships(conn, rels_parquet_path):
