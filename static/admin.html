@@ -499,10 +499,16 @@ async function openDetail(id){
         const fields=[['Số ký hiệu','so_ky_hieu'],['Ngày ban hành','ngay_ban_hanh'],['Loại văn bản','loai_van_ban'],['Cơ quan ban hành','co_quan_ban_hanh'],['Ngày có hiệu lực','ngay_co_hieu_luc'],['Ngày hết hiệu lực','ngay_het_hieu_luc'],['Tình trạng','tinh_trang_hieu_luc'],['Ngành','nganh'],['Lĩnh vực','linh_vuc'],['Người ký','nguoi_ky'],['Chức danh','chuc_danh'],['Phạm vi','pham_vi'],['Nguồn thu thập','nguon_thu_thap'],['Ngày đăng công báo','ngay_dang_cong_bao']];
         document.getElementById('dp-info').innerHTML='<div class="meta-grid">'+fields.map(([l,k])=>`<div class="meta-item"><div class="mk">${l}</div><div class="mv">${esc(d[k]||'—')}</div></div>`).join('')+'</div>'+(d.thong_tin_ap_dung?`<div style="margin-top:12px"><div class="mk" style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">Thông tin áp dụng</div><div style="font-size:12px;color:var(--g700);line-height:1.5">${esc(d.thong_tin_ap_dung)}</div></div>`:'');
         // Content
+        const contentBox = document.getElementById('dp-content');
         if(d.content_html){
-            document.getElementById('dp-content').innerHTML=`<iframe class="content-frame" srcdoc="${escAttr(d.content_html)}" style="width:100%;min-height:500px;border:1px solid var(--g200);border-radius:var(--rs)"></iframe>`;
+            contentBox.innerHTML = '';
+            const iframe = document.createElement('iframe');
+            iframe.className = 'content-frame';
+            iframe.style.cssText = 'width:100%;min-height:500px;border:1px solid var(--g200);border-radius:var(--rs)';
+            contentBox.appendChild(iframe);
+            iframe.srcdoc = d.content_html;
         }else{
-            document.getElementById('dp-content').innerHTML='<div class="empty"><p>Không có nội dung HTML</p></div>';
+            contentBox.innerHTML='<div class="empty"><p>Không có nội dung HTML</p></div>';
         }
         // Relationships
         loadRelationships(id);
