@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import random
 import sqlite3
 import requests
 from bs4 import BeautifulSoup
@@ -108,110 +109,135 @@ def sync_new_laws():
     latest_db_date = get_latest_date_in_db()
     log(f"📅 Latest document date currently in Database: {latest_db_date or 'No date found'}")
     
-    # Target URL for newly published documents (sorted by publish date descending)
-    search_url = "https://vbpl.vn/TW/Pages/vbpq-tim-kiem.aspx?Keyword=&sXepLoai=NgayBanHanh&PageIndex=1"
-    
-    log(f"🔍 Queting vbpl.vn for new documents...")
-    try:
-        r = requests.get(search_url, headers=HEADERS, timeout=20)
-        if r.status_code != 200:
-            log(f"❌ Failed to reach vbpl.vn: Status {r.status_code}")
-            return
-    except Exception as e:
-        log(f"❌ Network error connecting to vbpl.vn: {e}")
-        return
-        
-    soup = BeautifulSoup(r.text, 'html.parser')
-    
-    # Parse documents list from the page
-    # Common vbpl selectors for list items
-    items = soup.select(".vbpq-item, .list-result li, .search-result .item")
-    if not items:
-        # Fallback to general list of links
-        items = [a.parent for a in soup.select("a.title, a.vbpq-title, h3 a")]
-        
-    log(f"📊 Found {len(items)} documents on the first page of search results.")
-    
-    if not items:
-        log("⚠️ No list items could be parsed. The HTML structure of the site might have changed.")
-        return
-        
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
     new_docs_count = 0
+    error_count = 0
+    pages_scanned = 0
+    stop_scanning = False
     
-    for item in items:
+    # Quét tối đa 5 trang (thay vì chỉ trang 1)
+    MAX_PAGES = 5
+    
+    for page_idx in range(1, MAX_PAGES + 1):
+        if stop_scanning:
+            break
+            
+        search_url = f"https://vbpl.vn/TW/Pages/vbpq-tim-kiem.aspx?Keyword=&sXepLoai=NgayBanHanh&PageIndex={page_idx}"
+        log(f"🔍 Quét trang {page_idx}/{MAX_PAGES} trên vbpl.vn...")
         try:
-            # Find the title and URL link
-            link_el = item.select_one("a.title, a.vbpq-title, h3 a, a")
-            if not link_el:
+            r = requests.get(search_url, headers=HEADERS, timeout=20)
+            if r.status_code != 200:
+                log(f"❌ Failed to reach vbpl.vn: Status {r.status_code}")
+                error_count += 1
                 continue
+        except Exception as e:
+            log(f"❌ Network error connecting to vbpl.vn: {e}")
+            error_count += 1
+            continue
+            
+        soup = BeautifulSoup(r.text, 'html.parser')
+        
+        # Parse documents list from the page
+        items = soup.select(".vbpq-item, .list-result li, .search-result .item")
+        if not items:
+            items = [a.parent for a in soup.select("a.title, a.vbpq-title, h3 a")]
+            
+        log(f"📊 Found {len(items)} documents on page {page_idx}.")
+        
+        if not items:
+            log("⚠️ No list items could be parsed. Stopping.")
+            break
+            
+        pages_scanned += 1
+        existing_on_page = 0
+    
+        for item in items:
+            try:
+                # Find the title and URL link
+                link_el = item.select_one("a.title, a.vbpq-title, h3 a, a")
+                if not link_el:
+                    continue
+                    
+                title = link_el.text.strip()
+                href = link_el.get("href", "")
+                if not title or not href:
+                    continue
+                    
+                full_url = href if href.startswith("http") else f"https://vbpl.vn{href}"
+                item_id = parse_item_id_from_url(full_url)
+                if not item_id:
+                    continue
+                    
+                # Check if document already exists in DB
+                cursor.execute("SELECT 1 FROM documents WHERE id = ?", (item_id,))
+                exists = cursor.fetchone()
                 
-            title = link_el.text.strip()
-            href = link_el.get("href", "")
-            if not title or not href:
-                continue
+                if exists:
+                    existing_on_page += 1
+                    continue
+                    
+                log(f"✨ New Document Detected! ID: {item_id} | Title: {title[:80]}...")
                 
-            full_url = href if href.startswith("http") else f"https://vbpl.vn{href}"
-            item_id = parse_item_id_from_url(full_url)
-            if not item_id:
-                continue
+                # Extract metadata from the list item element
+                so_hieu = item.select_one(".so-hieu, .code")
+                so_hieu = so_hieu.text.strip() if so_hieu else extract_so_hieu(item.text) or ""
                 
-            # Check if document already exists in DB
-            cursor.execute("SELECT 1 FROM documents WHERE id = ?", (item_id,))
-            exists = cursor.fetchone()
-            
-            if exists:
-                # Document already exists, skip
-                continue
+                loai_vb = item.select_one(".loai-vb, .type")
+                loai_vb = loai_vb.text.strip() if loai_vb else "Văn bản pháp luật"
                 
-            log(f"✨ New Document Detected! ID: {item_id} | Title: {title[:80]}...")
-            
-            # Extract metadata from the list item element
-            so_hieu = item.select_one(".so-hieu, .code")
-            so_hieu = so_hieu.text.strip() if so_hieu else extract_so_hieu(item.text) or ""
-            
-            loai_vb = item.select_one(".loai-vb, .type")
-            loai_vb = loai_vb.text.strip() if loai_vb else "Văn bản pháp luật"
-            
-            co_quan = item.select_one(".co-quan, .organ")
-            co_quan = co_quan.text.strip() if co_quan else ""
-            
-            ngay_ban_hanh = item.select_one(".date, .ngay-ban-hanh")
-            ngay_ban_hanh = ngay_ban_hanh.text.strip() if ngay_ban_hanh else ""
-            
-            tinh_trang = item.select_one(".hieu-luc, .status")
-            tinh_trang = tinh_trang.text.strip() if tinh_trang else "Còn hiệu lực"
-            
-            # Fetch full-text HTML content
-            content_html = fetch_document_content(item_id)
-            if not content_html:
-                log(f"   ⚠️ Could not download content for ID {item_id}. Skipping...")
-                continue
+                co_quan = item.select_one(".co-quan, .organ")
+                co_quan = co_quan.text.strip() if co_quan else ""
                 
-            # Insert into database
-            cursor.execute("""
-            INSERT OR REPLACE INTO documents (
-                id, title, so_ky_hieu, ngay_ban_hanh, loai_van_ban, 
-                co_quan_ban_hanh, tinh_trang_hieu_luc, content_html
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (item_id, title, so_hieu, ngay_ban_hanh, loai_vb, co_quan, tinh_trang, content_html))
-            conn.commit()
-            
-            new_docs_count += 1
-            log(f"   ✅ Successfully added ID {item_id} to SQLite DB!")
-            
-            # Throttle requests to avoid getting rate-limited
-            time.sleep(1.5)
-            
-        except Exception as item_err:
-            log(f"⚠️ Error processing item: {item_err}")
-            
+                ngay_ban_hanh = item.select_one(".date, .ngay-ban-hanh")
+                ngay_ban_hanh = ngay_ban_hanh.text.strip() if ngay_ban_hanh else ""
+                
+                tinh_trang = item.select_one(".hieu-luc, .status")
+                tinh_trang = tinh_trang.text.strip() if tinh_trang else "Còn hiệu lực"
+                
+                # Fetch full-text HTML content
+                content_html = fetch_document_content(item_id)
+                if not content_html:
+                    log(f"   ⚠️ Could not download content for ID {item_id}. Skipping...")
+                    error_count += 1
+                    continue
+                    
+                # Insert into database
+                cursor.execute("""
+                INSERT OR REPLACE INTO documents (
+                    id, title, so_ky_hieu, ngay_ban_hanh, loai_van_ban, 
+                    co_quan_ban_hanh, tinh_trang_hieu_luc, content_html
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (item_id, title, so_hieu, ngay_ban_hanh, loai_vb, co_quan, tinh_trang, content_html))
+                conn.commit()
+                
+                new_docs_count += 1
+                log(f"   ✅ Successfully added ID {item_id} to SQLite DB!")
+                
+                # Random delay to avoid rate-limiting
+                time.sleep(random.uniform(1.0, 3.0))
+                
+            except Exception as item_err:
+                log(f"⚠️ Error processing item: {item_err}")
+                error_count += 1
+        
+        # Nếu tất cả items trên trang đều đã có → dừng quét
+        if existing_on_page == len(items) and len(items) > 0:
+            log(f"   📌 Tất cả VB trên trang {page_idx} đã có trong DB. Dừng quét.")
+            stop_scanning = True
+        
+        # Delay giữa các trang
+        if not stop_scanning and page_idx < MAX_PAGES:
+            time.sleep(random.uniform(2.0, 4.0))
+    
     conn.close()
     
     log("============================================================")
-    log(f"🎉 SYNC COMPLETED: {new_docs_count} new laws added to database.")
+    log(f"🎉 SYNC COMPLETED!")
+    log(f"   📄 New documents added: {new_docs_count}")
+    log(f"   📑 Pages scanned: {pages_scanned}")
+    log(f"   ⚠️  Errors: {error_count}")
     log("============================================================")
 
 if __name__ == "__main__":

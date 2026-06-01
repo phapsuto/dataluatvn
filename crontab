@@ -1,0 +1,8 @@
+# Hàng ngày 00:00 — Sync VBPL mới từ vbpl.vn
+0  0 * * *  cd /app && python3 sync_new_laws.py >> /app/logs/sync_vbpl.log 2>&1
+
+# Hàng tuần CN 02:00 — Kiểm tra HF datasets (pháp điển + án lệ)
+0  2 * * 0  cd /app && python3 sync_hf_datasets.py >> /app/logs/sync_hf.log 2>&1
+
+# Hàng tuần CN 03:00 — Rebuild crosslinks sau khi sync
+0  3 * * 0  cd /app && python3 build_crosslinks.py >> /app/logs/crosslinks.log 2>&1

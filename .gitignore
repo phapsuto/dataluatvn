@@ -13,5 +13,11 @@ sync.log
 __pycache__/
 *.pyc
 
+# Ignore logs
+logs/
+
+# HF cache
+hf_dataset_sha.json
+
 # Ignore macOS system files
 .DS_Store
