@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 # --- Configuration ---
 DB_NAME = "vietnamese_legal_documents.db"
+CONTENT_DB = "content_store.db"
 LOG_NAME = "sync.log"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 HEADERS = {"User-Agent": USER_AGENT}
@@ -211,6 +212,19 @@ def sync_new_laws():
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (item_id, title, so_hieu, ngay_ban_hanh, loai_vb, co_quan, tinh_trang, content_html))
                 conn.commit()
+                
+                # Sync content vào content_store.db (nếu đã tách DB)
+                if os.path.exists(CONTENT_DB):
+                    try:
+                        content_conn = sqlite3.connect(CONTENT_DB)
+                        content_conn.execute(
+                            "INSERT OR REPLACE INTO document_content (doc_id, content_html) VALUES (?, ?)",
+                            (item_id, content_html),
+                        )
+                        content_conn.commit()
+                        content_conn.close()
+                    except Exception as ce:
+                        log(f"   ⚠️ Lỗi sync content_store.db: {ce}")
                 
                 new_docs_count += 1
                 log(f"   ✅ Successfully added ID {item_id} to SQLite DB!")

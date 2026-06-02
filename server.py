@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 # ╚══════════════════════════════════════════════════════════════╝
 
 DB_NAME = os.environ.get("DB_PATH", "vietnamese_legal_documents.db")
+CONTENT_DB = os.environ.get("CONTENT_DB_PATH", "content_store.db")
 ADMIN_DB = os.environ.get("ADMIN_DB_PATH", "admin.db")
 API_PORT = int(os.environ.get("API_PORT", 2004))
 JWT_SECRET = os.environ.get("JWT_SECRET", "dlvn-jwt-secret-2024-phapsuto-internal")
@@ -40,7 +41,7 @@ api_key_header_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
 # ╚══════════════════════════════════════════════════════════════╝
 
 def get_db_connection():
-    """Connect to the main legal documents database."""
+    """Connect to the main legal documents database (metadata only, ~300 MB)."""
     if not os.path.exists(DB_NAME):
         raise HTTPException(
             status_code=500,
@@ -48,6 +49,26 @@ def get_db_connection():
         )
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
+    # ── PRAGMA tối ưu RAM ──
+    conn.execute("PRAGMA cache_size = -32000")   # 32 MB cache (thay vì mặc định hàng GB)
+    conn.execute("PRAGMA mmap_size = 0")          # Tắt memory-mapped I/O
+    conn.execute("PRAGMA journal_mode = WAL")     # Write-Ahead Logging cho concurrent reads
+    conn.execute("PRAGMA synchronous = NORMAL")   # Cân bằng safety/performance
+    conn.execute("PRAGMA temp_store = FILE")      # Temp tables lưu disk, không RAM
+    return conn
+
+
+def get_content_connection():
+    """Connect to content_store.db (chỉ chứa content_html, ~3.3 GB).
+    Chỉ mở khi cần lấy toàn văn 1 document cụ thể."""
+    if not os.path.exists(CONTENT_DB):
+        return None  # Fallback: content vẫn nằm trong DB chính
+    conn = sqlite3.connect(CONTENT_DB)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA cache_size = -8000")    # 8 MB cache (chỉ đọc 1 row)
+    conn.execute("PRAGMA mmap_size = 0")
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA temp_store = FILE")
     return conn
 
 
@@ -628,7 +649,24 @@ def get_law_detail(
 
     if not row:
         raise HTTPException(status_code=404, detail=f"Không tìm thấy văn bản có ID {law_id}")
-    return dict(row)
+
+    result = dict(row)
+
+    # Nếu content_html đã được tách sang content_store.db
+    if not result.get("content_html"):
+        content_conn = get_content_connection()
+        if content_conn:
+            content_cursor = content_conn.cursor()
+            content_cursor.execute(
+                "SELECT content_html FROM document_content WHERE doc_id = ?",
+                (law_id,),
+            )
+            content_row = content_cursor.fetchone()
+            content_conn.close()
+            if content_row:
+                result["content_html"] = content_row["content_html"]
+
+    return result
 
 
 # ─────────────────── RELATIONSHIPS ───────────────────

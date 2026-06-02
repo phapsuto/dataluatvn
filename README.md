@@ -16,6 +16,7 @@
 | 🏷️ **Danh mục** | Liệt kê loại văn bản, lĩnh vực, cơ quan ban hành |
 | 📚 **Tài liệu tự động** | Swagger UI tại `/docs` và ReDoc tại `/redoc` |
 | 🐳 **Docker Ready** | Triển khai 1 lệnh với Docker Compose |
+| ⚡ **Tối ưu RAM** | Kiến trúc tách DB — server chỉ dùng ~50-80 MB RAM |
 
 ---
 
@@ -23,15 +24,32 @@
 
 ```
 dataluatvn/
-├── server.py                 # REST API server (FastAPI) — Port 2004
-├── download_all_to_sqlite.py # Tải bộ dữ liệu gốc từ HuggingFace
-├── sync_new_laws.py          # Đồng bộ văn bản mới hàng đêm
-├── requirements.txt          # Python dependencies (pinned versions)
-├── Dockerfile                # Docker image build
-├── docker-compose.yml        # Docker Compose deployment
-├── huongdan.md               # Hướng dẫn kết nối API & Database
+├── server.py                      # REST API server (FastAPI) — Port 2004
+├── download_all_to_sqlite.py      # Tải bộ dữ liệu gốc từ HuggingFace
+├── split_content_db.py            # Tách content_html ra DB riêng (tối ưu RAM)
+├── sync_new_laws.py               # Đồng bộ văn bản mới hàng đêm
+├── optimize_db.py                 # Tạo FTS5 indexes + VACUUM
+├── db_schema.py                   # Schema migration (pháp điển, án lệ)
+├── build_crosslinks.py            # Xây dựng liên kết chéo
+├── requirements.txt               # Python dependencies
+├── Dockerfile                     # Docker image build
+├── docker-compose.yml             # Docker Compose deployment
+├── static/admin.html              # Trang quản trị API Keys
+├── huongdan.md                    # Hướng dẫn kết nối API & Database
 └── KE_HOACH_XAY_DUNG_DATA_PHAP_LUAT.md  # Kiến trúc & lộ trình
 ```
+
+### 📦 Kiến Trúc Database (Tách DB — Tối ưu RAM)
+
+```
+vietnamese_legal_documents.db   (~585 MB)   ← metadata, FTS5, relationships, pháp điển, án lệ
+content_store.db                (~3.1 GB)   ← chỉ chứa content_html (toàn văn)
+admin.db                        (~4 KB)     ← API keys
+```
+
+> **Tại sao tách?**
+> Trước đây toàn bộ nằm trong 1 file 3.7 GB — mỗi query SQLite cache pages chứa `content_html` vào RAM → chiếm hàng GB.
+> Sau khi tách, DB chính chỉ 585 MB và search/list không đụng content → **RAM giảm từ ~1-3 GB xuống ~50-80 MB**.
 
 ---
 
@@ -101,7 +119,10 @@ pip install -r requirements.txt
 # 2. Tải database gốc (~153.420 văn bản, ~3.2 GB)
 python download_all_to_sqlite.py
 
-# 3. Khởi chạy API server (port 2004)
+# 3. (Tùy chọn) Tách content_html ra DB riêng để giảm RAM
+python split_content_db.py
+
+# 4. Khởi chạy API server (port 2004)
 python server.py
 ```
 
@@ -109,6 +130,7 @@ python server.py
 - API: `http://localhost:2004`
 - Swagger Docs: `http://localhost:2004/docs`
 - ReDoc: `http://localhost:2004/redoc`
+- Admin: `http://localhost:2004/admin`
 
 ### Cách 2: Chạy bằng Docker 🐳 (Khuyên dùng)
 
@@ -117,7 +139,10 @@ python server.py
 pip install pyarrow huggingface_hub
 python download_all_to_sqlite.py
 
-# 2. Build & Run bằng Docker Compose
+# 2. Tách content_html (chạy 1 lần, giảm RAM server ~85%)
+python split_content_db.py
+
+# 3. Build & Run bằng Docker Compose
 docker compose up -d --build
 
 # Hoặc dùng Docker trực tiếp
@@ -125,7 +150,9 @@ docker build -t dataluat-api .
 docker run -d \
   -p 2004:2004 \
   -v $(pwd)/vietnamese_legal_documents.db:/app/vietnamese_legal_documents.db \
+  -v $(pwd)/content_store.db:/app/content_store.db \
   --name dataluat-api \
+  --memory=512m \
   dataluat-api
 ```
 
@@ -137,8 +164,33 @@ docker logs dataluat-api
 # Kiểm tra health
 curl http://localhost:2004/
 
+# Kiểm tra RAM usage
+docker stats dataluat-api --no-stream
+
 # Dừng container
 docker compose down
+```
+
+---
+
+## ⚡ Tối Ưu RAM (Split DB Architecture)
+
+| Metric | Trước | Sau |
+|---|---|---|
+| DB chính | 3,721 MB | **585 MB** |
+| RAM usage (ước tính) | ~1-3 GB | **~50-80 MB** |
+| content_store.db | — | 3,140 MB |
+| Search/List performance | Chậm (phải scan qua content) | **Nhanh** (chỉ scan metadata) |
+
+### Cách hoạt động
+
+1. **Search, list, stats, categories** → chỉ query DB chính (585 MB, không chứa content)
+2. **Chi tiết 1 văn bản** → lấy metadata từ DB chính + `content_html` từ `content_store.db` (chỉ 1 row ~18KB)
+3. **PRAGMA tối ưu** — giới hạn SQLite cache 32 MB, tắt memory-mapped I/O, dùng WAL mode
+
+```bash
+# Chạy tách DB (an toàn, idempotent, có integrity check)
+python split_content_db.py
 ```
 
 ---
@@ -155,10 +207,7 @@ crontab -e
 0 0 * * * cd /path/to/dataluatvn && /usr/bin/python3 sync_new_laws.py >> sync.log 2>&1
 ```
 
-Hoặc sử dụng PM2:
-```bash
-pm2 start "python3 server.py" --name "dataluat-api"
-```
+> **Lưu ý:** Script sync tự động lưu content vào cả DB chính và `content_store.db` nếu đã tách.
 
 ---
 

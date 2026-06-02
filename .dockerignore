@@ -7,3 +7,4 @@ __pycache__/
 *.md
 !requirements.txt
 vietnamese_legal_documents.db
+content_store.db

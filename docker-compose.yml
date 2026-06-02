@@ -8,12 +8,15 @@ services:
       - "2004:2004"
     volumes:
       - ./vietnamese_legal_documents.db:/app/vietnamese_legal_documents.db
+      - ./content_store.db:/app/content_store.db
       - ./admin.db:/app/admin.db
       - ./sync.log:/app/sync.log
     environment:
       - API_PORT=2004
       - DB_PATH=vietnamese_legal_documents.db
+      - CONTENT_DB_PATH=content_store.db
       - ADMIN_DB_PATH=admin.db
+    mem_limit: 512m
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:2004/"]

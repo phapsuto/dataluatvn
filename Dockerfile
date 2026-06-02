@@ -19,6 +19,7 @@ COPY . /app
 # ─── Environment ──────────────────────────────────────────
 ENV API_PORT=2004
 ENV DB_PATH=vietnamese_legal_documents.db
+ENV CONTENT_DB_PATH=content_store.db
 ENV PYTHONUNBUFFERED=1
 
 # Expose API port

@@ -1,5 +1,6 @@
 # Ignore databases
 vietnamese_legal_documents.db
+content_store.db
 admin.db
 
 # Ignore test documents
