@@ -29,7 +29,8 @@ def main():
     # Nếu content đã bị tách (nằm trong content_store.db)
     if os.path.exists("content_store.db"):
         print("Phát hiện content_store.db, đang đồng bộ cờ has_content...")
-        cursor.execute("ATTACH DATABASE 'content_store.db' AS content_db")
+        abs_path = os.path.abspath("content_store.db")
+        cursor.execute(f"ATTACH DATABASE '{abs_path}' AS content_db")
         cursor.execute("""
             UPDATE documents
             SET has_content = 1
