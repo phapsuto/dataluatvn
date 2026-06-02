@@ -383,7 +383,14 @@ let searchState={q:'',type:'',status:'',field:'',limit:20,offset:0,total:0};
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded',()=>{
-    if(jwt&&user){verify()}else{showLogin()}
+    if(jwt&&user){
+        verify().then(()=>{
+            const params = new URLSearchParams(window.location.search);
+            if(params.has('id')){
+                openDetail(params.get('id'));
+            }
+        });
+    }else{showLogin()}
 });
 function showLogin(){document.getElementById('loginPage').style.display='flex';document.getElementById('dashPage').classList.remove('active')}
 function showDash(){document.getElementById('loginPage').style.display='none';document.getElementById('dashPage').classList.add('active');document.getElementById('uEm').textContent=user;document.getElementById('uAv').textContent=user.charAt(0).toUpperCase();loadOverview();loadFilterOptions()}
@@ -456,6 +463,7 @@ async function doSearch(resetPage=true){
     if(searchState.status)p.set('tinh_trang',searchState.status);
     if(searchState.field)p.set('linh_vuc',searchState.field);
     p.set('limit',searchState.limit);p.set('offset',searchState.offset);
+    p.set('require_content','true');
     const box=document.getElementById('searchResults');
     box.innerHTML='<div class="loading-bar"><div class="bar"></div></div>';
     try{
@@ -493,35 +501,45 @@ async function openDetail(id){
     document.getElementById('dp-content').innerHTML='';document.getElementById('dp-rels').innerHTML='';
     document.querySelectorAll('.dtab').forEach((t,i)=>{t.classList.toggle('active',i===0)});
     document.querySelectorAll('.detail-panel').forEach((p,i)=>{p.classList.toggle('active',i===0)});
+    toast('Đang tải nội dung văn bản, vui lòng chờ...', 'info');
     try{
         const r=await api('/laws/'+id);if(r.status===401){logout();return}const d=await r.json();
+        toast('Đã tải xong!', 'ok');
         document.getElementById('detailTitle').textContent=d.title||'Không có tiêu đề';
         const fields=[['Số ký hiệu','so_ky_hieu'],['Ngày ban hành','ngay_ban_hanh'],['Loại văn bản','loai_van_ban'],['Cơ quan ban hành','co_quan_ban_hanh'],['Ngày có hiệu lực','ngay_co_hieu_luc'],['Ngày hết hiệu lực','ngay_het_hieu_luc'],['Tình trạng','tinh_trang_hieu_luc'],['Ngành','nganh'],['Lĩnh vực','linh_vuc'],['Người ký','nguoi_ky'],['Chức danh','chuc_danh'],['Phạm vi','pham_vi'],['Nguồn thu thập','nguon_thu_thap'],['Ngày đăng công báo','ngay_dang_cong_bao']];
         document.getElementById('dp-info').innerHTML='<div class="meta-grid">'+fields.map(([l,k])=>`<div class="meta-item"><div class="mk">${l}</div><div class="mv">${esc(d[k]||'—')}</div></div>`).join('')+'</div>'+(d.thong_tin_ap_dung?`<div style="margin-top:12px"><div class="mk" style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">Thông tin áp dụng</div><div style="font-size:12px;color:var(--g700);line-height:1.5">${esc(d.thong_tin_ap_dung)}</div></div>`:'');
-        // Content
+        // Relationships
+        const rRel = await api('/laws/'+id+'/relationships');
+        const rels = rRel.ok ? await rRel.json() : [];
+        const box=document.getElementById('dp-rels');
+        if(!rels.length){box.innerHTML='<div class="empty"><p>Không có liên kết pháp lý</p></div>';}
+        else{box.innerHTML=rels.map(r=>`<div class="rel-item"><div class="rel-type">${esc(r.relationship)}</div><div><div class="rel-title" onclick="openDetail(${r.other_doc_id})">${esc(r.other_doc_title)}</div>${r.other_doc_so_ky_hieu?`<div class="rel-code">${esc(r.other_doc_so_ky_hieu)}</div>`:''}</div></div>`).join('');}
+
+        // Content (With Auto-linking)
         const contentBox = document.getElementById('dp-content');
         if(d.content_html){
+            let html = d.content_html;
+            let validRels = rels.filter(r => r.other_doc_so_ky_hieu && r.other_doc_so_ky_hieu.length > 2);
+            validRels.sort((a,b) => b.other_doc_so_ky_hieu.length - a.other_doc_so_ky_hieu.length);
+            
+            for(let r of validRels){
+                const skh = r.other_doc_so_ky_hieu;
+                const safeSkh = skh.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(${safeSkh})(?![^<]*>)`, 'gi');
+                const replacement = `<a href="/admin?id=${r.other_doc_id}" target="_blank" style="background-color:#fef08a;color:#1d4ed8;font-weight:600;padding:2px 4px;border-radius:4px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.1); border:1px solid #fde047; transition:all 0.2s;" title="${escAttr(r.other_doc_title)}">$1</a>`;
+                html = html.replace(regex, replacement);
+            }
+            
             contentBox.innerHTML = '';
             const iframe = document.createElement('iframe');
             iframe.className = 'content-frame';
             iframe.style.cssText = 'width:100%;min-height:500px;border:1px solid var(--g200);border-radius:var(--rs)';
             contentBox.appendChild(iframe);
-            iframe.srcdoc = d.content_html;
+            iframe.srcdoc = `<style>body{font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#1e293b;padding:16px;} a{color:#2563eb}</style>` + html;
         }else{
             contentBox.innerHTML='<div class="empty"><p>Không có nội dung HTML</p></div>';
         }
-        // Relationships
-        loadRelationships(id);
     }catch(e){document.getElementById('dp-info').innerHTML='<div class="empty"><p>Lỗi tải dữ liệu</p></div>';console.error(e)}
-}
-async function loadRelationships(id){
-    const box=document.getElementById('dp-rels');
-    box.innerHTML='<div class="loading-bar"><div class="bar"></div></div>';
-    try{
-        const r=await api('/laws/'+id+'/relationships');const d=await r.json();
-        if(!d.length){box.innerHTML='<div class="empty"><p>Không có liên kết pháp lý</p></div>';return}
-        box.innerHTML=d.map(r=>`<div class="rel-item"><div class="rel-type">${esc(r.relationship)}</div><div><div class="rel-title" onclick="openDetail(${r.other_doc_id})">${esc(r.other_doc_title)}</div>${r.other_doc_so_ky_hieu?`<div class="rel-code">${esc(r.other_doc_so_ky_hieu)}</div>`:''}</div></div>`).join('');
-    }catch{box.innerHTML='<div class="empty"><p>Lỗi tải</p></div>'}
 }
 function closeDetail(){document.getElementById('detailModal').classList.remove('active')}
 function switchDtab(id,el){

@@ -5,7 +5,11 @@ import time
 import random
 import sqlite3
 import requests
+import urllib3
 from bs4 import BeautifulSoup
+
+# Tắt cảnh báo khi bỏ qua bảo mật SSL
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- Configuration ---
 DB_NAME = "vietnamese_legal_documents.db"
@@ -69,7 +73,7 @@ def fetch_document_content(item_id):
     # Retries for reliability
     for attempt in range(3):
         try:
-            r = requests.get(url, headers=HEADERS, timeout=15)
+            r = requests.get(url, headers=HEADERS, timeout=15, verify=False)
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
                 
@@ -128,7 +132,7 @@ def sync_new_laws():
         search_url = f"https://vbpl.vn/TW/Pages/vbpq-tim-kiem.aspx?Keyword=&sXepLoai=NgayBanHanh&PageIndex={page_idx}"
         log(f"🔍 Quét trang {page_idx}/{MAX_PAGES} trên vbpl.vn...")
         try:
-            r = requests.get(search_url, headers=HEADERS, timeout=20)
+            r = requests.get(search_url, headers=HEADERS, timeout=20, verify=False)
             if r.status_code != 200:
                 log(f"❌ Failed to reach vbpl.vn: Status {r.status_code}")
                 error_count += 1

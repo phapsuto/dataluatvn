@@ -2,6 +2,9 @@
 vietnamese_legal_documents.db
 content_store.db
 admin.db
+*.db-shm
+*.db-wal
+venv/
 
 # Ignore test documents
 Bo_luat_To_tung_Dan_su_2015.doc

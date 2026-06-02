@@ -557,6 +557,7 @@ def search_laws(
     linh_vuc: Optional[str] = Query(None, description="Lọc theo lĩnh vực"),
     limit: int = Query(20, ge=1, le=100, description="Số lượng tối đa (1–100)"),
     offset: int = Query(0, ge=0, description="Vị trí bắt đầu"),
+    require_content: bool = Query(False, description="Chỉ trả về văn bản có nội dung HTML"),
     _key=Depends(require_api_key),
 ):
     """Tìm kiếm và lọc văn bản pháp luật. **Yêu cầu API Key.**"""
@@ -565,6 +566,9 @@ def search_laws(
 
     where_clauses = ["1=1"]
     params: list = []
+
+    if require_content:
+        where_clauses.append("has_content = 1")
 
     if q:
         where_clauses.append("(title LIKE ? OR so_ky_hieu LIKE ?)")

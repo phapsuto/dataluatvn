@@ -81,6 +81,7 @@ API chạy trên **port 2004**. Tài liệu tương tác đầy đủ tại `/do
 | `linh_vuc` | string | Lọc theo lĩnh vực | `Đất đai` |
 | `limit` | int | Số lượng tối đa (1–100) | `20` |
 | `offset` | int | Vị trí bắt đầu | `0` |
+| `require_content`| bool | Chỉ lấy văn bản có ruột HTML | `true` |
 
 ### 🔗 Quan hệ pháp lý
 
@@ -119,18 +120,23 @@ pip install -r requirements.txt
 # 2. Tải database gốc (~153.420 văn bản, ~3.2 GB)
 python download_all_to_sqlite.py
 
-# 3. (Tùy chọn) Tách content_html ra DB riêng để giảm RAM
+# 3. Chạy cập nhật cờ dữ liệu (đánh dấu văn bản có nội dung)
+python upgrade_db.py
+
+# 4. (Tùy chọn) Tách content_html ra DB riêng để giảm RAM
 python split_content_db.py
 
-# 4. Khởi chạy API server (port 2004)
-python server.py
+# 5. Khởi chạy API server (port 2004)
+# (Trên server production, chạy bằng uvicorn với 4 workers
+# để tận dụng RAM dư dả và tăng tốc độ xử lý đồng thời)
+uvicorn server:app --host 0.0.0.0 --port 2004 --workers 4
 ```
 
 **Truy cập:**
 - API: `http://localhost:2004`
 - Swagger Docs: `http://localhost:2004/docs`
 - ReDoc: `http://localhost:2004/redoc`
-- Admin: `http://localhost:2004/admin`
+- Admin: `http://localhost:2004/admin` (Đăng nhập và lấy API Key tại đây)
 
 ### Cách 2: Chạy bằng Docker 🐳 (Khuyên dùng)
 
@@ -214,32 +220,35 @@ crontab -e
 ## 📝 Ví Dụ Sử Dụng (cURL)
 
 ```bash
-# 1. Kiểm tra hệ thống
+# LƯU Ý: Thay YOUR_API_KEY bằng key thật tạo từ trang /admin
+export API_KEY="dlvn_xxxxxxxxxxxxxxxxxxxx"
+
+# 1. Kiểm tra hệ thống (Không cần key)
 curl http://localhost:2004/
 
-# 2. Tìm kiếm "đất đai"
-curl "http://localhost:2004/laws/search?q=đất đai&limit=5"
+# 2. Tìm kiếm "đất đai" (Chỉ lấy văn bản có HTML)
+curl -H "X-API-Key: $API_KEY" "http://localhost:2004/laws/search?q=đất+đai&limit=5&require_content=true"
 
 # 3. Lọc Nghị định còn hiệu lực
-curl "http://localhost:2004/laws/search?loai_van_ban=Nghị định&tinh_trang=Còn hiệu lực"
+curl -H "X-API-Key: $API_KEY" "http://localhost:2004/laws/search?loai_van_ban=Nghị+định&tinh_trang=Còn+hiệu+lực"
 
 # 4. Lấy chi tiết văn bản ID 38920
-curl http://localhost:2004/laws/38920
+curl -H "X-API-Key: $API_KEY" http://localhost:2004/laws/38920
 
 # 5. Xem quan hệ pháp lý
-curl http://localhost:2004/laws/38920/relationships
+curl -H "X-API-Key: $API_KEY" http://localhost:2004/laws/38920/relationships
 
 # 6. Thống kê tổng quan
-curl http://localhost:2004/laws/stats
+curl -H "X-API-Key: $API_KEY" http://localhost:2004/laws/stats
 
 # 7. Danh sách loại văn bản
-curl http://localhost:2004/laws/categories/types
+curl -H "X-API-Key: $API_KEY" http://localhost:2004/laws/categories/types
 
 # 8. Danh sách lĩnh vực
-curl http://localhost:2004/laws/categories/fields
+curl -H "X-API-Key: $API_KEY" http://localhost:2004/laws/categories/fields
 
 # 9. Danh sách cơ quan ban hành
-curl http://localhost:2004/laws/categories/agencies
+curl -H "X-API-Key: $API_KEY" http://localhost:2004/laws/categories/agencies
 ```
 
 ---

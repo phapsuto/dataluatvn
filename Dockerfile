@@ -29,5 +29,5 @@ EXPOSE 2004
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:2004/ || exit 1
 
-# Run API server
-CMD ["python", "server.py"]
+# Run API server (Tận dụng RAM dư dả: 4 workers ~ 300-400MB RAM, cân tốt hàng trăm luồng)
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "2004", "--workers", "4"]
