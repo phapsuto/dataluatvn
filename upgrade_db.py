@@ -27,11 +27,12 @@ def main():
     """)
     
     # Nếu content đã bị tách (nằm trong content_store.db)
-    if os.path.exists("content_store.db"):
-        print("Phát hiện content_store.db, đang đồng bộ cờ has_content (không dùng ATTACH để tránh lỗi lock)...")
+    if os.path.isfile("content_store.db"):
+        print("Phát hiện file content_store.db, đang đồng bộ cờ has_content (không dùng ATTACH để tránh lỗi lock)...")
         
         # Kết nối độc lập tới content_store.db
-        conn2 = sqlite3.connect("content_store.db")
+        db_path = os.path.abspath("content_store.db")
+        conn2 = sqlite3.connect(db_path)
         cursor2 = conn2.cursor()
         cursor2.execute("SELECT doc_id FROM document_content WHERE content_html IS NOT NULL AND content_html != ''")
         doc_ids = [row[0] for row in cursor2.fetchall()]
