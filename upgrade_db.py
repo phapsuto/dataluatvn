@@ -28,18 +28,23 @@ def main():
     
     # Nếu content đã bị tách (nằm trong content_store.db)
     if os.path.exists("content_store.db"):
-        print("Phát hiện content_store.db, đang đồng bộ cờ has_content...")
-        abs_path = os.path.abspath("content_store.db")
-        cursor.execute(f"ATTACH DATABASE '{abs_path}' AS content_db")
-        cursor.execute("""
-            UPDATE documents
-            SET has_content = 1
-            WHERE id IN (
-                SELECT doc_id FROM content_db.document_content 
-                WHERE content_html IS NOT NULL AND content_html != ''
-            )
-        """)
-        cursor.execute("DETACH DATABASE content_db")
+        print("Phát hiện content_store.db, đang đồng bộ cờ has_content (không dùng ATTACH để tránh lỗi lock)...")
+        
+        # Kết nối độc lập tới content_store.db
+        conn2 = sqlite3.connect("content_store.db")
+        cursor2 = conn2.cursor()
+        cursor2.execute("SELECT doc_id FROM document_content WHERE content_html IS NOT NULL AND content_html != ''")
+        doc_ids = [row[0] for row in cursor2.fetchall()]
+        conn2.close()
+        
+        if doc_ids:
+            print(f"Tìm thấy {len(doc_ids)} văn bản có HTML trong content_store.db. Đang cập nhật...")
+            # SQLite giới hạn số lượng biến (999) trong 1 câu lệnh IN, nên ta chia nhỏ (chunk)
+            chunk_size = 500
+            for i in range(0, len(doc_ids), chunk_size):
+                chunk = doc_ids[i:i + chunk_size]
+                placeholders = ",".join(["?"] * len(chunk))
+                cursor.execute(f"UPDATE documents SET has_content = 1 WHERE id IN ({placeholders})", chunk)
         
     conn.commit()
 
