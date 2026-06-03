@@ -7,19 +7,7 @@ services:
     ports:
       - "2004:2004"
     volumes:
-      - ./vietnamese_legal_documents.db:/app/vietnamese_legal_documents.db
-      - ./content_store.db:/app/content_store.db
-      - ./admin.db:/app/admin.db
-      - ./sync.log:/app/sync.log
-      - ./fill_missing.log:/app/fill_missing.log
-      - ./server.py:/app/server.py
-      - ./static:/app/static
-      - ./fill_missing_content.py:/app/fill_missing_content.py
-      - ./sync_new_laws.py:/app/sync_new_laws.py
-      - ./extract_modifications.py:/app/extract_modifications.py
-      - ./build_crosslinks.py:/app/build_crosslinks.py
-      - ./crawler_progress.json:/app/crawler_progress.json
-      - ./discover_api.py:/app/discover_api.py
+      - ./:/app
     shm_size: '1gb'
     environment:
       - API_PORT=2004
