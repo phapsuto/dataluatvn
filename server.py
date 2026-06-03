@@ -66,7 +66,7 @@ def get_db_connection():
             status_code=500,
             detail="Database file not found. Please run download_all_to_sqlite.py first.",
         )
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_NAME, timeout=30.0)
     conn.row_factory = sqlite3.Row
     # ── PRAGMA tối ưu RAM ──
     conn.execute("PRAGMA cache_size = -32000")   # 32 MB cache (thay vì mặc định hàng GB)
@@ -82,7 +82,7 @@ def get_content_connection():
     Chỉ mở khi cần lấy toàn văn 1 document cụ thể."""
     if not os.path.exists(CONTENT_DB):
         return None  # Fallback: content vẫn nằm trong DB chính
-    conn = sqlite3.connect(CONTENT_DB)
+    conn = sqlite3.connect(CONTENT_DB, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA cache_size = -8000")    # 8 MB cache (chỉ đọc 1 row)
     conn.execute("PRAGMA mmap_size = 0")
@@ -93,14 +93,14 @@ def get_content_connection():
 
 def get_admin_db():
     """Connect to the admin database (API keys)."""
-    conn = sqlite3.connect(ADMIN_DB)
+    conn = sqlite3.connect(ADMIN_DB, timeout=30.0)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_admin_db():
     """Initialize admin database with api_keys table."""
-    conn = sqlite3.connect(ADMIN_DB)
+    conn = sqlite3.connect(ADMIN_DB, timeout=30.0)
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_keys (
@@ -316,12 +316,15 @@ async def lifespan(app: FastAPI):
     """Startup: init admin DB, validate main DB."""
     init_admin_db()
     if os.path.exists(DB_NAME):
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute("SELECT count(*) FROM documents")
-        total = cursor.fetchone()[0]
-        conn.close()
-        print(f"✅ Legal database loaded: {total:,} documents")
+        try:
+            conn = sqlite3.connect(DB_NAME, timeout=30.0)
+            cursor = conn.cursor()
+            cursor.execute("SELECT count(*) FROM documents")
+            total = cursor.fetchone()[0]
+            conn.close()
+            print(f"✅ Legal database loaded: {total:,} documents")
+        except sqlite3.OperationalError as e:
+            print(f"⚠️  Could not count documents on startup (database might be busy): {e}")
     else:
         print(f"⚠️  Legal database '{DB_NAME}' not found. Run download_all_to_sqlite.py first.")
     print(f"🚀 API server starting on port {API_PORT}")
