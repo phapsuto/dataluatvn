@@ -1,13 +1,32 @@
 import os
+import json
 import sqlite3
 import secrets
 import hashlib
+import time
+import subprocess
+import signal
 from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 
 import jwt as pyjwt
 from fastapi import FastAPI, HTTPException, Query, Path, Depends, Header, Request
+
+def simple_ttl_cache(ttl_seconds: int):
+    def decorator(func):
+        cached_value = None
+        last_update = 0
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            nonlocal cached_value, last_update
+            if time.time() - last_update > ttl_seconds:
+                cached_value = func(*args, **kwargs)
+                last_update = time.time()
+            return cached_value
+        return wrapper
+    return decorator
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
@@ -259,6 +278,11 @@ class RelationshipInfo(BaseModel):
     other_doc_title: str
     other_doc_so_ky_hieu: Optional[str] = None
 
+class ArticleModification(BaseModel):
+    article_name: str
+    modified_text: str
+    modified_by_doc_id: int
+
 class StatsResponse(BaseModel):
     total_documents: int
     total_relationships: int
@@ -269,6 +293,10 @@ class PaginatedSearchResponse(BaseModel):
     total: int
     limit: int
     offset: int
+    total_pages: int
+    current_page: int
+    has_next: bool
+    has_previous: bool
     results: List[LawBrief]
 
 class CategoryItem(BaseModel):
@@ -318,7 +346,7 @@ Hoặc qua query parameter: `?api_key=dlvn_xxx...`
 ### ✨ Tính năng chính
 | Tính năng | Mô tả |
 |---|---|
-| 🔍 **Tìm kiếm nhanh** | Tìm theo từ khóa, loại văn bản, lĩnh vực, tình trạng hiệu lực |
+| 🔍 **Tìm kiếm nhanh** | Tìm kiếm **Full-Text Search (FTS5)** siêu tốc, tự động sắp xếp kết quả liên quan lên top, kèm theo tính năng **Phân trang (Pagination)** tiêu chuẩn. |
 | 📄 **Chi tiết toàn văn** | Lấy toàn bộ nội dung HTML và metadata |
 | 🔗 **Quan hệ pháp lý** | Sửa đổi, bổ sung, thay thế giữa các văn bản |
 | 📊 **Thống kê** | Phân tích tổng quan theo loại, trạng thái |
@@ -519,9 +547,8 @@ def admin_page():
 
 # ─────────────────── STATISTICS ───────────────────
 
-@app.get("/laws/stats", response_model=StatsResponse, tags=["📊 Thống kê"], summary="Thống kê tổng quan")
-def get_stats(_key=Depends(require_api_key)):
-    """Thống kê tổng quan cơ sở dữ liệu. **Yêu cầu API Key.**"""
+@simple_ttl_cache(ttl_seconds=3600)
+def _get_cached_stats():
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -545,6 +572,11 @@ def get_stats(_key=Depends(require_api_key)):
         "by_effectiveness_status": status_count,
     }
 
+@app.get("/laws/stats", response_model=StatsResponse, tags=["📊 Thống kê"], summary="Thống kê tổng quan")
+def get_stats(_key=Depends(require_api_key)):
+    """Thống kê tổng quan cơ sở dữ liệu. **Yêu cầu API Key.**"""
+    return _get_cached_stats()
+
 
 # ─────────────────── SEARCH & RETRIEVAL ───────────────────
 
@@ -560,51 +592,81 @@ def search_laws(
     require_content: bool = Query(False, description="Chỉ trả về văn bản có nội dung HTML"),
     _key=Depends(require_api_key),
 ):
-    """Tìm kiếm và lọc văn bản pháp luật. **Yêu cầu API Key.**"""
+    """
+    Tìm kiếm và lọc văn bản pháp luật bằng **Full-Text Search (FTS5)**.
+    
+    **Tính năng nổi bật:**
+    - Kết quả tự động sắp xếp theo độ liên quan (relevance) nếu có từ khóa `q`.
+    - Phân trang đầy đủ với `total_pages`, `current_page`, `has_next`, `has_previous`.
+    
+    **Yêu cầu API Key.**
+    """
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    where_clauses = ["1=1"]
+    where_clauses = []
     params: list = []
+    from_clause = "documents d"
 
     if require_content:
-        where_clauses.append("has_content = 1")
+        where_clauses.append("d.has_content = 1")
 
     if q:
-        where_clauses.append("(title LIKE ? OR so_ky_hieu LIKE ?)")
-        params.extend([f"%{q}%", f"%{q}%"])
+        escaped_q = q.replace('"', '""')
+        where_clauses.append("documents_fts MATCH ?")
+        params.append(f'"{escaped_q}"')
+        from_clause = "documents d JOIN documents_fts ON d.id = documents_fts.rowid"
+
     if loai_van_ban:
-        where_clauses.append("loai_van_ban = ?")
+        where_clauses.append("d.loai_van_ban = ?")
         params.append(loai_van_ban)
     if co_quan_ban_hanh:
-        where_clauses.append("co_quan_ban_hanh LIKE ?")
+        where_clauses.append("d.co_quan_ban_hanh LIKE ?")
         params.append(f"%{co_quan_ban_hanh}%")
     if status:
-        where_clauses.append("tinh_trang_hieu_luc = ?")
+        where_clauses.append("d.tinh_trang_hieu_luc = ?")
         params.append(status)
     if linh_vuc:
-        where_clauses.append("(linh_vuc LIKE ? OR nganh LIKE ?)")
+        where_clauses.append("(d.linh_vuc LIKE ? OR d.nganh LIKE ?)")
         params.extend([f"%{linh_vuc}%", f"%{linh_vuc}%"])
+
+    if not where_clauses:
+        where_clauses.append("1=1")
 
     where_sql = " AND ".join(where_clauses)
 
-    cursor.execute(f"SELECT count(*) FROM documents WHERE {where_sql}", params)
+    cursor.execute(f"SELECT count(*) FROM {from_clause} WHERE {where_sql}", params)
     total = cursor.fetchone()[0]
 
+    order_clause = "documents_fts.rank, d.id DESC" if q else "d.id DESC"
+
     cursor.execute(
-        f"SELECT id, title, so_ky_hieu, ngay_ban_hanh, loai_van_ban, co_quan_ban_hanh, tinh_trang_hieu_luc "
-        f"FROM documents WHERE {where_sql} ORDER BY id DESC LIMIT ? OFFSET ?",
+        f"SELECT d.id, d.title, d.so_ky_hieu, d.ngay_ban_hanh, d.loai_van_ban, d.co_quan_ban_hanh, d.tinh_trang_hieu_luc "
+        f"FROM {from_clause} WHERE {where_sql} ORDER BY {order_clause} LIMIT ? OFFSET ?",
         params + [limit, offset],
     )
     rows = cursor.fetchall()
     conn.close()
 
-    return {"total": total, "limit": limit, "offset": offset, "results": [dict(r) for r in rows]}
+    total_pages = (total + limit - 1) // limit if limit > 0 else 0
+    current_page = (offset // limit) + 1 if limit > 0 else 1
+    has_next = current_page < total_pages
+    has_previous = current_page > 1
+
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "total_pages": total_pages,
+        "current_page": current_page,
+        "has_next": has_next,
+        "has_previous": has_previous,
+        "results": [dict(r) for r in rows]
+    }
 
 
-@app.get("/laws/categories/types", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Loại văn bản")
-def get_document_types(_key=Depends(require_api_key)):
-    """Danh sách loại văn bản. **Yêu cầu API Key.**"""
+@simple_ttl_cache(ttl_seconds=3600)
+def _get_cached_document_types():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT loai_van_ban, count(*) as cnt FROM documents GROUP BY loai_van_ban ORDER BY cnt DESC")
@@ -612,10 +674,14 @@ def get_document_types(_key=Depends(require_api_key)):
     conn.close()
     return [{"name": row[0] or "Khác", "count": row[1]} for row in rows]
 
+@app.get("/laws/categories/types", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Loại văn bản")
+def get_document_types(_key=Depends(require_api_key)):
+    """Danh sách loại văn bản. **Yêu cầu API Key.**"""
+    return _get_cached_document_types()
 
-@app.get("/laws/categories/fields", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Lĩnh vực")
-def get_fields(_key=Depends(require_api_key)):
-    """Danh sách lĩnh vực pháp luật. **Yêu cầu API Key.**"""
+
+@simple_ttl_cache(ttl_seconds=3600)
+def _get_cached_fields():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
@@ -625,10 +691,14 @@ def get_fields(_key=Depends(require_api_key)):
     conn.close()
     return [{"name": row[0], "count": row[1]} for row in rows]
 
+@app.get("/laws/categories/fields", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Lĩnh vực")
+def get_fields(_key=Depends(require_api_key)):
+    """Danh sách lĩnh vực pháp luật. **Yêu cầu API Key.**"""
+    return _get_cached_fields()
 
-@app.get("/laws/categories/agencies", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Cơ quan ban hành")
-def get_agencies(_key=Depends(require_api_key)):
-    """Danh sách cơ quan ban hành. **Yêu cầu API Key.**"""
+
+@simple_ttl_cache(ttl_seconds=3600)
+def _get_cached_agencies():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
@@ -637,6 +707,11 @@ def get_agencies(_key=Depends(require_api_key)):
     rows = cursor.fetchall()
     conn.close()
     return [{"name": row[0], "count": row[1]} for row in rows]
+
+@app.get("/laws/categories/agencies", response_model=List[CategoryItem], tags=["🏷️ Danh mục"], summary="Cơ quan ban hành")
+def get_agencies(_key=Depends(require_api_key)):
+    """Danh sách cơ quan ban hành. **Yêu cầu API Key.**"""
+    return _get_cached_agencies()
 
 
 @app.get("/laws/{law_id}", response_model=LawDetail, tags=["🔍 Tìm kiếm & Tra cứu"], summary="Chi tiết văn bản")
@@ -702,6 +777,339 @@ def get_law_relationships(
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+@app.get("/laws/{law_id}/article-modifications", response_model=List[ArticleModification], tags=["🔗 Quan hệ pháp lý"], summary="Các điều khoản bị sửa đổi")
+def get_article_modifications(
+    law_id: int = Path(..., description="ID văn bản"),
+    _key=Depends(require_api_key),
+):
+    """Tra cứu các điều khoản bị sửa đổi của văn bản. **Yêu cầu API Key.**"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT article_name, modified_text, modified_by_doc_id
+        FROM article_modifications
+        WHERE doc_id = ?
+    """
+
+    try:
+        cursor.execute(query, (law_id,))
+        rows = cursor.fetchall()
+    except sqlite3.OperationalError:
+        # Table might not exist yet if script hasn't run fully
+        rows = []
+    
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                    DASHBOARD                                ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# Global crawler process reference
+_crawler_process = None
+
+@app.get("/admin/dashboard", response_class=HTMLResponse, include_in_schema=False)
+def dashboard_page():
+    html_path = os.path.join(os.path.dirname(__file__), "static", "dashboard.html")
+    if not os.path.exists(html_path):
+        raise HTTPException(status_code=500, detail="Dashboard page not found.")
+    with open(html_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+
+@app.get("/api/dashboard/stats", include_in_schema=False)
+def dashboard_stats():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM documents")
+    total = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM documents WHERE has_content = 1")
+    with_content = c.fetchone()[0]
+    without_content = total - with_content
+
+    c.execute("SELECT loai_van_ban, COUNT(*) FROM documents GROUP BY loai_van_ban ORDER BY COUNT(*) DESC LIMIT 10")
+    by_type = [{"name": r[0] or "Không xác định", "count": r[1]} for r in c.fetchall()]
+
+    c.execute("SELECT COUNT(*) FROM relationships")
+    total_rels = c.fetchone()[0]
+
+    try:
+        c.execute("SELECT COUNT(*) FROM article_modifications")
+        total_mods = c.fetchone()[0]
+    except:
+        total_mods = 0
+
+    try:
+        c.execute("SELECT COUNT(*) FROM documents_fts")
+        fts_count = c.fetchone()[0]
+    except:
+        fts_count = 0
+
+    conn.close()
+
+    content_size = os.path.getsize(CONTENT_DB) if os.path.exists(CONTENT_DB) else 0
+
+    return {
+        "total_documents": total,
+        "with_content": with_content,
+        "without_content": without_content,
+        "progress_pct": round(with_content / total * 100, 2) if total > 0 else 0,
+        "by_type": by_type,
+        "total_relationships": total_rels,
+        "total_modifications": total_mods,
+        "fts_indexed": fts_count,
+        "content_db_size_mb": round(content_size / 1024 / 1024, 1),
+        "main_db_size_mb": round(os.path.getsize(DB_NAME) / 1024 / 1024, 1),
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+
+@app.get("/api/dashboard/logs", include_in_schema=False)
+def dashboard_logs():
+    log_path = os.path.join(os.path.dirname(__file__), "fill_missing.log")
+    if os.path.exists(log_path):
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        return {"lines": lines[-100:], "total_lines": len(lines)}
+    return {"lines": [], "total_lines": 0}
+
+
+@app.get("/api/dashboard/sample", include_in_schema=False)
+def dashboard_sample(limit: int = 20):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("""
+        SELECT id, title, so_ky_hieu, loai_van_ban, ngay_ban_hanh, tinh_trang_hieu_luc
+        FROM documents WHERE has_content = 1
+        ORDER BY id DESC LIMIT ?
+    """, (limit,))
+    docs = []
+    for row in c.fetchall():
+        doc = dict(row)
+        # Check content length
+        try:
+            conn_c = get_content_connection()
+            cc = conn_c.cursor()
+            cc.execute("SELECT LENGTH(content_html) FROM document_content WHERE doc_id = ?", (row["id"],))
+            cr = cc.fetchone()
+            doc["content_length"] = cr[0] if cr else 0
+            conn_c.close()
+        except:
+            doc["content_length"] = 0
+        docs.append(doc)
+    conn.close()
+    return {"documents": docs}
+
+
+@app.get("/api/dashboard/check", include_in_schema=False)
+def dashboard_check(id: int = Query(...)):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM documents WHERE id = ?", (id,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        return {"error": f"Document {id} not found"}
+
+    doc = dict(row)
+
+    # Content preview
+    try:
+        conn_c = get_content_connection()
+        cc = conn_c.cursor()
+        cc.execute("SELECT content_html FROM document_content WHERE doc_id = ?", (id,))
+        cr = cc.fetchone()
+        if cr and cr[0]:
+            doc["content_preview"] = cr[0][:2000]
+            doc["content_length"] = len(cr[0])
+        else:
+            doc["content_preview"] = None
+            doc["content_length"] = 0
+        conn_c.close()
+    except:
+        doc["content_preview"] = None
+        doc["content_length"] = 0
+
+    # Relationships
+    c.execute("""
+        SELECT r.other_doc_id, r.relationship, d.title
+        FROM relationships r
+        LEFT JOIN documents d ON d.id = r.other_doc_id
+        WHERE r.doc_id = ? LIMIT 20
+    """, (id,))
+    doc["relationships"] = [
+        {"other_id": r[0], "type": r[1], "other_title": r[2]}
+        for r in c.fetchall()
+    ]
+
+    # Modifications
+    try:
+        c.execute("""
+            SELECT am.article_name, am.modified_by_doc_id, am.modified_text, d.title
+            FROM article_modifications am
+            LEFT JOIN documents d ON d.id = am.modified_by_doc_id
+            WHERE am.doc_id = ? LIMIT 20
+        """, (id,))
+        doc["modifications"] = [
+            {"article": r[0], "by_doc_id": r[1], "text": (r[2] or "")[:200], "by_title": r[3]}
+            for r in c.fetchall()
+        ]
+    except:
+        doc["modifications"] = []
+
+    conn.close()
+    return doc
+
+
+@app.get("/api/dashboard/crawler/progress", include_in_schema=False)
+def dashboard_crawler_progress():
+    """Đọc progress từ crawler_progress.json — Dashboard poll mỗi 2s."""
+    progress_file = os.path.join(os.path.dirname(__file__), "crawler_progress.json")
+    pid_file = os.path.join(os.path.dirname(__file__), "crawler.pid")
+
+    # Check if crawler process is alive
+    is_running = False
+    pid = None
+    if os.path.exists(pid_file):
+        try:
+            with open(pid_file) as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)  # Check if alive
+            is_running = True
+        except (ProcessLookupError, ValueError, PermissionError):
+            is_running = False
+            try:
+                os.remove(pid_file)
+            except:
+                pass
+
+    if os.path.exists(progress_file):
+        try:
+            with open(progress_file, encoding="utf-8") as f:
+                data = json.load(f)
+            data["is_running"] = is_running
+            data["pid"] = pid
+            return data
+        except:
+            pass
+
+    return {"status": "idle", "is_running": False, "total": 0, "success": 0, "fail": 0}
+
+
+@app.post("/api/dashboard/crawler/start", include_in_schema=False)
+async def dashboard_crawler_start(request: Request):
+    """Start crawler as subprocess. Headless trên Linux server, headed trên macOS."""
+    pid_file = os.path.join(os.path.dirname(__file__), "crawler.pid")
+
+    # Check if already running
+    if os.path.exists(pid_file):
+        try:
+            with open(pid_file) as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)
+            return {"ok": False, "error": "Crawler đang chạy rồi!", "pid": pid}
+        except (ProcessLookupError, ValueError):
+            try:
+                os.remove(pid_file)
+            except:
+                pass
+
+    body = await request.json()
+    tabs = body.get("tabs", 5)
+    limit = body.get("limit", 0)
+
+    script = os.path.join(os.path.dirname(__file__), "fill_missing_content.py")
+    cmd = ["python", script]
+    if limit and limit > 0:
+        cmd.append(str(limit))
+
+    env = os.environ.copy()
+    env["CRAWLER_TABS"] = str(tabs)
+    # Auto-detect: headless on Linux, headed on macOS
+    import platform
+    if platform.system() == "Linux":
+        env["CRAWLER_HEADLESS"] = "1"
+
+    _crawler_process = subprocess.Popen(cmd, env=env, cwd=os.path.dirname(__file__))
+    return {"ok": True, "pid": _crawler_process.pid, "tabs": tabs, "limit": limit,
+            "headless": env.get("CRAWLER_HEADLESS", "0") == "1"}
+
+
+@app.post("/api/dashboard/crawler/stop", include_in_schema=False)
+def dashboard_crawler_stop():
+    """Gửi SIGTERM để crawler dừng an toàn."""
+    pid_file = os.path.join(os.path.dirname(__file__), "crawler.pid")
+    if os.path.exists(pid_file):
+        try:
+            with open(pid_file) as f:
+                pid = int(f.read().strip())
+            os.kill(pid, signal.SIGTERM)
+            return {"ok": True, "message": f"Đã gửi tín hiệu dừng (PID {pid}). Crawler sẽ kết thúc an toàn."}
+        except ProcessLookupError:
+            try:
+                os.remove(pid_file)
+            except:
+                pass
+            return {"ok": True, "message": "Crawler đã dừng trước đó."}
+        except Exception as e:
+            return {"ok": False, "message": str(e)}
+    return {"ok": False, "message": "Không có crawler nào đang chạy."}
+
+
+@app.post("/api/dashboard/sync/start", include_in_schema=False)
+async def dashboard_sync_start(request: Request):
+    body = await request.json()
+    pages = body.get("pages", 5)
+    script = os.path.join(os.path.dirname(__file__), "sync_new_laws.py")
+    if os.path.exists(script):
+        env = os.environ.copy()
+        env["MAX_PAGES"] = str(pages)
+        subprocess.Popen(["python", script], env=env, cwd=os.path.dirname(__file__))
+        return {"ok": True, "message": f"Sync đã bắt đầu (quét {pages} trang)"}
+    return {"ok": False, "message": "Script không tồn tại"}
+
+
+@app.post("/api/dashboard/tools/rebuild-fts", include_in_schema=False)
+def dashboard_rebuild_fts():
+    conn = sqlite3.connect(DB_NAME, timeout=30)
+    try:
+        conn.execute("DROP TABLE IF EXISTS documents_fts")
+        conn.execute("""
+            CREATE VIRTUAL TABLE documents_fts USING fts5(
+                title, so_ky_hieu, content='documents', content_rowid='id', tokenize='unicode61'
+            )
+        """)
+        conn.execute("""
+            INSERT INTO documents_fts(rowid, title, so_ky_hieu)
+            SELECT id, title, so_ky_hieu FROM documents
+        """)
+        conn.commit()
+        conn.close()
+        return {"ok": True, "message": "FTS index đã được rebuild thành công!"}
+    except Exception as e:
+        conn.close()
+        return {"ok": False, "message": str(e)}
+
+
+@app.post("/api/dashboard/tools/extract-mods", include_in_schema=False)
+def dashboard_extract_mods():
+    script = os.path.join(os.path.dirname(__file__), "extract_modifications.py")
+    if os.path.exists(script):
+        subprocess.Popen(["python", script], cwd=os.path.dirname(__file__))
+        return {"ok": True, "message": "Extract modifications đã bắt đầu"}
+    return {"ok": False, "message": "Script không tồn tại"}
+
+
+@app.post("/api/dashboard/tools/build-crosslinks", include_in_schema=False)
+def dashboard_build_crosslinks():
+    script = os.path.join(os.path.dirname(__file__), "build_crosslinks.py")
+    if os.path.exists(script):
+        subprocess.Popen(["python", script], cwd=os.path.dirname(__file__))
+        return {"ok": True, "message": "Build crosslinks đã bắt đầu"}
+    return {"ok": False, "message": "Script không tồn tại"}
 
 
 # ╔══════════════════════════════════════════════════════════════╗

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataLuatVN — Dashboard Quản lý Dữ liệu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --blue-50:#eff6ff;--blue-100:#dbeafe;--blue-200:#bfdbfe;--blue-300:#93c5fd;
+            --blue-400:#60a5fa;--blue-500:#3b82f6;--blue-600:#2563eb;--blue-700:#1d4ed8;
+            --teal-50:#f0fdfa;--teal-400:#2dd4bf;--teal-500:#14b8a6;--teal-600:#0d9488;
+            --green-50:#f0fdf4;--green-500:#22c55e;--green-600:#16a34a;
+            --red-50:#fef2f2;--red-500:#ef4444;--red-600:#dc2626;
+            --amber-50:#fffbeb;--amber-500:#f59e0b;--amber-600:#d97706;
+            --purple-50:#faf5ff;--purple-500:#a855f7;--purple-600:#9333ea;
+            --g50:#f8fafc;--g100:#f1f5f9;--g200:#e2e8f0;--g300:#cbd5e1;
+            --g400:#94a3b8;--g500:#64748b;--g600:#475569;--g700:#334155;--g800:#1e293b;--g900:#0f172a;
+            --white:#fff;
+            --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+            --shadow-md:0 4px 6px -1px rgba(0,0,0,.06),0 2px 4px -2px rgba(0,0,0,.04);
+            --r:10px;--rs:6px;--rf:9999px;--tr:all .2s ease;
+        }
+        body{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5;color:var(--g700);background:var(--g50);min-height:100vh;-webkit-font-smoothing:antialiased;font-weight:400}
+
+        /* ─── NAV ─── */
+        .nav{background:var(--white);border-bottom:1px solid var(--g200);padding:0 20px;height:48px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+        .nav-brand{display:flex;align-items:center;gap:8px;text-decoration:none}
+        .nav-brand .dot{width:26px;height:26px;background:linear-gradient(135deg,var(--blue-500),var(--teal-500));border-radius:7px;display:flex;align-items:center;justify-content:center}
+        .nav-brand .dot svg{width:13px;height:13px;fill:#fff}
+        .nav-brand span{font-size:14px;font-weight:600;color:var(--g900);letter-spacing:-0.3px}
+        .nav-right{display:flex;align-items:center;gap:8px}
+        .nav-status{display:flex;align-items:center;gap:5px;padding:3px 10px;background:var(--g50);border-radius:var(--rf);font-size:11px;color:var(--g500);font-weight:400}
+        .nav-status .pulse{width:6px;height:6px;border-radius:50%;background:var(--green-500);animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+        .nav-link{font-size:11px;color:var(--blue-500);text-decoration:none;padding:4px 10px;border:1px solid var(--blue-200);border-radius:5px;font-weight:500;transition:var(--tr)}
+        .nav-link:hover{background:var(--blue-50)}
+
+        /* ─── TAB BAR ─── */
+        .tab-bar{background:var(--white);border-bottom:1px solid var(--g200);padding:0 20px;display:flex;gap:0;overflow-x:auto}
+        .tab-btn{padding:10px 16px;font-size:12px;font-weight:400;color:var(--g500);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:var(--tr);white-space:nowrap;display:flex;align-items:center;gap:5px}
+        .tab-btn:hover{color:var(--blue-600);background:var(--blue-50)}
+        .tab-btn.active{color:var(--blue-600);border-bottom-color:var(--blue-500);font-weight:500}
+        .tab-content{display:none;max-width:1100px;margin:0 auto;padding:16px 20px}
+        .tab-content.active{display:block}
+
+        /* ─── STATS CARDS ─── */
+        .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px}
+        .scard{background:var(--white);border:1px solid var(--g200);border-radius:var(--r);padding:12px 14px;transition:var(--tr)}
+        .scard:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+        .scard .sl{font-size:10px;font-weight:500;color:var(--g400);text-transform:uppercase;letter-spacing:.4px}
+        .scard .sv{font-size:20px;font-weight:600;margin-top:2px;line-height:1.2}
+        .scard .ss{font-size:10px;color:var(--g400);margin-top:2px;font-weight:400}
+        .scard:nth-child(1) .sv{color:var(--blue-600)}
+        .scard:nth-child(2) .sv{color:var(--green-600)}
+        .scard:nth-child(3) .sv{color:var(--red-500)}
+        .scard:nth-child(4) .sv{color:var(--teal-600)}
+        .scard:nth-child(5) .sv{color:var(--purple-600)}
+        .scard:nth-child(6) .sv{color:var(--amber-600)}
+
+        /* ─── PROGRESS BAR ─── */
+        .progress-wrap{background:var(--white);border:1px solid var(--g200);border-radius:var(--r);padding:14px;margin-bottom:14px}
+        .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .progress-header h3{font-size:13px;font-weight:500;color:var(--g700)}
+        .progress-pct{font-size:18px;font-weight:600;color:var(--blue-600)}
+        .progress-track{width:100%;height:6px;background:var(--g100);border-radius:3px;overflow:hidden}
+        .progress-fill{height:100%;background:linear-gradient(90deg,var(--blue-500),var(--teal-500));border-radius:3px;transition:width 1s ease}
+        .progress-info{display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--g400);font-weight:400}
+
+        /* ─── CARD ─── */
+        .card{background:var(--white);border:1px solid var(--g200);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+        .card-h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--g100)}
+        .card-h h3{font-size:13px;font-weight:500;color:var(--g700)}
+
+        /* ─── BUTTONS ─── */
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;border:none;border-radius:var(--rs);font-size:11px;font-weight:500;font-family:inherit;cursor:pointer;transition:var(--tr);text-decoration:none;line-height:1.4;white-space:nowrap}
+        .btn-blue{background:var(--blue-500);color:#fff}.btn-blue:hover{background:var(--blue-600)}
+        .btn-teal{background:var(--teal-500);color:#fff}.btn-teal:hover{background:var(--teal-600)}
+        .btn-green{background:var(--green-500);color:#fff}.btn-green:hover{background:var(--green-600)}
+        .btn-red{background:var(--red-500);color:#fff}.btn-red:hover{background:var(--red-600)}
+        .btn-ghost{background:transparent;color:var(--g600);border:1px solid var(--g200)}.btn-ghost:hover{background:var(--g50);border-color:var(--g300)}
+        .btn-sm{padding:4px 10px;font-size:10px;border-radius:5px}
+        .btn:disabled{opacity:.5;cursor:default}
+
+        /* ─── TWO COL ─── */
+        .two-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        @media(max-width:900px){.two-cols{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(3,1fr)}}
+        @media(max-width:600px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+
+        /* ─── LOG PANEL ─── */
+        .log-body{padding:10px 14px;max-height:360px;overflow-y:auto;font-family:'SF Mono','Menlo','Fira Code',monospace;font-size:10.5px;line-height:1.9}
+        .log-body::-webkit-scrollbar{width:5px}
+        .log-body::-webkit-scrollbar-thumb{background:var(--g200);border-radius:3px}
+        .log-line{color:var(--g500);white-space:nowrap}
+        .log-line .t{color:var(--g300)}
+        .log-line .ok{color:var(--green-600)}
+        .log-line .er{color:var(--red-500)}
+        .log-line .hi{color:var(--blue-500)}
+
+        /* ─── CHECK DOC ─── */
+        .check-bar{display:flex;gap:6px;margin-bottom:12px}
+        .check-bar input{flex:1;padding:7px 12px;border:1px solid var(--g200);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none;transition:var(--tr);font-weight:400;color:var(--g700)}
+        .check-bar input:focus{border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(59,130,246,.08)}
+        .doc-result{font-size:12px;color:var(--g600);line-height:1.8;font-weight:400}
+        .doc-result .fk{color:var(--g400);font-weight:400;font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+        .doc-result .fv{color:var(--g700);font-weight:400}
+
+        /* ─── TABLE ─── */
+        .tbl{width:100%;border-collapse:collapse}
+        .tbl th{padding:7px 12px;text-align:left;font-size:10px;font-weight:500;color:var(--g400);text-transform:uppercase;letter-spacing:.3px;background:var(--g50);border-bottom:1px solid var(--g200)}
+        .tbl td{padding:7px 12px;font-size:11px;border-bottom:1px solid var(--g100);vertical-align:top;color:var(--g600);font-weight:400}
+        .tbl tr:last-child td{border-bottom:none}
+        .tbl tr:hover td{background:var(--blue-50)}
+        .tbl .title-cell{font-weight:500;color:var(--g700);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .mono{font-family:'SF Mono','Menlo',monospace;font-size:10px;color:var(--g500)}
+
+        /* ─── BADGES ─── */
+        .badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--rf);font-size:10px;font-weight:500}
+        .badge-green{background:var(--green-50);color:var(--green-600);border:1px solid #bbf7d0}
+        .badge-red{background:var(--red-50);color:var(--red-500);border:1px solid #fecaca}
+        .badge-blue{background:var(--blue-50);color:var(--blue-600);border:1px solid var(--blue-200)}
+        .badge-gray{background:var(--g100);color:var(--g500);border:1px solid var(--g200)}
+        .badge-amber{background:var(--amber-50);color:var(--amber-600);border:1px solid #fde68a}
+
+        /* ─── CRAWLER CONFIG ─── */
+        .config-row{display:flex;align-items:center;gap:12px;padding:12px 14px;flex-wrap:wrap}
+        .config-row label{font-size:11px;color:var(--g500);font-weight:400;display:flex;align-items:center;gap:5px}
+        .config-row input[type=number],.config-row select{padding:5px 10px;border:1px solid var(--g200);border-radius:var(--rs);font-size:12px;font-family:inherit;width:70px;outline:none;font-weight:400;color:var(--g700)}
+        .config-row input[type=number]:focus,.config-row select:focus{border-color:var(--blue-400)}
+
+        /* ─── TOAST ─── */
+        .toast-c{position:fixed;top:14px;right:14px;z-index:300;display:flex;flex-direction:column;gap:6px}
+        .toast{padding:7px 14px;border-radius:var(--rs);font-size:11px;font-weight:500;box-shadow:var(--shadow-md);display:flex;align-items:center;gap:6px;animation:toastIn .3s ease;max-width:300px}
+        .toast.out{animation:toastOut .3s ease forwards}
+        @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(20px)}}
+        .toast-ok{background:var(--green-600);color:#fff}
+        .toast-err{background:var(--red-600);color:#fff}
+        .toast-info{background:var(--blue-600);color:#fff}
+
+        .empty{text-align:center;padding:24px;color:var(--g400);font-size:12px;font-weight:400}
+        .rel-item{padding:5px 0;border-bottom:1px solid var(--g100);font-size:11px}
+        .rel-item:last-child{border-bottom:none}
+
+        /* ─── CRAWLER PROGRESS PANEL ─── */
+        .cpanel{background:var(--white);border:1px solid var(--g200);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+        .cpanel-status{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--g100)}
+        .cpanel-status .indicator{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .cpanel-status .indicator.running{background:var(--green-500);animation:pulse 1.5s infinite}
+        .cpanel-status .indicator.idle{background:var(--g300)}
+        .cpanel-status .indicator.error{background:var(--red-500)}
+        .cpanel-status .indicator.completed{background:var(--blue-500)}
+        .cpanel-status .status-text{font-size:12px;font-weight:500;color:var(--g700)}
+        .cpanel-status .status-sub{font-size:10px;color:var(--g400);margin-left:auto}
+        .cpanel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--g100)}
+        .cpanel-grid .cg-item{padding:10px 14px;border-right:1px solid var(--g100)}
+        .cpanel-grid .cg-item:last-child{border-right:none}
+        .cpanel-grid .cg-label{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--g400);font-weight:500}
+        .cpanel-grid .cg-value{font-size:16px;font-weight:600;margin-top:2px;color:var(--g800)}
+        .cpanel-grid .cg-sub{font-size:9px;color:var(--g400);margin-top:1px}
+        .cpanel-progress{padding:12px 14px}
+        .cpanel-progress .cp-bar{height:8px;background:var(--g100);border-radius:4px;overflow:hidden;position:relative}
+        .cpanel-progress .cp-fill{height:100%;border-radius:4px;transition:width .5s ease}
+        .cpanel-progress .cp-fill.ok{background:linear-gradient(90deg,var(--blue-500),var(--teal-500))}
+        .cpanel-progress .cp-fill.err{background:var(--red-400);position:absolute;top:0}
+        .cpanel-progress .cp-info{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--g400)}
+        .cpanel-recent{padding:0 14px 10px}
+        .cpanel-recent .cr-item{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px;color:var(--g500)}
+        .cpanel-recent .cr-id{font-family:'SF Mono',monospace;font-size:10px;color:var(--blue-500);min-width:55px}
+        .cpanel-recent .cr-time{font-size:10px;color:var(--g300);margin-left:auto}
+        .cpanel-recent .cr-size{font-size:10px;color:var(--g400)}
+        @media(max-width:700px){.cpanel-grid{grid-template-columns:repeat(2,1fr)}}
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+    <div class="nav-brand">
+        <div class="dot"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h5v7h7v9H6z"/></svg></div>
+        <span>DataLuatVN</span>
+    </div>
+    <div class="nav-right">
+        <div class="nav-status"><div class="pulse"></div><span id="lastUpdate">—</span></div>
+        <a href="/admin" class="nav-link">⬅ Admin Portal</a>
+    </div>
+</nav>
+
+<!-- TABS -->
+<div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('overview',this)">📊 Tổng quan</button>
+    <button class="tab-btn" onclick="switchTab('crawler',this)">🕷️ Crawler</button>
+    <button class="tab-btn" onclick="switchTab('check',this)">🔍 Kiểm tra</button>
+    <button class="tab-btn" onclick="switchTab('recent',this)">📄 Gần đây</button>
+</div>
+
+<!-- TAB: OVERVIEW -->
+<div id="tab-overview" class="tab-content active">
+    <div class="stats-row" id="statsGrid"></div>
+    <div class="progress-wrap" id="progressWrap"></div>
+    <div class="two-cols">
+        <div class="card">
+            <div class="card-h"><h3>Top loại văn bản</h3></div>
+            <div id="typeChart" style="padding:10px 14px"></div>
+        </div>
+        <div class="card">
+            <div class="card-h"><h3>📜 Log gần nhất</h3><span class="badge badge-gray" id="logCount">0</span></div>
+            <div class="log-body" id="logBodyMini"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB: CRAWLER -->
+<div id="tab-crawler" class="tab-content">
+    <!-- Crawler Progress Panel -->
+    <div class="cpanel" id="crawlerPanel">
+        <div class="cpanel-status">
+            <div class="indicator idle" id="cpIndicator"></div>
+            <span class="status-text" id="cpStatus">Chưa chạy</span>
+            <span class="status-sub" id="cpPid"></span>
+        </div>
+        <div class="cpanel-grid" id="cpGrid">
+            <div class="cg-item"><div class="cg-label">Tổng cộng</div><div class="cg-value" id="cpTotal">—</div><div class="cg-sub" id="cpDone"></div></div>
+            <div class="cg-item"><div class="cg-label">✅ Thành công</div><div class="cg-value" id="cpSuccess" style="color:var(--green-600)">0</div><div class="cg-sub" id="cpSkip"></div></div>
+            <div class="cg-item"><div class="cg-label">❌ Thất bại</div><div class="cg-value" id="cpFail" style="color:var(--red-500)">0</div><div class="cg-sub" id="cpRetries"></div></div>
+            <div class="cg-item"><div class="cg-label">⏱️ Tốc độ</div><div class="cg-value" id="cpSpeed">—</div><div class="cg-sub" id="cpEta"></div></div>
+        </div>
+        <div class="cpanel-progress">
+            <div class="cp-bar"><div class="cp-fill ok" id="cpFillOk" style="width:0%"></div></div>
+            <div class="cp-info">
+                <span id="cpElapsed">Đã chạy: —</span>
+                <span id="cpProgress">0%</span>
+                <span id="cpEstimate">Hoàn thành: —</span>
+            </div>
+        </div>
+        <div class="cpanel-recent" id="cpRecent"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="card">
+        <div class="card-h"><h3>🎮 Điều khiển Crawler</h3></div>
+        <div class="config-row">
+            <label>Số tab: <input type="number" id="cfgTabs" min="1" max="20" value="5"></label>
+            <label>Giới hạn: <input type="number" id="cfgLimit" min="0" value="0" placeholder="0=all"></label>
+            <button class="btn btn-green" onclick="startCrawler()" id="btnStart">▶ Bắt đầu</button>
+            <button class="btn btn-red btn-sm" onclick="stopCrawler()" id="btnStop">⏹ Dừng an toàn</button>
+        </div>
+    </div>
+
+    <div class="two-cols">
+        <div class="card">
+            <div class="card-h"><h3>🔄 Đồng bộ luật mới</h3></div>
+            <div class="config-row">
+                <label>Số trang: <input type="number" id="cfgSyncPages" min="1" max="20" value="5"></label>
+                <button class="btn btn-teal" onclick="startSync()">🔄 Quét vbpl.vn</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-h"><h3>🔧 Công cụ</h3></div>
+            <div class="config-row" style="gap:8px">
+                <button class="btn btn-ghost" onclick="rebuildFTS()">🔍 Rebuild FTS</button>
+                <button class="btn btn-ghost" onclick="extractMods()">📝 Extract Mods</button>
+                <button class="btn btn-ghost" onclick="buildCrosslinks()">🔗 Crosslinks</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-h"><h3>📜 Crawler Log</h3><span class="badge badge-gray" id="logCountFull">0</span></div>
+        <div class="log-body" id="logBodyFull" style="max-height:500px"></div>
+    </div>
+</div>
+
+<!-- TAB: CHECK -->
+<div id="tab-check" class="tab-content">
+    <div class="card">
+        <div class="card-h"><h3>🔍 Kiểm tra Văn bản</h3></div>
+        <div style="padding:14px">
+            <div class="check-bar">
+                <input type="text" id="checkId" placeholder="Nhập Document ID (vd: 96122)" onkeypress="if(event.key==='Enter')checkDoc()">
+                <button class="btn btn-blue" onclick="checkDoc()">Kiểm tra</button>
+            </div>
+            <div id="checkResult" class="doc-result"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB: RECENT -->
+<div id="tab-recent" class="tab-content">
+    <div class="card">
+        <div class="card-h"><h3>📄 Văn bản vừa tải gần đây</h3><button class="btn btn-ghost btn-sm" onclick="fetchSample()">↻ Refresh</button></div>
+        <table class="tbl">
+            <thead><tr><th>ID</th><th>Tiêu đề</th><th>Số ký hiệu</th><th>Loại</th><th>Ngày BH</th><th>Content</th></tr></thead>
+            <tbody id="sampleBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="toast-c" id="toastC"></div>
+
+<script>
+const API = '';
+function n(v){return v?.toLocaleString('vi-VN')??'0'}
+
+// ─── TABS ───
+function switchTab(id,el){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');
+    if(id==='recent')fetchSample();
+    if(id==='crawler'){fetchLogs();fetchProgress();}
+}
+
+// ─── STATS ───
+async function fetchStats(){
+    try{
+        const r=await fetch(API+'/api/dashboard/stats');const d=await r.json();
+        document.getElementById('lastUpdate').textContent=d.timestamp;
+        document.getElementById('statsGrid').innerHTML=`
+            <div class="scard"><div class="sl">Tổng văn bản</div><div class="sv">${n(d.total_documents)}</div><div class="ss">DB: ${d.main_db_size_mb}MB</div></div>
+            <div class="scard"><div class="sl">Có nội dung</div><div class="sv">${n(d.with_content)}</div><div class="ss">Content: ${d.content_db_size_mb}MB</div></div>
+            <div class="scard"><div class="sl">Thiếu nội dung</div><div class="sv">${n(d.without_content)}</div><div class="ss">Cần tải thêm</div></div>
+            <div class="scard"><div class="sl">FTS Indexed</div><div class="sv">${n(d.fts_indexed)}</div><div class="ss">Full-text search</div></div>
+            <div class="scard"><div class="sl">Liên kết</div><div class="sv">${n(d.total_relationships)}</div><div class="ss">Relationships</div></div>
+            <div class="scard"><div class="sl">Sửa đổi</div><div class="sv">${n(d.total_modifications)}</div><div class="ss">Modifications</div></div>
+        `;
+        document.getElementById('progressWrap').innerHTML=`
+            <div class="progress-header"><h3>Tiến độ tải nội dung</h3><div class="progress-pct">${d.progress_pct}%</div></div>
+            <div class="progress-track"><div class="progress-fill" style="width:${d.progress_pct}%"></div></div>
+            <div class="progress-info"><span>✅ Đã tải: ${n(d.with_content)}</span><span>⏳ Còn: ${n(d.without_content)}</span><span>📊 Tổng: ${n(d.total_documents)}</span></div>
+        `;
+        if(d.by_type){
+            const max=d.by_type[0]?.count||1;
+            const colors=['#3b82f6','#14b8a6','#22c55e','#a855f7','#f59e0b','#ef4444','#6366f1','#ec4899'];
+            document.getElementById('typeChart').innerHTML=d.by_type.map((t,i)=>`
+                <div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;font-weight:400"><span style="color:var(--g600)">${t.name}</span><span style="color:var(--g400)">${n(t.count)}</span></div>
+                <div style="height:5px;background:var(--g100);border-radius:3px;overflow:hidden"><div style="height:100%;width:${(t.count/max*100).toFixed(1)}%;background:${colors[i%8]};border-radius:3px"></div></div></div>
+            `).join('');
+        }
+    }catch(e){console.error('Stats:',e)}
+}
+
+// ─── CRAWLER PROGRESS ───
+async function fetchProgress(){
+    try{
+        const r=await fetch(API+'/api/dashboard/crawler/progress');const d=await r.json();
+        const ind=document.getElementById('cpIndicator');
+        const statusMap={running:'running',completed:'completed',error_rate_high:'error',stopped:'idle',idle:'idle'};
+        ind.className='indicator '+(statusMap[d.status]||'idle');
+
+        const statusLabels={running:'🟢 Đang chạy',completed:'✅ Hoàn thành',error_rate_high:'⚠️ Dừng do lỗi nhiều',stopped:'⏹ Đã dừng',idle:'⏸ Chưa chạy'};
+        document.getElementById('cpStatus').textContent=statusLabels[d.status]||d.status||'Chưa chạy';
+        document.getElementById('cpPid').textContent=d.pid?`PID: ${d.pid}`:'';
+
+        document.getElementById('cpTotal').textContent=n(d.total||0);
+        document.getElementById('cpDone').textContent=`Đã xử lý: ${n(d.done||0)}`;
+        document.getElementById('cpSuccess').textContent=n(d.success||0);
+        document.getElementById('cpSkip').textContent=`⏭️ Bỏ qua: ${n(d.skip||0)}`;
+        document.getElementById('cpFail').textContent=n(d.fail||0);
+        document.getElementById('cpRetries').textContent=`🔄 Retry: ${n(d.retries||0)}`;
+        document.getElementById('cpSpeed').textContent=d.speed?`${d.speed}/s`:'—';
+        document.getElementById('cpEta').textContent=d.eta_display?`ETA: ${d.eta_display}`:'';
+
+        const pct=d.progress_pct||0;
+        document.getElementById('cpFillOk').style.width=pct+'%';
+        document.getElementById('cpProgress').textContent=pct+'%';
+        document.getElementById('cpElapsed').textContent=`Đã chạy: ${d.elapsed_display||'—'}`;
+
+        // Estimate completion time
+        if(d.eta_seconds&&d.eta_seconds>0&&d.status==='running'){
+            const finish=new Date(Date.now()+d.eta_seconds*1000);
+            document.getElementById('cpEstimate').textContent=`Xong lúc: ~${finish.toLocaleTimeString('vi-VN')}`;
+        }else if(d.status==='completed'){
+            document.getElementById('cpEstimate').textContent=`Xong: ${d.finished_at||''}`;
+        }else{
+            document.getElementById('cpEstimate').textContent='';
+        }
+
+        // Recent docs
+        const recent=d.recent_docs||[];
+        if(recent.length>0){
+            document.getElementById('cpRecent').innerHTML='<div style="font-size:10px;color:var(--g400);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.3px">Vừa tải:</div>'+
+                recent.slice(0,8).map(r=>`<div class="cr-item"><span class="cr-id">#${r.id}</span><span class="cr-size">${(r.size/1024).toFixed(0)}KB</span><span class="cr-time">${r.time}</span></div>`).join('');
+        }
+
+        // Update buttons
+        document.getElementById('btnStart').disabled=d.is_running;
+        document.getElementById('btnStop').disabled=!d.is_running;
+    }catch(e){console.error('Progress:',e)}
+}
+
+// ─── LOGS ───
+async function fetchLogs(){
+    try{
+        const r=await fetch(API+'/api/dashboard/logs');const d=await r.json();
+        const render=(lines,elId)=>{
+            const el=document.getElementById(elId);
+            const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-20;
+            el.innerHTML=lines.map(l=>`<div class="log-line">${colorLog(l.trim())}</div>`).join('');
+            if(atBottom)el.scrollTop=el.scrollHeight;
+        };
+        render(d.lines.slice(-30),'logBodyMini');
+        render(d.lines,'logBodyFull');
+        document.getElementById('logCount').textContent=d.total_lines+' lines';
+        document.getElementById('logCountFull').textContent=d.total_lines+' lines';
+    }catch(e){}
+}
+function colorLog(l){
+    return l.replace(/✅/g,'<span class="ok">✅</span>').replace(/❌|⚠️/g,'<span class="er">$&</span>')
+        .replace(/🚀|🎉|📊|⏳|🔗|📋|⚡|🔍/g,'<span class="hi">$&</span>')
+        .replace(/\[([^\]]+)\]/,'<span class="t">[$1]</span>');
+}
+
+// ─── SAMPLE ───
+async function fetchSample(){
+    try{
+        const r=await fetch(API+'/api/dashboard/sample?limit=20');const d=await r.json();
+        document.getElementById('sampleBody').innerHTML=d.documents.map(doc=>`
+            <tr><td><a href="javascript:void(0)" onclick="document.getElementById('checkId').value='${doc.id}';switchTab('check',document.querySelectorAll('.tab-btn')[2]);checkDoc()" style="color:var(--blue-500);font-family:monospace;font-size:10px">${doc.id}</a></td>
+            <td class="title-cell" title="${esc(doc.title)}">${esc(doc.title||'-')}</td>
+            <td class="mono">${esc(doc.so_ky_hieu||'-')}</td>
+            <td style="font-size:10px">${esc((doc.loai_van_ban||'-').substring(0,20))}</td>
+            <td style="font-size:10px;color:var(--g400)">${doc.ngay_ban_hanh||'-'}</td>
+            <td>${doc.content_length>0?'<span class="badge badge-green">'+n(doc.content_length)+'</span>':'<span class="badge badge-red">Empty</span>'}</td></tr>
+        `).join('');
+    }catch(e){}
+}
+
+// ─── CHECK DOC ───
+async function checkDoc(){
+    const id=document.getElementById('checkId').value.trim();if(!id)return;
+    const el=document.getElementById('checkResult');
+    el.innerHTML='<span style="color:var(--blue-500)">Đang kiểm tra...</span>';
+    try{
+        const r=await fetch(API+'/api/dashboard/check?id='+id);const d=await r.json();
+        if(d.error){el.innerHTML=`<span style="color:var(--red-500)">❌ ${d.error}</span>`;return}
+        let h=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <div><div class="fk">ID</div><div class="fv">${d.id}</div></div>
+            <div><div class="fk">Số ký hiệu</div><div class="fv">${esc(d.so_ky_hieu||'-')}</div></div>
+            <div style="grid-column:span 2"><div class="fk">Tiêu đề</div><div class="fv" style="font-weight:500">${esc(d.title||'-')}</div></div>
+            <div><div class="fk">Loại</div><div class="fv">${esc(d.loai_van_ban||'-')}</div></div>
+            <div><div class="fk">Ngày BH</div><div class="fv">${esc(d.ngay_ban_hanh||'-')}</div></div>
+            <div><div class="fk">Hiệu lực</div><div class="fv">${esc(d.tinh_trang_hieu_luc||'-')}</div></div>
+            <div><div class="fk">Content</div><div class="fv">${d.content_length>0?'<span class="badge badge-green">✅ '+n(d.content_length)+' bytes</span>':'<span class="badge badge-red">❌ Chưa có</span>'}</div></div>
+        </div>`;
+        if(d.content_preview){
+            h+=`<div style="margin-bottom:10px"><div class="fk">Nội dung preview</div>
+            <div style="background:var(--g50);padding:8px 10px;border-radius:6px;font-size:10px;max-height:120px;overflow-y:auto;color:var(--g500);border:1px solid var(--g200);margin-top:4px">${d.content_preview.substring(0,500)}...</div></div>`;
+        }
+        if(d.relationships?.length){
+            h+=`<div style="margin-bottom:10px"><div class="fk">🔗 Liên kết (${d.relationships.length})</div>`;
+            d.relationships.slice(0,10).forEach(r=>{
+                h+=`<div class="rel-item"><span class="badge badge-blue" style="margin-right:5px">${esc(r.type)}</span>
+                <a href="javascript:void(0)" onclick="document.getElementById('checkId').value='${r.other_id}';checkDoc()" style="color:var(--blue-500);font-size:11px">#${r.other_id}</a>
+                <span style="color:var(--g500);font-size:11px;margin-left:4px">${esc((r.other_title||'').substring(0,50))}</span></div>`;
+            });
+            h+='</div>';
+        }
+        if(d.modifications?.length){
+            h+=`<div><div class="fk">📝 Sửa đổi (${d.modifications.length})</div>`;
+            d.modifications.slice(0,5).forEach(m=>{
+                h+=`<div class="rel-item"><span style="color:var(--amber-600);font-weight:500">${esc(m.article)}</span> bởi
+                <a href="javascript:void(0)" onclick="document.getElementById('checkId').value='${m.by_doc_id}';checkDoc()" style="color:var(--blue-500)">#${m.by_doc_id}</a></div>`;
+            });
+            h+='</div>';
+        }
+        el.innerHTML=h;
+    }catch(e){el.innerHTML=`<span style="color:var(--red-500)">❌ ${e.message}</span>`}
+}
+
+// ─── CRAWLER ACTIONS ───
+async function startCrawler(){
+    const tabs=document.getElementById('cfgTabs').value;
+    const limit=document.getElementById('cfgLimit').value;
+    try{
+        const r=await fetch(API+'/api/dashboard/crawler/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabs:parseInt(tabs),limit:parseInt(limit)})});
+        const d=await r.json();
+        if(d.ok){
+            toast(`Crawler đã khởi chạy! (${tabs} tabs, PID: ${d.pid}${d.headless?' headless':''})`,'ok');
+            document.getElementById('btnStart').disabled=true;
+            document.getElementById('btnStop').disabled=false;
+        }else{toast(d.error||'Lỗi','err')}
+    }catch(e){toast('Lỗi: '+e.message,'err')}
+}
+async function stopCrawler(){
+    try{
+        const r=await fetch(API+'/api/dashboard/crawler/stop',{method:'POST'});
+        const d=await r.json();
+        toast(d.message||'Đã dừng','info');
+    }catch(e){toast('Lỗi','err')}
+}
+async function startSync(){
+    const pages=document.getElementById('cfgSyncPages').value;
+    try{
+        const r=await fetch(API+'/api/dashboard/sync/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pages:parseInt(pages)})});
+        const d=await r.json();toast(d.message||'Sync started','ok');
+    }catch(e){toast('Lỗi: '+e.message,'err')}
+}
+async function rebuildFTS(){toast('Rebuilding FTS index...','info');try{const r=await fetch(API+'/api/dashboard/tools/rebuild-fts',{method:'POST'});const d=await r.json();toast(d.message||'Done','ok')}catch(e){toast('Lỗi','err')}}
+async function extractMods(){toast('Extracting modifications...','info');try{const r=await fetch(API+'/api/dashboard/tools/extract-mods',{method:'POST'});const d=await r.json();toast(d.message||'Done','ok')}catch(e){toast('Lỗi','err')}}
+async function buildCrosslinks(){toast('Building crosslinks...','info');try{const r=await fetch(API+'/api/dashboard/tools/build-crosslinks',{method:'POST'});const d=await r.json();toast(d.message||'Done','ok')}catch(e){toast('Lỗi','err')}}
+
+// ─── UTILS ───
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function toast(msg,type='info'){const c=document.getElementById('toastC');const t=document.createElement('div');t.className='toast toast-'+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),300)},3000)}
+
+// ─── INIT ───
+fetchStats();fetchLogs();fetchSample();fetchProgress();
+setInterval(fetchStats,5000);
+setInterval(fetchLogs,3000);
+setInterval(fetchProgress,2000);
+</script>
+</body>
+</html>

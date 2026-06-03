@@ -21,10 +21,10 @@ Bạn có 2 cách để truyền API Key:
 - **Xác thực:** Không yêu cầu
 - **Mô tả:** Trả về trạng thái hoạt động của server và tổng số văn bản hiện có trong CSDL.
 
-### 2. Tìm kiếm và Lọc văn bản
+### 2. Tìm kiếm và Lọc văn bản (Có hỗ trợ Full-Text Search)
 - **Endpoint:** `GET /laws/search`
 - **Xác thực:** Yêu cầu API Key
-- **Mô tả:** Tìm kiếm văn bản theo từ khóa và các bộ lọc.
+- **Mô tả:** Tìm kiếm văn bản theo từ khóa và các bộ lọc. Hệ thống sử dụng **Full-Text Search (FTS5)** nên sẽ tự động sắp xếp các kết quả có độ liên quan cao nhất (relevance) lên đầu nếu bạn truyền từ khóa `q`.
 
 **Tham số (Query Parameters):**
 | Tham số | Bắt buộc | Kiểu | Mô tả |
@@ -37,6 +37,20 @@ Bạn có 2 cách để truyền API Key:
 | `limit` | Không | int | Số lượng kết quả tối đa (Mặc định: 20, Max: 100). |
 | `offset` | Không | int | Vị trí bắt đầu (dùng cho phân trang). |
 | `require_content`| Không | bool | Truyền `true` để bộ lọc tự động loại bỏ các văn bản cũ không có ruột HTML. Đảm bảo 100% kết quả trả về có thể xem toàn văn. |
+
+**Cấu trúc Phân trang (Pagination) trả về:**
+```json
+{
+  "total": 1399,
+  "limit": 20,
+  "offset": 0,
+  "total_pages": 70,
+  "current_page": 1,
+  "has_next": true,
+  "has_previous": false,
+  "results": [ ... ]
+}
+```
 
 **Ví dụ cURL:**
 ```bash

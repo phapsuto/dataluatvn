@@ -3,7 +3,7 @@ FROM python:3.11-slim AS base
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies + Playwright browser deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -12,6 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Python dependencies first (layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright + Chromium for headless crawling on Linux
+RUN pip install --no-cache-dir playwright && \
+    playwright install chromium && \
+    playwright install-deps chromium
 
 # Copy source code
 COPY . /app

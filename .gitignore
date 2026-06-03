@@ -1,27 +1,48 @@
-# Ignore databases
-vietnamese_legal_documents.db
-content_store.db
-admin.db
-*.db-shm
-*.db-wal
+# ─── Python ───
 venv/
-
-# Ignore test documents
-Bo_luat_To_tung_Dan_su_2015.doc
-
-# Ignore logs
-*.log
-sync.log
-
-# Ignore python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
 
-# Ignore logs
-logs/
+# ─── Database (quá lớn, không push lên git) ───
+*.db
+*.db-shm
+*.db-wal
+*.db.bak
+*.db-journal
+db_dump.sql
 
-# HF cache
-hf_dataset_sha.json
+# ─── Logs & Runtime ───
+*.log
+crawler_progress.json
+crawler.pid
 
-# Ignore macOS system files
+# ─── Test files (không cần trên production) ───
+test_*.py
+vbpl_*.png
+vbpl_*.html
+vbpl_cookies.json
+
+# ─── OS ───
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.code-workspace
+
+# ─── Docker ───
+.dockerignore
+
+# ─── Backup & Corrupt ───
+*_corrupt.db
+*_new.db-*

@@ -11,12 +11,22 @@ services:
       - ./content_store.db:/app/content_store.db
       - ./admin.db:/app/admin.db
       - ./sync.log:/app/sync.log
+      - ./fill_missing.log:/app/fill_missing.log
+      - ./server.py:/app/server.py
+      - ./static:/app/static
+      - ./fill_missing_content.py:/app/fill_missing_content.py
+      - ./sync_new_laws.py:/app/sync_new_laws.py
+      - ./extract_modifications.py:/app/extract_modifications.py
+      - ./build_crosslinks.py:/app/build_crosslinks.py
+      - ./crawler_progress.json:/app/crawler_progress.json
+      - ./discover_api.py:/app/discover_api.py
+    shm_size: '1gb'
     environment:
       - API_PORT=2004
       - DB_PATH=vietnamese_legal_documents.db
       - CONTENT_DB_PATH=content_store.db
       - ADMIN_DB_PATH=admin.db
-    mem_limit: 512m
+    mem_limit: 2g
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:2004/"]
