@@ -872,12 +872,17 @@ def dashboard_stats():
 
 @app.get("/api/dashboard/logs", include_in_schema=False)
 def dashboard_logs():
-    log_path = os.path.join(os.path.dirname(__file__), "fill_missing.log")
-    if os.path.exists(log_path):
-        with open(log_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-        return {"lines": lines[-100:], "total_lines": len(lines)}
-    return {"lines": [], "total_lines": 0}
+    all_lines = []
+    for log_file in ["fill_missing.log", "sync.log"]:
+        log_path = os.path.join(os.path.dirname(__file__), log_file)
+        if os.path.isfile(log_path):
+            try:
+                with open(log_path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                    all_lines.extend(lines)
+            except Exception:
+                pass
+    return {"lines": all_lines[-100:], "total_lines": len(all_lines)}
 
 
 @app.get("/api/dashboard/sample", include_in_schema=False)
