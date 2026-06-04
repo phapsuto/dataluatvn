@@ -87,6 +87,26 @@ Các endpoint này dùng để render bộ lọc cho Frontend.
 
 ---
 
+### 6. Tra Cứu Án Lệ & Bản Án
+- **Tìm kiếm:** `GET /anle/search?q=từ_khóa`
+- **Xem chi tiết:** `GET /anle/{doc_name}`
+- **Thống kê:** `GET /anle/stats`
+- **Danh mục:** `GET /anle/categories/case-types` và `GET /anle/categories/court-levels`
+
+**Xác thực:** Yêu cầu API Key
+
+### 7. Tra Cứu Bộ Pháp Điển
+- **Tìm kiếm:** `GET /phapdien/search?q=từ_khóa`
+- **Xem chi tiết:** `GET /phapdien/{article_anchor}`
+- **Danh mục đề mục:** `GET /phapdien/subjects`
+- **Danh mục chủ đề:** `GET /phapdien/topics`
+- **Thuật ngữ (Glossary):** `GET /phapdien/glossary`
+- **Thống kê:** `GET /phapdien/stats`
+
+**Xác thực:** Yêu cầu API Key
+
+---
+
 ## 🛠️ Tích Hợp Frontend (Javascript Ví Dụ)
 
 Dưới đây là đoạn code JS mẫu để gọi API Tìm kiếm:

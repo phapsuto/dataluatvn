@@ -252,7 +252,9 @@
 
     <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('overview',this)">📊 Tổng quan</button>
-        <button class="tab-btn" onclick="switchTab('search',this)">🔍 Tra cứu</button>
+        <button class="tab-btn" onclick="switchTab('search',this)">🔍 Tra cứu VB</button>
+        <button class="tab-btn" onclick="switchTab('search-anle',this)">⚖️ Án Lệ</button>
+        <button class="tab-btn" onclick="switchTab('search-phapdien',this)">📖 Pháp Điển</button>
         <button class="tab-btn" onclick="switchTab('categories',this)">🏷️ Danh mục</button>
         <button class="tab-btn" onclick="switchTab('keys',this)">🔑 API Keys</button>
         <a href="/admin/dashboard" class="tab-btn" style="text-decoration:none;color:var(--teal-600)">🕷️ Dashboard</a>
@@ -260,8 +262,10 @@
 
     <!-- ── TAB: OVERVIEW ── -->
     <div id="tab-overview" class="tab-content active">
-        <div class="stats-row">
+        <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
             <div class="scard"><div class="sl">Tổng văn bản</div><div class="sv" id="ovDocs">—</div></div>
+            <div class="scard"><div class="sl">Tổng Án Lệ</div><div class="sv" id="ovAnle">—</div></div>
+            <div class="scard"><div class="sl">Tổng Điều Pháp Điển</div><div class="sv" id="ovPhapdien">—</div></div>
             <div class="scard"><div class="sl">Liên kết pháp lý</div><div class="sv" id="ovRels">—</div></div>
             <div class="scard"><div class="sl">Còn hiệu lực</div><div class="sv" id="ovActive">—</div></div>
             <div class="scard"><div class="sl">Loại văn bản</div><div class="sv" id="ovTypes">—</div></div>
@@ -297,6 +301,37 @@
             <select id="fField"><option value="">Tất cả lĩnh vực</option></select>
         </div>
         <div id="searchResults">
+            <div class="empty"><p>Nhập từ khóa hoặc chọn bộ lọc để bắt đầu tìm kiếm</p></div>
+        </div>
+    </div>
+
+    <!-- ── TAB: SEARCH ÁN LỆ ── -->
+    <div id="tab-search-anle" class="tab-content">
+        <div class="search-bar">
+            <input type="text" id="sQueryAnle" placeholder="Tìm kiếm Án Lệ / Bản Án (FTS)..." onkeydown="if(event.key==='Enter')doSearchAnle()">
+            <button class="btn btn-blue" onclick="doSearchAnle()">⚖️ Tìm Án Lệ</button>
+        </div>
+        <div class="filters">
+            <select id="fCaseType"><option value="">Tất cả loại vụ án</option></select>
+            <select id="fCourtLevel"><option value="">Tất cả cấp tòa</option></select>
+            <label style="display:flex;align-items:center;font-size:12px;color:var(--g600);margin-left:8px"><input type="checkbox" id="fOnlyPrec" style="margin-right:6px"> Chỉ Án Lệ chính thức</label>
+        </div>
+        <div id="searchResultsAnle">
+            <div class="empty"><p>Nhập từ khóa hoặc chọn bộ lọc để bắt đầu tìm kiếm</p></div>
+        </div>
+    </div>
+
+    <!-- ── TAB: SEARCH PHÁP ĐIỂN ── -->
+    <div id="tab-search-phapdien" class="tab-content">
+        <div class="search-bar">
+            <input type="text" id="sQueryPhapdien" placeholder="Tìm kiếm Điều khoản Pháp Điển (FTS)..." onkeydown="if(event.key==='Enter')doSearchPhapdien()">
+            <button class="btn btn-blue" onclick="doSearchPhapdien()">📖 Tìm Pháp Điển</button>
+        </div>
+        <div class="filters">
+            <select id="fSubject"><option value="">Tất cả Đề mục</option></select>
+            <select id="fTopic"><option value="">Tất cả Chủ đề</option></select>
+        </div>
+        <div id="searchResultsPhapdien">
             <div class="empty"><p>Nhập từ khóa hoặc chọn bộ lọc để bắt đầu tìm kiếm</p></div>
         </div>
     </div>
@@ -375,6 +410,40 @@
     </div>
 </div>
 
+<!-- ══════════ ÁN LỆ DETAIL MODAL ══════════ -->
+<div id="anleDetailModal" class="modal-overlay" onclick="if(event.target===this)closeAnleDetail()">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="anleDetailTitle">—</h3>
+            <button class="modal-close" onclick="closeAnleDetail()">✕</button>
+        </div>
+        <div class="detail-tabs">
+            <button class="dtab active" onclick="switchAnleDtab('info',this)">📋 Thông tin</button>
+            <button class="dtab" onclick="switchAnleDtab('content',this)">📄 Toàn văn</button>
+        </div>
+        <div id="anle-dp-info" class="detail-panel active"></div>
+        <div id="anle-dp-content" class="detail-panel"></div>
+    </div>
+</div>
+
+<!-- ══════════ PHÁP ĐIỂN DETAIL MODAL ══════════ -->
+<div id="phapdienDetailModal" class="modal-overlay" onclick="if(event.target===this)closePhapdienDetail()">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="phapdienDetailTitle">—</h3>
+            <button class="modal-close" onclick="closePhapdienDetail()">✕</button>
+        </div>
+        <div class="detail-tabs">
+            <button class="dtab active" onclick="switchPhapdienDtab('info',this)">📋 Thông tin</button>
+            <button class="dtab" onclick="switchPhapdienDtab('content',this)">📄 Nội dung</button>
+            <button class="dtab" onclick="switchPhapdienDtab('notes',this)">📝 Ghi chú</button>
+        </div>
+        <div id="pd-dp-info" class="detail-panel active"></div>
+        <div id="pd-dp-content" class="detail-panel"></div>
+        <div id="pd-dp-notes" class="detail-panel"></div>
+    </div>
+</div>
+
 <div class="toast-c" id="toastC"></div>
 
 <script>
@@ -442,14 +511,33 @@ async function loadOverview(){
         const sColors=['#ef4444','#22c55e','#f59e0b','#94a3b8','#6366f1','#ec4899','#14b8a6','#3b82f6','#a855f7'];
         document.getElementById('ovStatusChart').innerHTML=sts.map(([n,c],i)=>`<div class="bar-item"><div class="bar-label"><span>${esc(n)}</span><span>${num(c)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${(c/maxS*100).toFixed(1)}%;background:${sColors[i%sColors.length]}"></div></div></div>`).join('');
     }catch(e){console.error(e)}
+    
+    try{
+        const [r1, r2] = await Promise.all([api('/anle/stats'), api('/phapdien/stats')]);
+        if(r1.ok){const d=await r1.json();document.getElementById('ovAnle').textContent=num(d.total_documents);}
+        if(r2.ok){const d=await r2.json();document.getElementById('ovPhapdien').textContent=num(d.total_articles);}
+    }catch{}
 }
 
 // ── SEARCH ──
+let searchStateAnle={offset:0,limit:20,total:0};
+let searchStatePhapdien={offset:0,limit:20,total:0};
+
 async function loadFilterOptions(){
     try{
         const [tRes,fRes]=await Promise.all([api('/laws/categories/types'),api('/laws/categories/fields')]);
         if(tRes.ok){const d=await tRes.json();const sel=document.getElementById('fType');d.forEach(i=>{const o=document.createElement('option');o.value=i.name;o.textContent=`${i.name} (${num(i.count)})`;sel.appendChild(o)})}
         if(fRes.ok){const d=await fRes.json();const sel=document.getElementById('fField');d.slice(0,50).forEach(i=>{const o=document.createElement('option');o.value=i.name;o.textContent=i.name;sel.appendChild(o)})}
+        
+        // An le
+        const [caRes,clRes]=await Promise.all([api('/anle/categories/case-types'),api('/anle/categories/court-levels')]);
+        if(caRes.ok){const d=await caRes.json();const sel=document.getElementById('fCaseType');d.forEach(i=>{const o=document.createElement('option');o.value=i.name;o.textContent=`${i.name}`;sel.appendChild(o)})}
+        if(clRes.ok){const d=await clRes.json();const sel=document.getElementById('fCourtLevel');d.forEach(i=>{const o=document.createElement('option');o.value=i.name;o.textContent=`${i.name}`;sel.appendChild(o)})}
+
+        // Phap dien
+        const [sjRes,tpRes]=await Promise.all([api('/phapdien/subjects'),api('/phapdien/topics')]);
+        if(sjRes.ok){const d=await sjRes.json();const sel=document.getElementById('fSubject');d.slice(0,30).forEach(i=>{const o=document.createElement('option');o.value=i.name;o.textContent=`${i.name}`;sel.appendChild(o)})}
+        if(tpRes.ok){const d=await tpRes.json();const sel=document.getElementById('fTopic');d.slice(0,30).forEach(i=>{const o=document.createElement('option');o.value=i.name;o.textContent=`${i.name}`;sel.appendChild(o)})}
     }catch{}
 }
 async function doSearch(resetPage=true){
@@ -486,6 +574,74 @@ async function doSearch(resetPage=true){
 }
 function prevPage(){searchState.offset=Math.max(0,searchState.offset-searchState.limit);doSearch(false)}
 function nextPage(){if(searchState.offset+searchState.limit<searchState.total){searchState.offset+=searchState.limit;doSearch(false)}}
+
+async function doSearchAnle(resetPage=true){
+    if(resetPage)searchStateAnle.offset=0;
+    const q=document.getElementById('sQueryAnle').value.trim();
+    const caseType=document.getElementById('fCaseType').value;
+    const courtLevel=document.getElementById('fCourtLevel').value;
+    const onlyPrec=document.getElementById('fOnlyPrec').checked;
+    
+    const p=new URLSearchParams();
+    if(q)p.set('q',q);
+    if(caseType)p.set('case_type',caseType);
+    if(courtLevel)p.set('court_level',courtLevel);
+    if(onlyPrec)p.set('only_precedents','true');
+    const page = Math.floor(searchStateAnle.offset/searchStateAnle.limit)+1;
+    p.set('limit',searchStateAnle.limit);p.set('page',page);
+    
+    const box=document.getElementById('searchResultsAnle');
+    box.innerHTML='<div class="loading-bar"><div class="bar"></div></div>';
+    try{
+        const r=await api('/anle/search?'+p.toString());const d=await r.json();
+        searchStateAnle.total=d.total;
+        if(!d.results.length){box.innerHTML='<div class="empty"><p>Không tìm thấy án lệ nào</p></div>';return}
+        const from=searchStateAnle.offset+1;const to=Math.min(searchStateAnle.offset+searchStateAnle.limit,d.total);
+        let h=`<div class="result-info"><span>Hiển thị <b>${from}–${to}</b> / <b>${num(d.total)}</b> kết quả</span><div class="pagination"><button onclick="prevPageAnle()" ${d.has_previous?'':'disabled'}>← Trước</button><span>${page}/${d.total_pages}</span><button onclick="nextPageAnle()" ${d.has_next?'':'disabled'}>Sau →</button></div></div>`;
+        h+=`<div class="card" style="margin-top:8px"><table class="tbl"><thead><tr><th style="width:120px">Mã</th><th>Tiêu đề</th><th>Năm</th><th>Cấp Tòa</th><th>Loại Án</th></tr></thead><tbody>`;
+        for(const r of d.results){
+            const titleHtml = r.precedent_number ? `<span class="badge badge-amber" style="margin-right:4px">AL</span> ${esc(r.title)}` : esc(r.title);
+            h+=`<tr onclick="openAnleDetail('${escAttr(r.doc_name)}')"><td class="mono">${r.doc_name}</td><td class="title-cell">${titleHtml}</td><td style="font-size:11px">${r.year||'—'}</td><td><span class="badge badge-gray">${esc(r.court_level||'—')}</span></td><td>${esc(r.case_type||'—')}</td></tr>`;
+        }
+        h+=`</tbody></table></div>`;
+        box.innerHTML=h;
+    }catch(e){box.innerHTML='<div class="empty"><p>Lỗi kết nối</p></div>'}
+}
+function prevPageAnle(){searchStateAnle.offset=Math.max(0,searchStateAnle.offset-searchStateAnle.limit);doSearchAnle(false)}
+function nextPageAnle(){if(searchStateAnle.offset+searchStateAnle.limit<searchStateAnle.total){searchStateAnle.offset+=searchStateAnle.limit;doSearchAnle(false)}}
+
+async function doSearchPhapdien(resetPage=true){
+    if(resetPage)searchStatePhapdien.offset=0;
+    const q=document.getElementById('sQueryPhapdien').value.trim();
+    const subject=document.getElementById('fSubject').value;
+    const topic=document.getElementById('fTopic').value;
+    
+    const p=new URLSearchParams();
+    if(q)p.set('q',q);
+    if(subject)p.set('subject',subject);
+    if(topic)p.set('topic',topic);
+    const page = Math.floor(searchStatePhapdien.offset/searchStatePhapdien.limit)+1;
+    p.set('limit',searchStatePhapdien.limit);p.set('page',page);
+    
+    const box=document.getElementById('searchResultsPhapdien');
+    box.innerHTML='<div class="loading-bar"><div class="bar"></div></div>';
+    try{
+        const r=await api('/phapdien/search?'+p.toString());const d=await r.json();
+        searchStatePhapdien.total=d.total;
+        if(!d.results.length){box.innerHTML='<div class="empty"><p>Không tìm thấy Điều khoản nào</p></div>';return}
+        const from=searchStatePhapdien.offset+1;const to=Math.min(searchStatePhapdien.offset+searchStatePhapdien.limit,d.total);
+        let h=`<div class="result-info"><span>Hiển thị <b>${from}–${to}</b> / <b>${num(d.total)}</b> kết quả</span><div class="pagination"><button onclick="prevPagePhapdien()" ${d.has_previous?'':'disabled'}>← Trước</button><span>${page}/${d.total_pages}</span><button onclick="nextPagePhapdien()" ${d.has_next?'':'disabled'}>Sau →</button></div></div>`;
+        h+=`<div class="card" style="margin-top:8px"><table class="tbl"><thead><tr><th>Tiêu đề Điều khoản</th><th>Chủ đề</th><th>Đề mục</th></tr></thead><tbody>`;
+        for(const r of d.results){
+            h+=`<tr onclick="openPhapdienDetail('${escAttr(r.article_anchor)}')"><td class="title-cell" style="font-weight:500;color:var(--g800)">${esc(r.article_title)}</td><td style="font-size:11px">${esc(r.topic_title||'—')}</td><td><span class="badge badge-gray">${esc(r.subject_title||'—')}</span></td></tr>`;
+        }
+        h+=`</tbody></table></div>`;
+        box.innerHTML=h;
+    }catch(e){box.innerHTML='<div class="empty"><p>Lỗi kết nối</p></div>'}
+}
+function prevPagePhapdien(){searchStatePhapdien.offset=Math.max(0,searchStatePhapdien.offset-searchStatePhapdien.limit);doSearchPhapdien(false)}
+function nextPagePhapdien(){if(searchStatePhapdien.offset+searchStatePhapdien.limit<searchStatePhapdien.total){searchStatePhapdien.offset+=searchStatePhapdien.limit;doSearchPhapdien(false)}}
+
 function statusBadge(s){
     if(!s)return'<span class="badge badge-gray">—</span>';
     if(s.includes('Còn'))return`<span class="badge badge-green"><span class="badge-dot" style="background:var(--green-500)"></span>${esc(s)}</span>`;
@@ -544,8 +700,135 @@ async function openDetail(id){
 }
 function closeDetail(){document.getElementById('detailModal').classList.remove('active')}
 function switchDtab(id,el){
-    document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
-    document.querySelectorAll('.detail-panel').forEach(p=>p.classList.remove('active'));document.getElementById('dp-'+id).classList.add('active');
+    const modal = el.closest('.modal');
+    modal.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+    modal.querySelectorAll('.detail-panel').forEach(p=>p.classList.remove('active'));document.getElementById('dp-'+id).classList.add('active');
+}
+
+// ── ÁN LỆ DETAIL ──
+async function openAnleDetail(docName){
+    const modal = document.getElementById('anleDetailModal');
+    modal.classList.add('active');
+    document.getElementById('anleDetailTitle').textContent='Đang tải...';
+    document.getElementById('anle-dp-info').innerHTML='<div class="loading-bar"><div class="bar"></div></div>';
+    document.getElementById('anle-dp-content').innerHTML='';
+    // Reset tabs
+    modal.querySelectorAll('.dtab').forEach((t,i)=>t.classList.toggle('active',i===0));
+    modal.querySelectorAll('.detail-panel').forEach((p,i)=>p.classList.toggle('active',i===0));
+    try{
+        const r=await api('/anle/'+encodeURIComponent(docName));
+        if(r.status===401){logout();return}
+        if(!r.ok){toast('Không tìm thấy bản án','err');closeAnleDetail();return}
+        const d=await r.json();
+        document.getElementById('anleDetailTitle').textContent=d.title||'Không có tiêu đề';
+        // Info tab
+        const fields=[
+            ['Mã văn bản','doc_name'],['Số hiệu','doc_code'],['Loại văn bản','doc_type'],['Phân loại','doc_subtype'],
+            ['Loại vụ án','case_type'],['Cấp tòa','court_level'],['Năm','year'],['Ngày ban hành','issue_date'],
+            ['Cơ quan ban hành','issuing_authority'],['Thẩm quyền','jurisdiction'],['Chủ đề','subject'],
+            ['Số Án Lệ','precedent_number'],['Ngày thông qua Án Lệ','adopted_date'],['Điều khoản áp dụng','applied_article_code'],
+            ['Số trang','num_pages'],['URL PDF','pdf_url']
+        ];
+        let infoHtml='<div class="meta-grid">';
+        for(const [label,key] of fields){
+            let val = d[key];
+            if(!val && val!==0) val='—';
+            if(key==='pdf_url' && val!=='—') val=`<a href="${esc(val)}" target="_blank" style="color:var(--blue-600)">${esc(val)}</a>`;
+            else val=esc(String(val));
+            infoHtml+=`<div class="meta-item"><div class="mk">${label}</div><div class="mv">${val}</div></div>`;
+        }
+        infoHtml+='</div>';
+        if(d.principle_text){
+            infoHtml+=`<div style="margin-top:14px;padding:12px;background:var(--amber-50);border:1px solid #fde68a;border-radius:var(--rs)"><div class="mk" style="font-size:10px;font-weight:600;color:var(--amber-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">📌 Nguyên tắc pháp lý (Án Lệ)</div><div style="font-size:12px;color:var(--g800);line-height:1.6;white-space:pre-wrap">${esc(d.principle_text)}</div></div>`;
+        }
+        document.getElementById('anle-dp-info').innerHTML=infoHtml;
+        // Content tab
+        const contentBox=document.getElementById('anle-dp-content');
+        if(d.markdown){
+            contentBox.innerHTML='';
+            const iframe=document.createElement('iframe');
+            iframe.className='content-frame';
+            iframe.style.cssText='width:100%;min-height:600px;border:1px solid var(--g200);border-radius:var(--rs)';
+            contentBox.appendChild(iframe);
+            const mdHtml = d.markdown.replace(/\n/g,'<br>');
+            iframe.srcdoc=`<style>body{font-family:system-ui,-apple-system,sans-serif;line-height:1.7;color:#1e293b;padding:16px 20px;font-size:14px} p{margin:8px 0} h1,h2,h3{margin:16px 0 8px;color:#0f172a}</style>`+mdHtml;
+        }else{
+            contentBox.innerHTML='<div class="empty"><p>Không có toàn văn</p></div>';
+        }
+    }catch(e){document.getElementById('anle-dp-info').innerHTML='<div class="empty"><p>Lỗi tải dữ liệu</p></div>';console.error(e)}
+}
+function closeAnleDetail(){document.getElementById('anleDetailModal').classList.remove('active')}
+function switchAnleDtab(id,el){
+    const modal=el.closest('.modal');
+    modal.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+    modal.querySelectorAll('.detail-panel').forEach(p=>p.classList.remove('active'));document.getElementById('anle-dp-'+id).classList.add('active');
+}
+
+// ── PHÁP ĐIỂN DETAIL ──
+async function openPhapdienDetail(anchor){
+    const modal = document.getElementById('phapdienDetailModal');
+    modal.classList.add('active');
+    document.getElementById('phapdienDetailTitle').textContent='Đang tải...';
+    document.getElementById('pd-dp-info').innerHTML='<div class="loading-bar"><div class="bar"></div></div>';
+    document.getElementById('pd-dp-content').innerHTML='';
+    document.getElementById('pd-dp-notes').innerHTML='';
+    // Reset tabs
+    modal.querySelectorAll('.dtab').forEach((t,i)=>t.classList.toggle('active',i===0));
+    modal.querySelectorAll('.detail-panel').forEach((p,i)=>p.classList.toggle('active',i===0));
+    try{
+        const r=await api('/phapdien/'+encodeURIComponent(anchor));
+        if(r.status===401){logout();return}
+        if(!r.ok){toast('Không tìm thấy Điều khoản','err');closePhapdienDetail();return}
+        const d=await r.json();
+        document.getElementById('phapdienDetailTitle').textContent=d.article_title||'Không có tiêu đề';
+        // Info tab
+        const fields=[
+            ['Mã Điều khoản','article_anchor'],['Tiêu đề','article_title'],['Chương','chapter_title'],
+            ['Đề mục','subject_title'],['Mã Đề mục','subject_id'],
+            ['Chủ đề','topic_title'],['Mã Chủ đề','topic_id'],['Số thứ tự Chủ đề','topic_number'],
+            ['Số từ','content_word_count'],['URL nguồn','source_url']
+        ];
+        let infoHtml='<div class="meta-grid">';
+        for(const [label,key] of fields){
+            let val=d[key];
+            if(!val && val!==0) val='—';
+            if(key==='source_url' && val!=='—') val=`<a href="${esc(val)}" target="_blank" style="color:var(--blue-600);word-break:break-all">${esc(val)}</a>`;
+            else val=esc(String(val));
+            infoHtml+=`<div class="meta-item"><div class="mk">${label}</div><div class="mv">${val}</div></div>`;
+        }
+        infoHtml+='</div>';
+        document.getElementById('pd-dp-info').innerHTML=infoHtml;
+        // Content tab
+        const contentBox=document.getElementById('pd-dp-content');
+        if(d.content_text){
+            contentBox.innerHTML='';
+            const iframe=document.createElement('iframe');
+            iframe.className='content-frame';
+            iframe.style.cssText='width:100%;min-height:500px;border:1px solid var(--g200);border-radius:var(--rs)';
+            contentBox.appendChild(iframe);
+            const formatted=esc(d.content_text).replace(/\n/g,'<br>');
+            iframe.srcdoc=`<style>body{font-family:system-ui,-apple-system,sans-serif;line-height:1.7;color:#1e293b;padding:16px 20px;font-size:14px}</style><div>`+formatted+`</div>`;
+        }else{
+            contentBox.innerHTML='<div class="empty"><p>Không có nội dung văn bản</p></div>';
+        }
+        // Notes tab
+        const notesBox=document.getElementById('pd-dp-notes');
+        let notesHtml='';
+        if(d.source_note_text){
+            notesHtml+=`<div style="margin-bottom:14px"><div class="mk" style="font-size:10px;font-weight:600;color:var(--blue-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">📌 Ghi chú nguồn</div><div style="font-size:12px;color:var(--g800);line-height:1.6;padding:10px;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:var(--rs);white-space:pre-wrap">${esc(d.source_note_text)}</div></div>`;
+        }
+        if(d.related_note_text){
+            notesHtml+=`<div><div class="mk" style="font-size:10px;font-weight:600;color:var(--teal-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">🔗 Ghi chú liên quan</div><div style="font-size:12px;color:var(--g800);line-height:1.6;padding:10px;background:var(--teal-50);border:1px solid #99f6e4;border-radius:var(--rs);white-space:pre-wrap">${esc(d.related_note_text)}</div></div>`;
+        }
+        if(!notesHtml) notesHtml='<div class="empty"><p>Không có ghi chú</p></div>';
+        notesBox.innerHTML=notesHtml;
+    }catch(e){document.getElementById('pd-dp-info').innerHTML='<div class="empty"><p>Lỗi tải dữ liệu</p></div>';console.error(e)}
+}
+function closePhapdienDetail(){document.getElementById('phapdienDetailModal').classList.remove('active')}
+function switchPhapdienDtab(id,el){
+    const modal=el.closest('.modal');
+    modal.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+    modal.querySelectorAll('.detail-panel').forEach(p=>p.classList.remove('active'));document.getElementById('pd-dp-'+id).classList.add('active');
 }
 
 // ── CATEGORIES ──

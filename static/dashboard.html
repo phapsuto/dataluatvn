@@ -47,7 +47,7 @@
         .tab-content.active{display:block}
 
         /* ─── STATS CARDS ─── */
-        .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px}
+        .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
         .scard{background:var(--white);border:1px solid var(--g200);border-radius:var(--r);padding:12px 14px;transition:var(--tr)}
         .scard:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
         .scard .sl{font-size:10px;font-weight:500;color:var(--g400);text-transform:uppercase;letter-spacing:.4px}
@@ -59,6 +59,8 @@
         .scard:nth-child(4) .sv{color:var(--teal-600)}
         .scard:nth-child(5) .sv{color:var(--purple-600)}
         .scard:nth-child(6) .sv{color:var(--amber-600)}
+        .scard:nth-child(7) .sv{color:var(--blue-500)}
+        .scard:nth-child(8) .sv{color:var(--green-500)}
 
         /* ─── PROGRESS BAR ─── */
         .progress-wrap{background:var(--white);border:1px solid var(--g200);border-radius:var(--r);padding:14px;margin-bottom:14px}
@@ -322,6 +324,8 @@ async function fetchStats(){
             <div class="scard"><div class="sl">Có nội dung</div><div class="sv">${n(d.with_content)}</div><div class="ss">Content: ${d.content_db_size_mb}MB</div></div>
             <div class="scard"><div class="sl">Thiếu nội dung</div><div class="sv">${n(d.without_content)}</div><div class="ss">Cần tải thêm</div></div>
             <div class="scard"><div class="sl">FTS Indexed</div><div class="sv">${n(d.fts_indexed)}</div><div class="ss">Full-text search</div></div>
+            <div class="scard"><div class="sl">Án Lệ & Bản Án</div><div class="sv">${n(d.total_anle)}</div><div class="ss">${n(d.total_precedents)} Án lệ chính thức</div></div>
+            <div class="scard"><div class="sl">Pháp Điển</div><div class="sv">${n(d.total_phapdien)}</div><div class="ss">${n(d.total_glossary)} thuật ngữ</div></div>
             <div class="scard"><div class="sl">Liên kết</div><div class="sv">${n(d.total_relationships)}</div><div class="ss">Relationships</div></div>
             <div class="scard"><div class="sl">Sửa đổi</div><div class="sv">${n(d.total_modifications)}</div><div class="ss">Modifications</div></div>
         `;

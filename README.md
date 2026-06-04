@@ -24,7 +24,13 @@
 
 ```
 dataluatvn/
-├── server.py                      # REST API server (FastAPI) — Port 2004
+├── server.py                      # REST API server (FastAPI) — Slim entry point
+├── app/                           # Modular API Architecture
+│   ├── config.py                  # Configurations & Swagger Metadata
+│   ├── database.py                # DB connections & Optimizations
+│   ├── dependencies.py            # JWT & API Key authentication
+│   ├── routers/                   # API Routes (laws, anle, phapdien, admin, dashboard)
+│   └── schemas/                   # Pydantic models
 ├── download_all_to_sqlite.py      # Tải bộ dữ liệu gốc từ HuggingFace
 ├── split_content_db.py            # Tách content_html ra DB riêng (tối ưu RAM)
 ├── sync_new_laws.py               # Đồng bộ văn bản mới hàng đêm
@@ -34,7 +40,8 @@ dataluatvn/
 ├── requirements.txt               # Python dependencies
 ├── Dockerfile                     # Docker image build
 ├── docker-compose.yml             # Docker Compose deployment
-├── static/admin.html              # Trang quản trị API Keys
+├── static/admin.html              # Trang quản trị API Keys & Tìm kiếm
+├── static/dashboard.html          # Trang Dashboard thống kê & Crawler
 ├── huongdan.md                    # Hướng dẫn kết nối API & Database
 └── KE_HOACH_XAY_DUNG_DATA_PHAP_LUAT.md  # Kiến trúc & lộ trình
 ```
@@ -102,6 +109,27 @@ API chạy trên **port 2004**. Tài liệu tương tác đầy đủ tại `/do
 | `GET`  | `/laws/categories/types` | Danh sách loại văn bản |
 | `GET`  | `/laws/categories/fields` | Danh sách lĩnh vực |
 | `GET`  | `/laws/categories/agencies` | Danh sách cơ quan ban hành |
+
+### ⚖️ Án Lệ
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET`  | `/anle/search` | Tìm kiếm Án Lệ, Bản Án (FTS5) |
+| `GET`  | `/anle/{doc_name}` | Xem chi tiết & toàn văn markdown |
+| `GET`  | `/anle/stats` | Thống kê dữ liệu Án Lệ |
+| `GET`  | `/anle/categories/case-types` | Danh sách loại vụ án |
+| `GET`  | `/anle/categories/court-levels` | Danh sách cấp tòa |
+
+### 📖 Pháp Điển
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET`  | `/phapdien/search` | Tìm kiếm Điều khoản Pháp Điển (FTS5) |
+| `GET`  | `/phapdien/{article_anchor}` | Xem chi tiết Điều khoản |
+| `GET`  | `/phapdien/stats` | Thống kê Pháp Điển |
+| `GET`  | `/phapdien/subjects` | Danh sách Đề mục |
+| `GET`  | `/phapdien/topics` | Danh sách Chủ đề |
+| `GET`  | `/phapdien/glossary` | Danh sách thuật ngữ VI-EN |
 
 ---
 
@@ -249,6 +277,12 @@ curl -H "X-API-Key: $API_KEY" http://localhost:2004/laws/categories/fields
 
 # 9. Danh sách cơ quan ban hành
 curl -H "X-API-Key: $API_KEY" http://localhost:2004/laws/categories/agencies
+
+# 10. Tìm kiếm Án Lệ
+curl -H "X-API-Key: $API_KEY" "http://localhost:2004/anle/search?q=dân+sự&limit=5"
+
+# 11. Tìm kiếm Pháp Điển
+curl -H "X-API-Key: $API_KEY" "http://localhost:2004/phapdien/search?q=lao+động&limit=5"
 ```
 
 ---
