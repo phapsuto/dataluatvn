@@ -31,7 +31,7 @@ CONTENT_DB = "content_store.db"
 LOG_NAME = "fill_missing.log"
 PROGRESS_FILE = "crawler_progress.json"
 PID_FILE = "crawler.pid"
-BASE_URL = "https://vbpl.vn/van-ban/chi-tiet"
+BASE_URL = "https://vbpl.vn"
 
 db_lock = asyncio.Lock()
 _shutdown = False
@@ -148,6 +148,7 @@ async def crawl_documents(missing_ids):
 
     NUM_TABS = int(os.environ.get("CRAWLER_TABS", "5"))
     HEADLESS = os.environ.get("CRAWLER_HEADLESS", "0") == "1"
+    PROXY = os.environ.get("CRAWLER_PROXY", "").strip()
     MAX_RETRIES = 3
 
     stats = {
@@ -172,12 +173,18 @@ async def crawl_documents(missing_ids):
     }
     write_progress(stats)
 
-    log(f"⚡ Cấu hình: {NUM_TABS} tabs, headless={HEADLESS}")
+    log(f"⚡ Cấu hình: {NUM_TABS} tabs, headless={HEADLESS}, proxy={PROXY or 'none'}")
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=HEADLESS)
+        launch_args = ["--ignore-certificate-errors", "--disable-blink-features=AutomationControlled"]
+        launch_opts = {"headless": HEADLESS, "args": launch_args}
+        if PROXY:
+            launch_opts["proxy"] = {"server": PROXY}
+            log(f"🌐 Sử dụng proxy: {PROXY}")
+        browser = await p.chromium.launch(**launch_opts)
         context = await browser.new_context(
             viewport={"width": 1280, "height": 900},
+            ignore_https_errors=True,
             user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         )
@@ -196,14 +203,69 @@ async def crawl_documents(missing_ids):
             if _shutdown:
                 return
             page = pages[tab_idx % len(pages)]
-            
+
+            # Lấy thông tin VB từ DB để tìm trên vbpl.vn mới
+            async with db_lock:
+                row = conn_main.execute(
+                    "SELECT so_ky_hieu, title FROM documents WHERE id = ?", (item_id,)
+                ).fetchone()
+            if not row:
+                stats["skip"] += 1
+                return
+            so_hieu, title = row[0] or "", row[1] or ""
+
             for attempt in range(MAX_RETRIES):
                 if _shutdown:
                     return
                 try:
-                    resp = await page.goto(f"{BASE_URL}/{item_id}", 
-                                          wait_until="domcontentloaded", timeout=25000)
-                    await page.wait_for_timeout(1500)
+                    # Tìm kiếm bằng số ký hiệu trên vbpl.vn mới
+                    search_keyword = so_hieu if so_hieu else title[:50]
+                    search_url = f"{BASE_URL}/van-ban/trung-uong?keyword={search_keyword}"
+                    await page.goto(search_url, wait_until="domcontentloaded", timeout=25000)
+                    await page.wait_for_timeout(3000)
+
+                    # Tìm và click vào kết quả đầu tiên (Next.js DocumentCard)
+                    detail_url = None
+                    for _ in range(5):
+                        detail_url = await page.evaluate("""
+                        () => {
+                            const cards = document.querySelectorAll('[class*="documentCard"], [class*="DocumentCard"]');
+                            if (cards.length > 0) {
+                                // Find the card that has no skeleton inside
+                                for (const card of cards) {
+                                    if (!card.querySelector('.ant-skeleton')) {
+                                        const els = card.querySelectorAll('div, span');
+                                        for (const el of els) {
+                                            if (el.textContent.trim().length > 30) {
+                                                el.click();
+                                                return true;
+                                            }
+                                        }
+                                        card.click();
+                                        return true;
+                                    }
+                                }
+                            }
+                            return false;
+                        }
+                        """)
+                        if detail_url:
+                            break
+                        await page.wait_for_timeout(2000)
+
+                    if not detail_url:
+                        if attempt < MAX_RETRIES - 1:
+                            stats["retries"] += 1
+                            continue
+                        stats["skip"] += 1
+                        return
+
+                    # Đợi cho trang chi tiết load (URL thay đổi)
+                    try:
+                        await page.wait_for_url("**/chi-tiet/**", timeout=10000)
+                    except:
+                        pass
+                    await page.wait_for_timeout(3000)
 
                     body_text = await page.inner_text("body")
 
@@ -216,26 +278,41 @@ async def crawl_documents(missing_ids):
                         stats["last_error"] = f"Connection error ID {item_id}"
                         return
 
-                    if "Văn bản không tồn tại" in body_text or "404" in body_text:
+                    if "không tồn tại" in body_text or "404" in body_text:
                         async with db_lock:
                             conn_main.execute("UPDATE documents SET has_content = -1 WHERE id = ?", (item_id,))
                             conn_main.commit()
                         stats["skip"] += 1
                         return
 
-                    content_html = None
-                    for sel in ["[class*='fulltext']", "[class*='FullText']",
-                                "[class*='content-detail']", "[class*='ContentDetail']",
-                                "[class*='noi-dung']", "article", "main"]:
-                        el = page.locator(sel).first
-                        if await el.count() > 0:
-                            html = await el.inner_html()
-                            if len(html) > 100:
-                                content_html = html
-                                break
-
-                    if not content_html:
-                        content_html = await page.inner_html("body")
+                    # Extract content from new vbpl.vn page structure
+                    content_html = await page.evaluate("""
+                    () => {
+                        const selectors = [
+                            '[class*="fulltext"]', '[class*="full-text"]',
+                            '[class*="content-detail"]', '[class*="document-content"]',
+                            '[class*="noi-dung"]', '[class*="tab-content"]',
+                            'article', 'main'
+                        ];
+                        for (const sel of selectors) {
+                            const el = document.querySelector(sel);
+                            if (el && el.innerHTML.length > 200) {
+                                return el.innerHTML;
+                            }
+                        }
+                        // Fallback: largest div with legal content
+                        const divs = Array.from(document.querySelectorAll('div'));
+                        let best = null, bestLen = 0;
+                        for (const div of divs) {
+                            if (div.innerHTML.length > 500 && div.innerHTML.includes('Điều')
+                                && div.innerHTML.length > bestLen) {
+                                bestLen = div.innerHTML.length;
+                                best = div.innerHTML;
+                            }
+                        }
+                        return best || '';
+                    }
+                    """)
 
                     if content_html and len(content_html) > 50:
                         mods = await save_content_safe(item_id, content_html, conn_main, conn_content)

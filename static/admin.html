@@ -201,8 +201,23 @@
         .toast-err{background:var(--red-600);color:#fff}
         .toast-info{background:var(--blue-600);color:#fff}
 
+        /* ─── EDIT FORM ─── */
+        .edit-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .edit-form .fg{display:flex;flex-direction:column;gap:3px}
+        .edit-form .fg.full{grid-column:1/-1}
+        .edit-form .fg label{font-size:10px;font-weight:600;color:var(--g500);text-transform:uppercase;letter-spacing:.3px}
+        .edit-form .fg input,.edit-form .fg select,.edit-form .fg textarea{width:100%;padding:7px 10px;border:1px solid var(--g200);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--g800);outline:none;transition:var(--tr);background:var(--white)}
+        .edit-form .fg input:focus,.edit-form .fg select:focus,.edit-form .fg textarea:focus{border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(59,130,246,.08)}
+        .edit-form .fg textarea{resize:vertical;min-height:80px}
+        .action-bar{display:flex;gap:6px;align-items:center;margin-left:auto}
+        .btn-edit{background:var(--blue-50);color:var(--blue-600);border:1px solid var(--blue-200)}.btn-edit:hover{background:var(--blue-100)}
+        .btn-warn{background:var(--amber-50);color:var(--amber-600);border:1px solid #fde68a}.btn-warn:hover{background:#fef3c7}
+        .btn-green{background:var(--green-500);color:#fff}.btn-green:hover{background:var(--green-600)}
+        .confirm-box{background:var(--red-50);border:1px solid #fecaca;border-radius:var(--rs);padding:12px;margin-top:10px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--red-600)}
+        .confirm-box .msg{flex:1}
+
         /* ─── RESPONSIVE ─── */
-        @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.cat-grid{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr}.filters{flex-direction:column}.filters select{min-width:100%}}
+        @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.cat-grid{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr}.filters{flex-direction:column}.filters select{min-width:100%}.edit-form{grid-template-columns:1fr}}
         @media(max-width:480px){.stats-row{grid-template-columns:1fr}.tab-btn{padding:8px 10px;font-size:11px}}
     </style>
 </head>
@@ -373,16 +388,22 @@
     <div class="modal">
         <div class="modal-header">
             <h3 id="detailTitle">—</h3>
-            <button class="modal-close" onclick="closeDetail()">✕</button>
+            <div class="action-bar">
+                <button class="btn btn-edit btn-sm" id="btnEditLaw" onclick="openEditLaw()">✏️ Sửa</button>
+                <button class="btn btn-danger btn-sm" id="btnDelLaw" onclick="confirmDeleteLaw()">🗑️ Xóa</button>
+                <button class="modal-close" onclick="closeDetail()">✕</button>
+            </div>
         </div>
         <div class="detail-tabs">
             <button class="dtab active" onclick="switchDtab('info',this)">📋 Thông tin</button>
             <button class="dtab" onclick="switchDtab('content',this)">📄 Nội dung</button>
             <button class="dtab" onclick="switchDtab('rels',this)">🔗 Quan hệ</button>
+            <button class="dtab" id="dtabEditLaw" onclick="switchDtab('edit',this)" style="display:none">✏️ Chỉnh sửa</button>
         </div>
         <div id="dp-info" class="detail-panel active"></div>
         <div id="dp-content" class="detail-panel"></div>
         <div id="dp-rels" class="detail-panel"></div>
+        <div id="dp-edit" class="detail-panel"></div>
     </div>
 </div>
 
@@ -415,14 +436,20 @@
     <div class="modal">
         <div class="modal-header">
             <h3 id="anleDetailTitle">—</h3>
-            <button class="modal-close" onclick="closeAnleDetail()">✕</button>
+            <div class="action-bar">
+                <button class="btn btn-edit btn-sm" onclick="openEditAnle()">✏️ Sửa</button>
+                <button class="btn btn-danger btn-sm" onclick="confirmDeleteAnle()">🗑️ Xóa</button>
+                <button class="modal-close" onclick="closeAnleDetail()">✕</button>
+            </div>
         </div>
         <div class="detail-tabs">
             <button class="dtab active" onclick="switchAnleDtab('info',this)">📋 Thông tin</button>
             <button class="dtab" onclick="switchAnleDtab('content',this)">📄 Toàn văn</button>
+            <button class="dtab" id="dtabEditAnle" onclick="switchAnleDtab('edit',this)" style="display:none">✏️ Chỉnh sửa</button>
         </div>
         <div id="anle-dp-info" class="detail-panel active"></div>
         <div id="anle-dp-content" class="detail-panel"></div>
+        <div id="anle-dp-edit" class="detail-panel"></div>
     </div>
 </div>
 
@@ -431,16 +458,22 @@
     <div class="modal">
         <div class="modal-header">
             <h3 id="phapdienDetailTitle">—</h3>
-            <button class="modal-close" onclick="closePhapdienDetail()">✕</button>
+            <div class="action-bar">
+                <button class="btn btn-edit btn-sm" onclick="openEditPhapdien()">✏️ Sửa</button>
+                <button class="btn btn-danger btn-sm" onclick="confirmDeletePhapdien()">🗑️ Xóa</button>
+                <button class="modal-close" onclick="closePhapdienDetail()">✕</button>
+            </div>
         </div>
         <div class="detail-tabs">
             <button class="dtab active" onclick="switchPhapdienDtab('info',this)">📋 Thông tin</button>
             <button class="dtab" onclick="switchPhapdienDtab('content',this)">📄 Nội dung</button>
             <button class="dtab" onclick="switchPhapdienDtab('notes',this)">📝 Ghi chú</button>
+            <button class="dtab" id="dtabEditPhapdien" onclick="switchPhapdienDtab('edit',this)" style="display:none">✏️ Chỉnh sửa</button>
         </div>
         <div id="pd-dp-info" class="detail-panel active"></div>
         <div id="pd-dp-content" class="detail-panel"></div>
         <div id="pd-dp-notes" class="detail-panel"></div>
+        <div id="pd-dp-edit" class="detail-panel"></div>
     </div>
 </div>
 
@@ -661,6 +694,8 @@ async function openDetail(id){
     toast('Đang tải nội dung văn bản, vui lòng chờ...', 'info');
     try{
         const r=await api('/laws/'+id);if(r.status===401){logout();return}const d=await r.json();
+        _currentLaw = d; _currentLaw.id = id;
+        document.getElementById('dtabEditLaw').style.display='none';
         toast('Đã tải xong!', 'ok');
         document.getElementById('detailTitle').textContent=d.title||'Không có tiêu đề';
         const fields=[['Số ký hiệu','so_ky_hieu'],['Ngày ban hành','ngay_ban_hanh'],['Loại văn bản','loai_van_ban'],['Cơ quan ban hành','co_quan_ban_hanh'],['Ngày có hiệu lực','ngay_co_hieu_luc'],['Ngày hết hiệu lực','ngay_het_hieu_luc'],['Tình trạng','tinh_trang_hieu_luc'],['Ngành','nganh'],['Lĩnh vực','linh_vuc'],['Người ký','nguoi_ky'],['Chức danh','chuc_danh'],['Phạm vi','pham_vi'],['Nguồn thu thập','nguon_thu_thap'],['Ngày đăng công báo','ngay_dang_cong_bao']];
@@ -720,6 +755,8 @@ async function openAnleDetail(docName){
         if(r.status===401){logout();return}
         if(!r.ok){toast('Không tìm thấy bản án','err');closeAnleDetail();return}
         const d=await r.json();
+        _currentAnle = d;
+        document.getElementById('dtabEditAnle').style.display='none';
         document.getElementById('anleDetailTitle').textContent=d.title||'Không có tiêu đề';
         // Info tab
         const fields=[
@@ -780,6 +817,8 @@ async function openPhapdienDetail(anchor){
         if(r.status===401){logout();return}
         if(!r.ok){toast('Không tìm thấy Điều khoản','err');closePhapdienDetail();return}
         const d=await r.json();
+        _currentPhapdien = d;
+        document.getElementById('dtabEditPhapdien').style.display='none';
         document.getElementById('phapdienDetailTitle').textContent=d.article_title||'Không có tiêu đề';
         // Info tab
         const fields=[
@@ -897,6 +936,270 @@ function maskKey(k){return k.length<=14?k:k.substring(0,10)+'••••'+k.sli
 function fmtDate(iso){if(!iso)return'—';try{const d=new Date(iso);return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}catch{return iso}}
 async function clip(t){try{await navigator.clipboard.writeText(t)}catch{const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a)}toast('Đã copy','ok')}
 function toast(msg,type='info'){const c=document.getElementById('toastC');const e=document.createElement('div');e.className='toast toast-'+type;e.textContent=msg;c.appendChild(e);setTimeout(()=>{e.classList.add('out');setTimeout(()=>e.remove(),300)},2500)}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║                 ADMIN CRUD — LAWS                          ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+let _currentLaw = null;
+let _currentAnle = null;
+let _currentPhapdien = null;
+
+function buildEditField(label, name, value, type='text', fullWidth=false) {
+    const cls = fullWidth ? 'fg full' : 'fg';
+    if (type === 'textarea') {
+        return `<div class="${cls}"><label>${label}</label><textarea name="${name}" rows="4">${esc(value||'')}</textarea></div>`;
+    }
+    if (type === 'select-status') {
+        const opts = ['Còn hiệu lực','Hết hiệu lực toàn bộ','Hết hiệu lực một phần','Chưa có hiệu lực','Ngưng hiệu lực'];
+        return `<div class="${cls}"><label>${label}</label><select name="${name}">${opts.map(o=>`<option value="${o}" ${o===value?'selected':''}>${o}</option>`).join('')}<option value="" ${!value?'selected':''}>— Không xác định —</option></select></div>`;
+    }
+    return `<div class="${cls}"><label>${label}</label><input type="${type}" name="${name}" value="${escAttr(value||'')}"></div>`;
+}
+
+function openEditLaw() {
+    if (!_currentLaw) return;
+    const d = _currentLaw;
+    const tab = document.getElementById('dtabEditLaw');
+    tab.style.display = '';
+    tab.click();
+
+    document.getElementById('dp-edit').innerHTML = `
+        <form id="editLawForm" class="edit-form" onsubmit="saveLaw(event)">
+            ${buildEditField('Tiêu đề','title',d.title,'text',true)}
+            ${buildEditField('Số ký hiệu','so_ky_hieu',d.so_ky_hieu)}
+            ${buildEditField('Ngày ban hành','ngay_ban_hanh',d.ngay_ban_hanh)}
+            ${buildEditField('Loại văn bản','loai_van_ban',d.loai_van_ban)}
+            ${buildEditField('Cơ quan ban hành','co_quan_ban_hanh',d.co_quan_ban_hanh)}
+            ${buildEditField('Tình trạng hiệu lực','tinh_trang_hieu_luc',d.tinh_trang_hieu_luc,'select-status')}
+            ${buildEditField('Ngày có hiệu lực','ngay_co_hieu_luc',d.ngay_co_hieu_luc)}
+            ${buildEditField('Ngày hết hiệu lực','ngay_het_hieu_luc',d.ngay_het_hieu_luc)}
+            ${buildEditField('Ngành','nganh',d.nganh)}
+            ${buildEditField('Lĩnh vực','linh_vuc',d.linh_vuc)}
+            ${buildEditField('Người ký','nguoi_ky',d.nguoi_ky)}
+            ${buildEditField('Chức danh','chuc_danh',d.chuc_danh)}
+            ${buildEditField('Phạm vi','pham_vi',d.pham_vi)}
+            ${buildEditField('Nguồn thu thập','nguon_thu_thap',d.nguon_thu_thap)}
+            ${buildEditField('Thông tin áp dụng','thong_tin_ap_dung',d.thong_tin_ap_dung,'textarea',true)}
+            <div class="fg full" style="display:flex;justify-content:flex-end;gap:8px;padding-top:8px">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="switchDtab('info',document.querySelector('#detailModal .dtab'))">Hủy</button>
+                <button type="submit" class="btn btn-green btn-sm" id="saveLawBtn">💾 Lưu thay đổi</button>
+            </div>
+        </form>
+    `;
+}
+
+async function saveLaw(e) {
+    e.preventDefault();
+    if (!_currentLaw) return;
+    const form = document.getElementById('editLawForm');
+    const btn = document.getElementById('saveLawBtn');
+    btn.classList.add('loading'); btn.textContent = 'Đang lưu...';
+
+    const body = {};
+    const formData = new FormData(form);
+    for (const [k, v] of formData.entries()) {
+        if (v !== '' && v !== (_currentLaw[k] || '')) body[k] = v;
+        if (v === '' && _currentLaw[k]) body[k] = '';
+    }
+
+    if (Object.keys(body).length === 0) {
+        toast('Không có thay đổi nào', 'info');
+        btn.classList.remove('loading'); btn.textContent = '💾 Lưu thay đổi';
+        return;
+    }
+
+    try {
+        const r = await apiJson(`/admin/laws/${_currentLaw.id}`, { method: 'PUT', body: JSON.stringify(body) });
+        const d = await r.json();
+        if (r.ok) {
+            toast(d.message, 'ok');
+            openDetail(_currentLaw.id); // Reload
+        } else {
+            toast(d.detail || 'Lỗi cập nhật', 'err');
+        }
+    } catch { toast('Lỗi kết nối', 'err'); }
+    finally { btn.classList.remove('loading'); btn.textContent = '💾 Lưu thay đổi'; }
+}
+
+function confirmDeleteLaw() {
+    if (!_currentLaw) return;
+    if (!confirm(`⚠️ XÁC NHẬN XÓA\n\nVăn bản: ${_currentLaw.title}\nID: ${_currentLaw.id}\n\nHành động này KHÔNG THỂ hoàn tác!`)) return;
+    deleteLaw();
+}
+
+async function deleteLaw() {
+    try {
+        const r = await api(`/admin/laws/${_currentLaw.id}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (r.ok) {
+            toast(d.message, 'ok');
+            closeDetail();
+            doSearch(); // Refresh search results
+        } else {
+            toast(d.detail || 'Lỗi xóa', 'err');
+        }
+    } catch { toast('Lỗi kết nối', 'err'); }
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║                 ADMIN CRUD — ÁN LỆ                         ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function openEditAnle() {
+    if (!_currentAnle) return;
+    const d = _currentAnle;
+    const tab = document.getElementById('dtabEditAnle');
+    tab.style.display = '';
+    tab.click();
+
+    document.getElementById('anle-dp-edit').innerHTML = `
+        <form id="editAnleForm" class="edit-form" onsubmit="saveAnle(event)">
+            ${buildEditField('Tiêu đề','title',d.title,'text',true)}
+            ${buildEditField('Số hiệu','doc_code',d.doc_code)}
+            ${buildEditField('Loại văn bản','doc_type',d.doc_type)}
+            ${buildEditField('Loại vụ án','case_type',d.case_type)}
+            ${buildEditField('Phân loại phụ','doc_subtype',d.doc_subtype)}
+            ${buildEditField('Năm','year',d.year,'number')}
+            ${buildEditField('Ngày ban hành','issue_date',d.issue_date)}
+            ${buildEditField('Cơ quan ban hành','issuing_authority',d.issuing_authority)}
+            ${buildEditField('Cấp tòa','court_level',d.court_level)}
+            ${buildEditField('Thẩm quyền','jurisdiction',d.jurisdiction)}
+            ${buildEditField('Chủ đề','subject',d.subject,'text',true)}
+            ${buildEditField('Số Án Lệ','precedent_number',d.precedent_number)}
+            ${buildEditField('Ngày thông qua','adopted_date',d.adopted_date)}
+            ${buildEditField('Điều khoản áp dụng','applied_article_code',d.applied_article_code)}
+            ${buildEditField('URL PDF','pdf_url',d.pdf_url,'text',true)}
+            ${buildEditField('Nguyên tắc pháp lý','principle_text',d.principle_text,'textarea',true)}
+            <div class="fg full" style="display:flex;justify-content:flex-end;gap:8px;padding-top:8px">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="switchAnleDtab('info',document.querySelector('#anleDetailModal .dtab'))">Hủy</button>
+                <button type="submit" class="btn btn-green btn-sm" id="saveAnleBtn">💾 Lưu thay đổi</button>
+            </div>
+        </form>
+    `;
+}
+
+async function saveAnle(e) {
+    e.preventDefault();
+    if (!_currentAnle) return;
+    const form = document.getElementById('editAnleForm');
+    const btn = document.getElementById('saveAnleBtn');
+    btn.classList.add('loading'); btn.textContent = 'Đang lưu...';
+
+    const body = {};
+    const formData = new FormData(form);
+    for (const [k, v] of formData.entries()) {
+        if (k === 'year') { if (v && v !== String(_currentAnle.year||'')) body[k] = parseInt(v); }
+        else if (v !== (_currentAnle[k] || '')) body[k] = v;
+    }
+
+    if (Object.keys(body).length === 0) {
+        toast('Không có thay đổi nào', 'info');
+        btn.classList.remove('loading'); btn.textContent = '💾 Lưu thay đổi';
+        return;
+    }
+
+    try {
+        const r = await apiJson(`/admin/anle/${encodeURIComponent(_currentAnle.doc_name)}`, { method: 'PUT', body: JSON.stringify(body) });
+        const d = await r.json();
+        if (r.ok) {
+            toast(d.message, 'ok');
+            openAnleDetail(_currentAnle.doc_name);
+        } else { toast(d.detail || 'Lỗi', 'err'); }
+    } catch { toast('Lỗi kết nối', 'err'); }
+    finally { btn.classList.remove('loading'); btn.textContent = '💾 Lưu thay đổi'; }
+}
+
+function confirmDeleteAnle() {
+    if (!_currentAnle) return;
+    if (!confirm(`⚠️ XÁC NHẬN XÓA\n\nÁn Lệ: ${_currentAnle.title}\nDoc: ${_currentAnle.doc_name}\n\nHành động này KHÔNG THỂ hoàn tác!`)) return;
+    deleteAnle();
+}
+
+async function deleteAnle() {
+    try {
+        const r = await api(`/admin/anle/${encodeURIComponent(_currentAnle.doc_name)}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (r.ok) { toast(d.message, 'ok'); closeAnleDetail(); doSearchAnle(); }
+        else { toast(d.detail || 'Lỗi', 'err'); }
+    } catch { toast('Lỗi kết nối', 'err'); }
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║                 ADMIN CRUD — PHÁP ĐIỂN                     ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function openEditPhapdien() {
+    if (!_currentPhapdien) return;
+    const d = _currentPhapdien;
+    const tab = document.getElementById('dtabEditPhapdien');
+    tab.style.display = '';
+    tab.click();
+
+    document.getElementById('pd-dp-edit').innerHTML = `
+        <form id="editPhapdienForm" class="edit-form" onsubmit="savePhapdien(event)">
+            ${buildEditField('Tiêu đề Điều khoản','article_title',d.article_title,'text',true)}
+            ${buildEditField('Chương','chapter_title',d.chapter_title,'text',true)}
+            ${buildEditField('Mã Đề mục','subject_id',d.subject_id)}
+            ${buildEditField('Tên Đề mục','subject_title',d.subject_title)}
+            ${buildEditField('Mã Chủ đề','topic_id',d.topic_id)}
+            ${buildEditField('Tên Chủ đề','topic_title',d.topic_title)}
+            ${buildEditField('Số thứ tự','topic_number',d.topic_number,'number')}
+            ${buildEditField('URL nguồn','source_url',d.source_url)}
+            ${buildEditField('Nội dung','content_text',d.content_text,'textarea',true)}
+            ${buildEditField('Ghi chú nguồn','source_note_text',d.source_note_text,'textarea',true)}
+            ${buildEditField('Ghi chú liên quan','related_note_text',d.related_note_text,'textarea',true)}
+            <div class="fg full" style="display:flex;justify-content:flex-end;gap:8px;padding-top:8px">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="switchPhapdienDtab('info',document.querySelector('#phapdienDetailModal .dtab'))">Hủy</button>
+                <button type="submit" class="btn btn-green btn-sm" id="savePhapdienBtn">💾 Lưu thay đổi</button>
+            </div>
+        </form>
+    `;
+}
+
+async function savePhapdien(e) {
+    e.preventDefault();
+    if (!_currentPhapdien) return;
+    const form = document.getElementById('editPhapdienForm');
+    const btn = document.getElementById('savePhapdienBtn');
+    btn.classList.add('loading'); btn.textContent = 'Đang lưu...';
+
+    const body = {};
+    const formData = new FormData(form);
+    for (const [k, v] of formData.entries()) {
+        if (k === 'topic_number') { if (v && v !== String(_currentPhapdien.topic_number||'')) body[k] = parseInt(v); }
+        else if (v !== (_currentPhapdien[k] || '')) body[k] = v;
+    }
+
+    if (Object.keys(body).length === 0) {
+        toast('Không có thay đổi nào', 'info');
+        btn.classList.remove('loading'); btn.textContent = '💾 Lưu thay đổi';
+        return;
+    }
+
+    try {
+        const r = await apiJson(`/admin/phapdien/${encodeURIComponent(_currentPhapdien.article_anchor)}`, { method: 'PUT', body: JSON.stringify(body) });
+        const d = await r.json();
+        if (r.ok) { toast(d.message, 'ok'); openPhapdienDetail(_currentPhapdien.article_anchor); }
+        else { toast(d.detail || 'Lỗi', 'err'); }
+    } catch { toast('Lỗi kết nối', 'err'); }
+    finally { btn.classList.remove('loading'); btn.textContent = '💾 Lưu thay đổi'; }
+}
+
+function confirmDeletePhapdien() {
+    if (!_currentPhapdien) return;
+    if (!confirm(`⚠️ XÁC NHẬN XÓA\n\nĐiều khoản: ${_currentPhapdien.article_title}\nAnchor: ${_currentPhapdien.article_anchor}\n\nHành động này KHÔNG THỂ hoàn tác!`)) return;
+    deletePhapdien();
+}
+
+async function deletePhapdien() {
+    try {
+        const r = await api(`/admin/phapdien/${encodeURIComponent(_currentPhapdien.article_anchor)}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (r.ok) { toast(d.message, 'ok'); closePhapdienDetail(); doSearchPhapdien(); }
+        else { toast(d.detail || 'Lỗi', 'err'); }
+    } catch { toast('Lỗi kết nối', 'err'); }
+}
 </script>
 </body>
 </html>

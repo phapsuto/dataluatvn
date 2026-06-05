@@ -246,6 +246,7 @@
         <div class="config-row">
             <label>Số tab: <input type="number" id="cfgTabs" min="1" max="20" value="5"></label>
             <label>Giới hạn: <input type="number" id="cfgLimit" min="0" value="0" placeholder="0=all"></label>
+            <label>🌐 Proxy: <input type="text" id="cfgProxy" placeholder="http://user:pass@ip:port" style="width:220px;padding:5px 10px;border:1px solid var(--g200);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none;color:var(--g700)"></label>
             <button class="btn btn-green" onclick="startCrawler()" id="btnStart">▶ Bắt đầu</button>
             <button class="btn btn-red btn-sm" onclick="stopCrawler()" id="btnStop">⏹ Dừng an toàn</button>
         </div>
@@ -253,10 +254,19 @@
 
     <div class="two-cols">
         <div class="card">
-            <div class="card-h"><h3>🔄 Đồng bộ luật mới</h3></div>
+            <div class="card-h"><h3>🔄 Đồng bộ luật mới</h3><span class="badge badge-gray" id="syncStatusBadge">idle</span></div>
             <div class="config-row">
-                <label>Số trang: <input type="number" id="cfgSyncPages" min="1" max="20" value="5"></label>
-                <button class="btn btn-teal" onclick="startSync()">🔄 Quét vbpl.vn</button>
+                <label>Số trang: <input type="number" id="cfgSyncPages" min="1" max="50" value="5"></label>
+                <button class="btn btn-teal" onclick="startSync()" id="btnSync">🔄 Quét vbpl.vn</button>
+            </div>
+            <div id="syncProgress" style="padding:8px 14px;font-size:11px;color:var(--g500);display:none">
+                <div style="display:flex;gap:16px;flex-wrap:wrap">
+                    <span>📄 Mới: <b id="syncNew" style="color:var(--green-600)">0</b></span>
+                    <span>⏭️ Đã có: <b id="syncSkip">0</b></span>
+                    <span>❌ Lỗi: <b id="syncErr" style="color:var(--red-500)">0</b></span>
+                    <span>📑 Trang: <b id="syncPages">0</b></span>
+                </div>
+                <div id="syncRecent" style="margin-top:6px"></div>
             </div>
         </div>
         <div class="card">
@@ -477,11 +487,12 @@ async function checkDoc(){
 async function startCrawler(){
     const tabs=document.getElementById('cfgTabs').value;
     const limit=document.getElementById('cfgLimit').value;
+    const proxy=(document.getElementById('cfgProxy').value||'').trim();
     try{
-        const r=await fetch(API+'/api/dashboard/crawler/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabs:parseInt(tabs),limit:parseInt(limit)})});
+        const r=await fetch(API+'/api/dashboard/crawler/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabs:parseInt(tabs),limit:parseInt(limit),proxy:proxy})});
         const d=await r.json();
         if(d.ok){
-            toast(`Crawler đã khởi chạy! (${tabs} tabs, PID: ${d.pid}${d.headless?' headless':''})`,'ok');
+            toast(`Crawler đã khởi chạy! (${tabs} tabs, PID: ${d.pid}${proxy?', proxy: '+proxy:''}${d.headless?' headless':''})`,'ok');
             document.getElementById('btnStart').disabled=true;
             document.getElementById('btnStop').disabled=false;
         }else{toast(d.error||'Lỗi','err')}
@@ -496,10 +507,47 @@ async function stopCrawler(){
 }
 async function startSync(){
     const pages=document.getElementById('cfgSyncPages').value;
+    const proxy=(document.getElementById('cfgProxy').value||'').trim();
     try{
-        const r=await fetch(API+'/api/dashboard/sync/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pages:parseInt(pages)})});
-        const d=await r.json();toast(d.message||'Sync started','ok');
+        const r=await fetch(API+'/api/dashboard/sync/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pages:parseInt(pages),proxy:proxy})});
+        const d=await r.json();
+        if(d.ok){
+            toast(d.message||'Sync started','ok');
+            document.getElementById('btnSync').disabled=true;
+        }else{toast(d.error||'Lỗi','err')}
     }catch(e){toast('Lỗi: '+e.message,'err')}
+}
+async function fetchSyncProgress(){
+    try{
+        const r=await fetch(API+'/api/dashboard/sync/progress');
+        const d=await r.json();
+        const badge=document.getElementById('syncStatusBadge');
+        const panel=document.getElementById('syncProgress');
+        if(d.status==='idle'&&!d.is_running){
+            badge.textContent='idle';badge.className='badge badge-gray';
+            panel.style.display='none';
+            document.getElementById('btnSync').disabled=false;
+            return;
+        }
+        panel.style.display='block';
+        document.getElementById('syncNew').textContent=d.new_docs||0;
+        document.getElementById('syncSkip').textContent=d.skipped||0;
+        document.getElementById('syncErr').textContent=d.errors||0;
+        document.getElementById('syncPages').textContent=(d.pages_scanned||0)+'/'+(d.max_pages||'?');
+        if(d.is_running){
+            badge.textContent='running';badge.className='badge badge-green';
+            document.getElementById('btnSync').disabled=true;
+        }else{
+            badge.textContent=d.status||'done';badge.className='badge badge-blue';
+            document.getElementById('btnSync').disabled=false;
+        }
+        // Recent docs
+        if(d.recent&&d.recent.length){
+            document.getElementById('syncRecent').innerHTML=d.recent.slice(0,5).map(r=>
+                `<div style="font-size:10px;color:var(--g400);padding:2px 0">✅ ID ${r.id} — ${esc(r.title)} (${r.time})</div>`
+            ).join('');
+        }
+    }catch{}
 }
 async function rebuildFTS(){toast('Rebuilding FTS index...','info');try{const r=await fetch(API+'/api/dashboard/tools/rebuild-fts',{method:'POST'});const d=await r.json();toast(d.message||'Done','ok')}catch(e){toast('Lỗi','err')}}
 async function extractMods(){toast('Extracting modifications...','info');try{const r=await fetch(API+'/api/dashboard/tools/extract-mods',{method:'POST'});const d=await r.json();toast(d.message||'Done','ok')}catch(e){toast('Lỗi','err')}}
@@ -510,10 +558,11 @@ function esc(s){if(!s)return'';const d=document.createElement('div');d.textConte
 function toast(msg,type='info'){const c=document.getElementById('toastC');const t=document.createElement('div');t.className='toast toast-'+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),300)},3000)}
 
 // ─── INIT ───
-fetchStats();fetchLogs();fetchSample();fetchProgress();
+fetchStats();fetchLogs();fetchSample();fetchProgress();fetchSyncProgress();
 setInterval(fetchStats,5000);
 setInterval(fetchLogs,3000);
 setInterval(fetchProgress,2000);
+setInterval(fetchSyncProgress,3000);
 </script>
 </body>
 </html>

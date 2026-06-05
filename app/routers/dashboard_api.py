@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import time
 import signal
@@ -240,14 +241,17 @@ async def dashboard_crawler_start(request: Request):
     body = await request.json()
     tabs = body.get("tabs", 5)
     limit = body.get("limit", 0)
+    proxy = body.get("proxy", "").strip()
 
     script = os.path.join(_PROJECT_ROOT, "fill_missing_content.py")
-    cmd = ["python", script]
+    cmd = [sys.executable, script]
     if limit and limit > 0:
         cmd.append(str(limit))
 
     env = os.environ.copy()
     env["CRAWLER_TABS"] = str(tabs)
+    if proxy:
+        env["CRAWLER_PROXY"] = proxy
     # Auto-detect: headless on Linux, headed on macOS
     import platform
     if platform.system() == "Linux":
@@ -255,6 +259,7 @@ async def dashboard_crawler_start(request: Request):
 
     _crawler_process = subprocess.Popen(cmd, env=env, cwd=_PROJECT_ROOT)
     return {"ok": True, "pid": _crawler_process.pid, "tabs": tabs, "limit": limit,
+            "proxy": proxy or "none",
             "headless": env.get("CRAWLER_HEADLESS", "0") == "1"}
 
 
@@ -281,15 +286,73 @@ def dashboard_crawler_stop():
 
 @router.post("/sync/start")
 async def dashboard_sync_start(request: Request):
+    """Start sync as subprocess. Tự detect ngày mới nhất → quét vbpl.vn."""
+    pid_file = os.path.join(_PROJECT_ROOT, "sync.pid")
+
+    # Check if already running
+    if os.path.exists(pid_file):
+        try:
+            with open(pid_file) as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)
+            return {"ok": False, "error": "Sync đang chạy rồi!", "pid": pid}
+        except (ProcessLookupError, ValueError):
+            try:
+                os.remove(pid_file)
+            except:
+                pass
+
     body = await request.json()
     pages = body.get("pages", 5)
+    proxy = body.get("proxy", "").strip()
+
     script = os.path.join(_PROJECT_ROOT, "sync_new_laws.py")
     if os.path.exists(script):
         env = os.environ.copy()
-        env["MAX_PAGES"] = str(pages)
-        subprocess.Popen(["python", script], env=env, cwd=_PROJECT_ROOT)
-        return {"ok": True, "message": f"Sync đã bắt đầu (quét {pages} trang)"}
+        env["SYNC_PAGES"] = str(pages)
+        if proxy:
+            env["CRAWLER_PROXY"] = proxy
+        import platform
+        if platform.system() == "Linux":
+            env["CRAWLER_HEADLESS"] = "1"
+        proc = subprocess.Popen([sys.executable, script], env=env, cwd=_PROJECT_ROOT)
+        return {"ok": True, "pid": proc.pid, "pages": pages, "proxy": proxy or "none",
+                "message": f"Sync đã bắt đầu (quét {pages} trang)"}
     return {"ok": False, "message": "Script không tồn tại"}
+
+
+@router.get("/sync/progress")
+def dashboard_sync_progress():
+    """Đọc progress từ sync_progress.json."""
+    progress_file = os.path.join(_PROJECT_ROOT, "sync_progress.json")
+    pid_file = os.path.join(_PROJECT_ROOT, "sync.pid")
+
+    is_running = False
+    pid = None
+    if os.path.exists(pid_file):
+        try:
+            with open(pid_file) as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)
+            is_running = True
+        except (ProcessLookupError, ValueError, PermissionError):
+            is_running = False
+            try:
+                os.remove(pid_file)
+            except:
+                pass
+
+    if os.path.exists(progress_file):
+        try:
+            with open(progress_file, encoding="utf-8") as f:
+                data = json.load(f)
+            data["is_running"] = is_running
+            data["pid"] = pid
+            return data
+        except:
+            pass
+
+    return {"status": "idle", "is_running": False, "new_docs": 0}
 
 
 @router.post("/tools/rebuild-fts")
@@ -344,7 +407,7 @@ def dashboard_rebuild_fts():
 def dashboard_extract_mods():
     script = os.path.join(_PROJECT_ROOT, "extract_modifications.py")
     if os.path.exists(script):
-        subprocess.Popen(["python", script], cwd=_PROJECT_ROOT)
+        subprocess.Popen([sys.executable, script], cwd=_PROJECT_ROOT)
         return {"ok": True, "message": "Extract modifications đã bắt đầu"}
     return {"ok": False, "message": "Script không tồn tại"}
 
@@ -353,6 +416,6 @@ def dashboard_extract_mods():
 def dashboard_build_crosslinks():
     script = os.path.join(_PROJECT_ROOT, "build_crosslinks.py")
     if os.path.exists(script):
-        subprocess.Popen(["python", script], cwd=_PROJECT_ROOT)
+        subprocess.Popen([sys.executable, script], cwd=_PROJECT_ROOT)
         return {"ok": True, "message": "Build crosslinks đã bắt đầu"}
     return {"ok": False, "message": "Script không tồn tại"}

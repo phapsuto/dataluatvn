@@ -24,7 +24,9 @@ db_dump.sql
 # ─── Logs & Runtime ───
 *.log
 crawler_progress.json
+sync_progress.json
 crawler.pid
+sync.pid
 
 # ─── Test files (không cần trên production) ───
 test_*.py
