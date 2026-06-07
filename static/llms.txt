@@ -1,0 +1,54 @@
+# DataLuatVN — Vietnamese Legal Documents API & Graph Database
+
+High-performance API system containing over 153,420+ Vietnamese legal documents, 64,400+ codification sections (Pháp Điển), 2,000+ precedents (Án Lệ), and 897,890+ legal relationships (relationships).
+
+## API Authentication
+All API endpoints (except health checks) require an API Key provided in the request headers:
+```http
+X-API-Key: dlvn_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+Alternatively, as a query parameter: `?api_key=dlvn_xxx...`
+
+## Primary AI-Friendly Endpoints
+
+### 1. Document Search
+`GET /laws/search`
+*   **Description**: Search for active and historical legal documents in Vietnam using full-text search (FTS5).
+*   **Query Parameters**:
+    *   `q` (string, required): Search terms or document titles (e.g. "đất đai", "thuế").
+    *   `loai_van_ban` (string, optional): Filter by document type (e.g. "Luật", "Nghị định", "Thông tư").
+    *   `tinh_trang` (string, optional): Filter by effectiveness (e.g. "Còn hiệu lực", "Hết hiệu lực toàn bộ").
+    *   `limit` (integer, default 20): Maximum number of results.
+    *   `offset` (integer, default 0): Starting offset.
+
+### 2. Retrieve Full Document Text
+`GET /laws/{law_id}`
+*   **Description**: Get complete metadata and full clean text of a legal document by its system ID.
+*   **Parameters**:
+    *   `law_id` (integer, path): Unique database ID of the document.
+
+### 3. Document Lineage Graph
+`GET /laws/{law_id}/lineage`
+*   **Description**: Get the legal descent tree of a document, including parent authorizing acts (e.g., a Law that forms the base of a Decree), child detailing circulars, and replacement/amendment nodes.
+*   **Response Format**: Returns a JSON representation of nodes and edges (suitable for rendering libraries like vis-network).
+
+### 4. Overlap & Conflict Check
+`GET /laws/{law_id}/overlaps`
+*   **Description**: Check for overlapping regulations or contradictions between this document and other active documents in the same legal area.
+*   **Logic**: Applies the conflict resolution rules of **Điều 156 Luật ban hành văn bản QPPL 2015**:
+    *   *Rule 1 (Hierarchy)*: Higher rank overrides lower rank (e.g., Constitution > Law > Decree > Circular > Local Province Decision > Local Commune Decision).
+    *   *Rule 2 (Time)*: Same rank, same authority -> newer document overrides older document.
+
+## Document Rank Hierarchy
+Documents are rated on a precedence rank scale from 15 to 100:
+1.  **Hiến pháp** (Constitution): Rank 100
+2.  **Bộ luật / Luật** (Code / Law): Rank 90
+3.  **Nghị quyết của Quốc hội** (Resolution of National Assembly): Rank 85
+4.  **Pháp lệnh** (Ordinance): Rank 80
+5.  **Lệnh / Quyết định của Chủ tịch nước** (Presidential Order): Rank 75
+6.  **Nghị định của Chính phủ** (Government Decree): Rank 70
+7.  **Quyết định của Thủ tướng** (Prime Minister Decision): Rank 65
+8.  **Nghị quyết Hội đồng Thẩm phán TANDTC** (Supreme Court Resolution): Rank 60
+9.  **Thông tư / TTLT** (Circular / Joint Circular): Rank 50
+10. **Cấp địa phương - Tỉnh** (Resolution/Decision of Province level): Rank 40
+11. **Cấp địa phương - Xã/Phường** (Resolution/Decision of Commune level): Rank 20

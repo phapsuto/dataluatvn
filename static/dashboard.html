@@ -6,6 +6,8 @@
     <title>DataLuatVN — Dashboard Quản lý Dữ liệu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Thư viện vis-network vẽ sơ đồ phả hệ -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root{
@@ -194,6 +196,7 @@
 <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('overview',this)">📊 Tổng quan</button>
     <button class="tab-btn" onclick="switchTab('crawler',this)">🕷️ Crawler</button>
+    <button class="tab-btn" onclick="switchTab('lineage',this)">🌳 Đồ thị & Chồng chéo</button>
     <button class="tab-btn" onclick="switchTab('check',this)">🔍 Kiểm tra</button>
     <button class="tab-btn" onclick="switchTab('recent',this)">📄 Gần đây</button>
 </div>
@@ -282,6 +285,59 @@
     <div class="card">
         <div class="card-h"><h3>📜 Crawler Log</h3><span class="badge badge-gray" id="logCountFull">0</span></div>
         <div class="log-body" id="logBodyFull" style="max-height:500px"></div>
+    </div>
+</div>
+
+<!-- TAB: LINEAGE -->
+<div id="tab-lineage" class="tab-content">
+    <div class="two-cols" style="grid-template-columns: 350px 1fr; gap: 14px; align-items: start;">
+        <!-- Left: Search & Analysis -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card">
+                <div class="card-h"><h3>🔍 Nhập ID / Số ký hiệu</h3></div>
+                <div style="padding: 12px;">
+                    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                        <input type="text" id="lineageSearchInput" placeholder="Ví dụ: 80/2015/QH13 hoặc 96122" style="flex:1; padding:7px 10px; border:1px solid var(--g200); border-radius:var(--rs); font-size:12px; outline:none;" onkeypress="if(event.key==='Enter')loadLineageData()">
+                        <button class="btn btn-blue" onclick="loadLineageData()">Xem đồ thị</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="lineageDocCard" style="display: none;">
+                <div class="card-h"><h3 id="lineageDocTitle">Thông tin văn bản</h3></div>
+                <div style="padding: 12px; font-size: 12px; line-height: 1.6;">
+                    <div style="margin-bottom: 8px;"><span style="color:var(--g400); text-transform:uppercase; font-size:10px;">Tiêu đề:</span> <strong id="lineageMetaTitle" style="color:var(--g700)">-</strong></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <div><span style="color:var(--g400); text-transform:uppercase; font-size:10px;">Cơ quan BH:</span> <div id="lineageMetaAgency">-</div></div>
+                        <div><span style="color:var(--g400); text-transform:uppercase; font-size:10px;">Ngày BH:</span> <div id="lineageMetaDate">-</div></div>
+                        <div><span style="color:var(--g400); text-transform:uppercase; font-size:10px;">Loại:</span> <div id="lineageMetaType">-</div></div>
+                        <div><span style="color:var(--g400); text-transform:uppercase; font-size:10px;">Hiệu lực:</span> <div id="lineageMetaStatus">-</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="overlapsCard" style="display: none;">
+                <div class="card-h"><h3>⚠️ Đối soát Chồng chéo & Mâu thuẫn</h3></div>
+                <div id="overlapsList" style="padding: 12px; max-height: 350px; overflow-y: auto;">
+                    <div class="empty">Chưa phát hiện chồng chéo.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Interactive Graph Canvas -->
+        <div class="card" style="display: flex; flex-direction: column; min-height: 550px;">
+            <div class="card-h">
+                <h3>🌳 Sơ đồ Phả hệ & Liên kết Pháp lý</h3>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="btn btn-ghost btn-sm" onclick="resetLineageGraphPhysics()">⚡ Định vị lại</button>
+                </div>
+            </div>
+            <div id="lineage-canvas" style="flex: 1; background: var(--white); min-height: 500px; position: relative; border-top: 1px solid var(--g100);">
+                <div class="empty" style="position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:80%;">
+                    Nhập ID văn bản hoặc số ký hiệu ở cột bên trái để tải sơ đồ cây phả hệ pháp luật.
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -552,6 +608,162 @@ async function fetchSyncProgress(){
 async function rebuildFTS(){toast('Rebuilding FTS index...','info');try{const r=await fetch(API+'/api/dashboard/tools/rebuild-fts',{method:'POST'});const d=await r.json();toast(d.message||'Done','ok')}catch(e){toast('Lỗi','err')}}
 async function extractMods(){toast('Extracting modifications...','info');try{const r=await fetch(API+'/api/dashboard/tools/extract-mods',{method:'POST'});const d=await r.json();toast(d.message||'Done','ok')}catch(e){toast('Lỗi','err')}}
 async function buildCrosslinks(){toast('Building crosslinks...','info');try{const r=await fetch(API+'/api/dashboard/tools/build-crosslinks',{method:'POST'});const d=await r.json();toast(d.message||'Done','ok')}catch(e){toast('Lỗi','err')}}
+
+// ─── LINEAGE GRAPH ───
+let lineageNetworkInstance = null;
+
+function renderLineageGraph(nodesData, edgesData) {
+    const container = document.getElementById('lineage-canvas');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const data = {
+        nodes: new vis.DataSet(nodesData),
+        edges: new vis.DataSet(edgesData)
+    };
+    
+    const options = {
+        nodes: {
+            shape: 'dot',
+            size: 20,
+            font: {
+                size: 11,
+                color: '#334155',
+                face: 'Inter, sans-serif'
+            },
+            borderWidth: 1.5,
+            shadow: { enabled: true, color: 'rgba(0,0,0,0.1)', size: 5, x: 1, y: 1 }
+        },
+        edges: {
+            width: 1.5,
+            font: {
+                size: 9,
+                color: '#64748b',
+                face: 'Inter, sans-serif',
+                align: 'middle'
+            },
+            arrows: {
+                to: { enabled: true, scaleFactor: 0.6 }
+            },
+            smooth: { type: 'curvedCW', roundness: 0.15 }
+        },
+        physics: {
+            enabled: true,
+            solver: 'forceAtlas2Based',
+            forceAtlas2Based: {
+                gravitationalConstant: -50,
+                centralGravity: 0.01,
+                springLength: 120,
+                springConstant: 0.05,
+                damping: 0.4
+            },
+            stabilization: { enabled: true, iterations: 150 }
+        },
+        interaction: {
+            hover: true,
+            tooltipDelay: 150,
+            zoomView: true
+        }
+    };
+    
+    lineageNetworkInstance = new vis.Network(container, data, options);
+    
+    lineageNetworkInstance.on('doubleClick', function(params) {
+        if (params.nodes.length > 0) {
+            const selectId = params.nodes[0];
+            document.getElementById('lineageSearchInput').value = selectId;
+            loadLineageData(selectId);
+        }
+    });
+}
+
+async function loadLineageData(overrideId = null) {
+    let query = document.getElementById('lineageSearchInput').value.trim();
+    if (overrideId) {
+        query = String(overrideId);
+    }
+    if (!query) return;
+    
+    let docId = parseInt(query);
+    
+    if (isNaN(docId)) {
+        try {
+            toast('Đang tìm kiếm văn bản...', 'info');
+            const searchRes = await fetch(API + `/laws/search?q=${encodeURIComponent(query)}&limit=1`);
+            const searchData = await searchRes.json();
+            if (searchData.results && searchData.results.length > 0) {
+                docId = searchData.results[0].id;
+                document.getElementById('lineageSearchInput').value = docId;
+            } else {
+                toast('Không tìm thấy văn bản nào phù hợp số ký hiệu này', 'err');
+                return;
+            }
+        } catch (e) {
+            toast('Lỗi khi tra cứu số hiệu', 'err');
+            return;
+        }
+    }
+    
+    try {
+        toast('Đang dựng cây phả hệ...', 'info');
+        
+        const docRes = await fetch(API + `/laws/${docId}`);
+        const docMeta = await docRes.json();
+        
+        document.getElementById('lineageDocCard').style.display = 'block';
+        document.getElementById('lineageDocTitle').textContent = `📄 Văn bản #${docMeta.id}`;
+        document.getElementById('lineageMetaTitle').textContent = docMeta.title || '-';
+        document.getElementById('lineageMetaAgency').textContent = docMeta.co_quan_ban_hanh || '-';
+        document.getElementById('lineageMetaDate').textContent = docMeta.ngay_ban_hanh || '-';
+        document.getElementById('lineageMetaType').textContent = docMeta.loai_van_ban || '-';
+        document.getElementById('lineageMetaStatus').textContent = docMeta.tinh_trang_hieu_luc || '-';
+        document.getElementById('lineageMetaStatus').style.color = docMeta.tinh_trang_hieu_luc === 'Còn hiệu lực' ? 'var(--green-600)' : 'var(--red-500)';
+        
+        const linRes = await fetch(API + `/laws/${docId}/lineage`);
+        const linData = await linRes.json();
+        renderLineageGraph(linData.nodes, linData.edges);
+        
+        const overRes = await fetch(API + `/laws/${docId}/overlaps`);
+        const overData = await overRes.json();
+        const overList = document.getElementById('overlapsList');
+        
+        document.getElementById('overlapsCard').style.display = 'block';
+        if (overData && overData.length > 0) {
+            overList.innerHTML = overData.map(o => `
+                <div style="border:1px solid var(--g200); border-radius:6px; padding:10px; margin-bottom:8px; background:${o.preferred ? 'var(--green-50)' : 'var(--red-50)'}; border-left:4px solid ${o.preferred ? 'var(--green-600)' : 'var(--red-500)'}; transition:var(--tr);">
+                    <div style="font-weight:600; font-size:11.5px; color:var(--g800); display:flex; justify-content:space-between; align-items:center;">
+                        <span>${esc(o.so_ky_hieu || 'Không số hiệu')}</span>
+                        <span style="font-size:9px; padding:1px 5px; border-radius:3px; background:${o.preferred ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'}; color:${o.preferred ? 'var(--green-600)' : 'var(--red-500)'}; font-weight:500;">
+                            ${o.preferred ? 'Ưu tiên' : 'Không ưu tiên'}
+                        </span>
+                    </div>
+                    <div style="font-size:11px; color:var(--g600); margin:4px 0 6px;">${esc(o.title)}</div>
+                    <div style="font-size:10px; line-height:1.4; color:var(--g500); border-top:1px dashed var(--g200); padding-top:6px;">
+                        <strong>Mối quan hệ:</strong> ${esc(o.relationship)}<br>
+                        <strong>Lý do:</strong> ${esc(o.reason)}<br>
+                        <strong>Căn cứ:</strong> <span style="font-style:italic; color:var(--g600)">${esc(o.clause)}</span>
+                    </div>
+                    <div style="margin-top:6px; display:flex; gap:6px;">
+                        <button class="btn btn-ghost btn-sm" onclick="loadLineageData(${o.doc_id})" style="padding:2px 6px; font-size:9px;">🔍 Xem phả hệ</button>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            overList.innerHTML = '<div class="empty">Không phát hiện xung đột hoặc quy định chồng chéo.</div>';
+        }
+        
+        toast('Tải dữ liệu hoàn tất!', 'ok');
+    } catch (e) {
+        toast('Lỗi khi tải cây phả hệ: ' + e.message, 'err');
+    }
+}
+
+function resetLineageGraphPhysics() {
+    if (lineageNetworkInstance) {
+        lineageNetworkInstance.stabilize();
+    }
+}
 
 // ─── UTILS ───
 function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}

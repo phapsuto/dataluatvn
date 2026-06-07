@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import DB_NAME, API_PORT, DESCRIPTION, TAGS_METADATA
 from app.database import init_admin_db
-from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud
+from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -78,6 +78,7 @@ app.include_router(phapdien.router)
 app.include_router(admin_pages.router)
 app.include_router(dashboard_api.router)
 app.include_router(admin_crud.router)
+app.include_router(lineage.router)
 
 
 # ╔══════════════════════════════════════════════════════════════╗

@@ -1,4 +1,6 @@
+import os
 from fastapi import APIRouter
+from fastapi.responses import PlainTextResponse
 
 from app.database import get_db_connection
 from app.schemas.laws import HealthResponse
@@ -22,3 +24,13 @@ def welcome():
         "redoc_url": "/redoc",
         "admin_url": "/admin",
     }
+
+
+@router.get("/llms.txt", response_class=PlainTextResponse, summary="llms.txt for AI Search Engines")
+def get_llms_txt():
+    """Tệp tin đặc tả dữ liệu phục vụ các AI Search crawler (Perplexity, ChatGPT)."""
+    file_path = os.path.join("static", "llms.txt")
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Vietnamese Legal Documents API system. Visit /docs for OpenAPI specifications."
