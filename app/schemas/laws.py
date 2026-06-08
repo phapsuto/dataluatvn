@@ -74,3 +74,50 @@ class CategoryItem(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class ProvinceItem(BaseModel):
+    code: str
+    name: str
+    full_name: str
+    code_name: Optional[str] = None
+    administrative_unit_id: Optional[int] = None
+
+
+class WardItem(BaseModel):
+    code: str
+    name: str
+    full_name: str
+    code_name: Optional[str] = None
+    province_code: str
+    administrative_unit_id: Optional[int] = None
+
+
+class ChunkBrief(BaseModel):
+    id: int
+    doc_id: int
+    chunk_index: int
+    chunk_type: str
+    chunk_header: Optional[str] = None
+    chunk_text: str
+    token_estimate: Optional[int] = None
+    document_title: Optional[str] = None
+    document_so_ky_hieu: Optional[str] = None
+    document_loai_van_ban: Optional[str] = None
+    document_co_quan_ban_hanh: Optional[str] = None
+    document_tinh_trang_hieu_luc: Optional[str] = None
+    document_ngay_ban_hanh: Optional[str] = None
+    score: Optional[float] = None
+
+
+class PaginatedChunkSearchResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    total_pages: int
+    current_page: int
+    has_next: bool
+    has_previous: bool
+    results: List[ChunkBrief]
+
+

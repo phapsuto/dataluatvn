@@ -176,6 +176,15 @@
         .cpanel-recent .cr-time{font-size:10px;color:var(--g300);margin-left:auto}
         .cpanel-recent .cr-size{font-size:10px;color:var(--g400)}
         @media(max-width:700px){.cpanel-grid{grid-template-columns:repeat(2,1fr)}}
+
+        /* vis.js tooltip transparent overrides */
+        div.vis-tooltip {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            color: inherit !important;
+        }
     </style>
 </head>
 <body>
@@ -618,8 +627,21 @@ function renderLineageGraph(nodesData, edgesData) {
     
     container.innerHTML = '';
     
+    // Convert HTML title strings to DOM elements for proper vis.js tooltip rendering
+    const processedNodes = (nodesData || []).map(n => {
+        if (n.title && typeof n.title === 'string' && n.title.includes('<')) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = n.title.trim();
+            return {
+                ...n,
+                title: wrapper.firstElementChild || wrapper
+            };
+        }
+        return n;
+    });
+
     const data = {
-        nodes: new vis.DataSet(nodesData),
+        nodes: new vis.DataSet(processedNodes),
         edges: new vis.DataSet(edgesData)
     };
     
@@ -652,11 +674,12 @@ function renderLineageGraph(nodesData, edgesData) {
             enabled: true,
             solver: 'forceAtlas2Based',
             forceAtlas2Based: {
-                gravitationalConstant: -50,
-                centralGravity: 0.01,
-                springLength: 120,
+                gravitationalConstant: -140,
+                centralGravity: 0.015,
+                springLength: 140,
                 springConstant: 0.05,
-                damping: 0.4
+                damping: 0.4,
+                avoidOverlap: 1.0
             },
             stabilization: { enabled: true, iterations: 150 }
         },

@@ -9,6 +9,8 @@ import hashlib
 DB_NAME = os.environ.get("DB_PATH", "vietnamese_legal_documents.db")
 CONTENT_DB = os.environ.get("CONTENT_DB_PATH", "content_store.db")
 ADMIN_DB = os.environ.get("ADMIN_DB_PATH", "admin.db")
+MEMORY_DB = os.environ.get("MEMORY_DB_PATH", "user_session_memory.db")
+FPT_CLOUD_API_KEY = os.environ.get("FPT_CLOUD_API_KEY", "sk-o38ypse9lSfaKaDOQ9O7STlEbfZZ0PBLmJ1v_dwlSmM=")
 API_PORT = int(os.environ.get("API_PORT", 2004))
 JWT_SECRET = os.environ.get("JWT_SECRET", "dlvn-jwt-secret-2024-phapsuto-internal")
 JWT_ALGORITHM = "HS256"

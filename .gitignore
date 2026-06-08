@@ -2,16 +2,19 @@
 venv/
 __pycache__/
 *.pyc
-
-# ─── Cache / AI ───
-.hf_cache/
-.gemini/
 *.pyo
 *.pyd
 .Python
 *.egg-info/
 dist/
 build/
+
+# ─── Cache / AI / Vector ───
+.hf_cache/
+.gemini/
+*.pkl
+*.index
+users_memory_faiss/
 
 # ─── Database (quá lớn, không push lên git) ───
 *.db
@@ -27,12 +30,14 @@ crawler_progress.json
 sync_progress.json
 crawler.pid
 sync.pid
+.status_checkpoint.json
 
 # ─── Test files (không cần trên production) ───
 test_*.py
 vbpl_*.png
 vbpl_*.html
 vbpl_cookies.json
+scratch/vietnamese-provinces-database/
 
 # ─── OS ───
 .DS_Store
@@ -45,6 +50,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.code-workspace
+.agents/
 
 # ─── Docker ───
 .dockerignore

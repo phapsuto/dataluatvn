@@ -23,6 +23,7 @@ class GraphNode(BaseModel):
     color: Dict[str, str]
     value: int
     font: Dict[str, Any]
+    size: Optional[int] = None
 
 class GraphEdge(BaseModel):
     from_node: int = Query(..., alias="from")
@@ -123,7 +124,8 @@ def get_node_styling(doc: Dict[str, Any], is_target: bool = False) -> Dict[str, 
         "group": group,
         "color": {"background": bg_color, "border": border_color},
         "title": title_tooltip,
-        "value": 30 if is_target else 20
+        "value": 30 if is_target else 20,
+        "size": 26 if is_target else 15
     }
 
 
@@ -157,11 +159,13 @@ def get_law_lineage(
     _key=Depends(require_api_key),
 ):
     """
-    Truy vấn đệ quy/nhiều bước để xây dựng mạng lưới quan hệ (lineage) của văn bản.
+    Truy vấn thông minh và tối ưu hóa kết nối để xây dựng mạng lưới quan hệ (lineage) của văn bản.
     Đầu ra chuẩn hóa danh sách `nodes` và `edges` để nạp trực tiếp vào thư viện `vis-network`.
     
-    **Các mối quan hệ hướng dọc:** Căn cứ ban hành (Parents) -> Văn bản hướng dẫn thi hành (Children).
-    **Các mối quan hệ hướng ngang:** Sửa đổi, bổ sung, thay thế, đình chỉ.
+    Tối ưu hóa:
+    - Sắp xếp và lọc các nút liên kết trực tiếp theo độ quan trọng pháp lý.
+    - Tìm kiếm 2-hop có chọn lọc nếu tổng số nút nhỏ (<15) để mở rộng đồ thị phong phú.
+    - Truy vấn đồ thị con (subgraph query) để hiển thị tất cả các mối quan hệ giữa các nút trong đồ thị.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -183,50 +187,118 @@ def get_law_lineage(
     """, (law_id, law_id))
     direct_rels = [dict(row) for row in cursor.fetchall()]
 
-    # Thu thập tất cả các ID liên quan trực tiếp
-    connected_ids = {law_id}
+    # Thu thập tất cả các ID liên quan trực tiếp (neighbors)
+    neighbor_ids = set()
     for r in direct_rels:
-        connected_ids.add(r['doc_id'])
-        connected_ids.add(r['other_doc_id'])
+        neighbor_ids.add(r['doc_id'])
+        neighbor_ids.add(r['other_doc_id'])
+    neighbor_ids.discard(law_id)
 
-    # 3. Nếu số lượng node nhỏ (< 15), mở rộng thêm 1 hop của các node con để tạo đồ thị liên kết phong phú
-    all_rels = list(direct_rels)
-    if len(connected_ids) < 15:
-        neighbors = list(connected_ids - {law_id})
-        if neighbors:
-            placeholders = ",".join(["?"] * len(neighbors))
-            # Lấy thêm quan hệ của các neighbor (giới hạn 100 dòng để tránh bùng nổ đồ thị)
-            cursor.execute(f"""
-                SELECT doc_id, other_doc_id, relationship 
-                FROM relationships 
-                WHERE doc_id IN ({placeholders}) OR other_doc_id IN ({placeholders}) 
-                LIMIT 100
-            """, neighbors + neighbors)
-            extra_rels = [dict(row) for row in cursor.fetchall()]
-            
-            # Gộp và lọc trùng
-            existing_pairs = {f"{r['doc_id']}|{r['other_doc_id']}|{r['relationship']}" for r in all_rels}
-            for er in extra_rels:
-                pair_key = f"{er['doc_id']}|{er['other_doc_id']}|{er['relationship']}"
-                if pair_key not in existing_pairs:
-                    all_rels.append(er)
-                    connected_ids.add(er['doc_id'])
-                    connected_ids.add(er['other_doc_id'])
+    # 3. Lấy metadata của các neighbor để xếp hạng độ quan trọng
+    neighbors_meta = {}
+    if neighbor_ids:
+        placeholders = ",".join(["?"] * len(neighbor_ids))
+        cursor.execute(f"""
+            SELECT id, loai_van_ban, co_quan_ban_hanh, so_ky_hieu, ngay_ban_hanh, title, tinh_trang_hieu_luc 
+            FROM documents 
+            WHERE id IN ({placeholders})
+        """, list(neighbor_ids))
+        for row in cursor.fetchall():
+            d = dict(row)
+            neighbors_meta[d["id"]] = d
 
-    # Giới hạn tối đa 60 nodes để đảm bảo hiệu năng vẽ đồ thị
-    final_node_ids = list(connected_ids)[:60]
-    
-    # Fetch toàn bộ thông tin metadata của các node
-    if not final_node_ids:
+    # Định nghĩa trọng số mối quan hệ
+    def get_relationship_weight(rel_str: str) -> int:
+        r = rel_str.lower()
+        if any(x in r for x in ["thay thế", "sửa đổi", "bổ sung", "hết hiệu lực", "đình chỉ"]):
+            return 50  # Quan hệ thay đổi hiệu lực
+        if any(x in r for x in ["căn cứ", "hướng dẫn", "hd, qđ"]):
+            return 30  # Quan hệ phân cấp
+        if "dẫn chiếu" in r:
+            return 10  # Quan hệ dẫn chiếu thông thường
+        return 5
+
+    # Định nghĩa trọng số cấp bậc loại văn bản
+    def get_document_rank_weight(loai_vb: str) -> int:
+        l = (loai_vb or "").strip().lower()
+        if "hiến pháp" in l:
+            return 20
+        if l in ["bộ luật", "luật"]:
+            return 18
+        if l == "pháp lệnh":
+            return 15
+        if l == "nghị định":
+            return 12
+        if l == "quyết định":
+            return 8
+        if "thông tư" in l:
+            return 6
+        return 2
+
+    # Tính điểm quan trọng của từng neighbor
+    neighbor_scores = {}
+    for r in direct_rels:
+        nid = r['doc_id'] if r['other_doc_id'] == law_id else r['other_doc_id']
+        rel_weight = get_relationship_weight(r['relationship'])
+        
+        meta = neighbors_meta.get(nid, {})
+        rank_weight = get_document_rank_weight(meta.get("loai_van_ban") or "")
+        
+        score = rel_weight + rank_weight
+        # Lưu điểm số cao nhất nếu có nhiều quan hệ
+        neighbor_scores[nid] = max(neighbor_scores.get(nid, 0), score)
+
+    # Sắp xếp neighbors theo điểm số giảm dần
+    sorted_neighbors = sorted(neighbor_scores.keys(), key=lambda x: neighbor_scores[x], reverse=True)
+
+    # Giới hạn số lượng neighbors trực tiếp tối đa là 40 để tránh rối mắt
+    selected_neighbors = sorted_neighbors[:40]
+    final_node_ids = {law_id} | set(selected_neighbors)
+
+    # 4. Nếu số lượng node nhỏ (< 15), mở rộng thêm 2-hop cho các neighbors quan trọng nhất
+    if len(final_node_ids) < 15 and selected_neighbors:
+        # Lấy tối đa 5 neighbors hàng đầu để mở rộng 2-hop
+        nodes_to_expand = selected_neighbors[:5]
+        placeholders = ",".join(["?"] * len(nodes_to_expand))
+        
+        cursor.execute(f"""
+            SELECT doc_id, other_doc_id, relationship 
+            FROM relationships 
+            WHERE (doc_id IN ({placeholders}) OR other_doc_id IN ({placeholders}))
+              AND doc_id != ? AND other_doc_id != ?
+            LIMIT 50
+        """, nodes_to_expand + nodes_to_expand + [law_id, law_id])
+        
+        extra_rels = [dict(row) for row in cursor.fetchall()]
+        
+        # Thêm các node 2-hop (chỉ lấy thêm tối đa 15 node mới để tránh quá tải)
+        added_2hop = 0
+        for er in extra_rels:
+            for nid in [er['doc_id'], er['other_doc_id']]:
+                if nid not in final_node_ids and added_2hop < 15:
+                    final_node_ids.add(nid)
+                    added_2hop += 1
+
+    # 5. TRUY VẤN SUBGRAPH: Lấy toàn bộ mối quan hệ ngang/dọc giữa tất cả các node trong đồ thị hiện tại
+    final_node_list = list(final_node_ids)
+    if not final_node_list:
         conn.close()
         return {"nodes": [], "edges": []}
 
-    placeholders = ",".join(["?"] * len(final_node_ids))
-    cursor.execute(f"SELECT * FROM documents WHERE id IN ({placeholders})", final_node_ids)
+    placeholders = ",".join(["?"] * len(final_node_list))
+    cursor.execute(f"""
+        SELECT doc_id, other_doc_id, relationship 
+        FROM relationships 
+        WHERE doc_id IN ({placeholders}) AND other_doc_id IN ({placeholders})
+    """, final_node_list + final_node_list)
+    all_subgraph_rels = [dict(row) for row in cursor.fetchall()]
+
+    # Lấy metadata đầy đủ cho toàn bộ node (bao gồm cả các node 2-hop vừa được thêm)
+    cursor.execute(f"SELECT * FROM documents WHERE id IN ({placeholders})", final_node_list)
     nodes_rows = [dict(row) for row in cursor.fetchall()]
     conn.close()
 
-    # 4. Biến đổi dữ liệu sang định dạng vis-network
+    # 6. Biến đổi dữ liệu sang định dạng vis-network
     nodes = []
     for doc in nodes_rows:
         is_tgt = (doc["id"] == law_id)
@@ -242,6 +314,7 @@ def get_law_lineage(
             "group": style["group"],
             "color": style["color"],
             "value": style["value"],
+            "size": style["size"],  # Kích thước node trực tiếp
             "font": {
                 "size": 13,
                 "color": "#ffffff",
@@ -251,10 +324,18 @@ def get_law_lineage(
             }
         })
 
+    # Deduplicate relationships to prevent duplicate edges
+    seen_edges = set()
     edges = []
-    for r in all_rels:
+    for r in all_subgraph_rels:
         # Chỉ giữ lại các quan hệ mà cả 2 node đều nằm trong danh sách cuối cùng
         if r['doc_id'] in final_node_ids and r['other_doc_id'] in final_node_ids:
+            # Sắp xếp và định danh edge để tránh trùng lặp
+            edge_key = (r['doc_id'], r['other_doc_id'], r['relationship'])
+            if edge_key in seen_edges:
+                continue
+            seen_edges.add(edge_key)
+
             style = get_edge_styling(r['relationship'])
             
             # Chuẩn hóa hướng mũi tên từ cha đến con

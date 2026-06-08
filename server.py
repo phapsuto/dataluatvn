@@ -11,8 +11,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import DB_NAME, API_PORT, DESCRIPTION, TAGS_METADATA
-from app.database import init_admin_db
-from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage
+from app.database import init_admin_db, init_memory_db
+from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage, assistant_memory, chatbot
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -21,8 +21,9 @@ from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pag
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: init admin DB, validate main DB."""
+    """Startup: init admin DB, validate main DB, init assistant memory DB, init hybrid search."""
     init_admin_db()
+    init_memory_db()
     if os.path.exists(DB_NAME):
         try:
             conn = sqlite3.connect(DB_NAME, timeout=30.0)
@@ -35,6 +36,35 @@ async def lifespan(app: FastAPI):
             print(f"⚠️  Could not count documents on startup (database might be busy): {e}")
     else:
         print(f"⚠️  Legal database '{DB_NAME}' not found. Run download_all_to_sqlite.py first.")
+    
+    # Init Hybrid Search (BM25 + FTS5) in background
+    import threading
+    from app.hybrid_search import init_hybrid_engine
+    from app.config import CONTENT_DB
+    def _build_hybrid():
+        try:
+            init_hybrid_engine(DB_NAME, CONTENT_DB)
+        except Exception as e:
+            print(f"⚠️  Hybrid search init failed: {e}")
+    threading.Thread(target=_build_hybrid, daemon=True).start()
+    
+    # Warm-up: Preload Smart Search model + FAISS index (TÙY CHỌN)
+    # Đặt biến PRELOAD_SMART_SEARCH=1 để bật. Mặc định TẮT để tiết kiệm ~1.5 GB RAM.
+    if os.environ.get("PRELOAD_SMART_SEARCH", "0") == "1":
+        def _warmup_smart_search():
+            try:
+                from app.routers.laws import get_smart_search_resources
+                model, index = get_smart_search_resources()
+                if model:
+                    print(f"✅ Smart Search model preloaded (device: {model.device})")
+                if index:
+                    print(f"✅ FAISS index preloaded ({index.ntotal:,} vectors)")
+            except Exception as e:
+                print(f"⚠️  Smart Search warm-up failed (non-critical): {e}")
+        threading.Thread(target=_warmup_smart_search, daemon=True).start()
+    else:
+        print("ℹ️  Smart Search model sẽ lazy-load khi có truy vấn đầu tiên (tiết kiệm RAM).")
+    
     print(f"🚀 API server starting on port {API_PORT}")
     yield
 
@@ -79,6 +109,8 @@ app.include_router(admin_pages.router)
 app.include_router(dashboard_api.router)
 app.include_router(admin_crud.router)
 app.include_router(lineage.router)
+app.include_router(assistant_memory.router)
+app.include_router(chatbot.router)
 
 
 # ╔══════════════════════════════════════════════════════════════╗

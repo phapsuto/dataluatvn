@@ -1,0 +1,13 @@
+graph TD
+    DB_Goc[(vietnamese_legal_documents.db)] -->|Read chunks tuần tự| Script[build_vector_index.py]
+    Script -->|Tải driver GPU MPS| PyTorch[PyTorch & SentenceTransformer]
+    PyTorch -->|Sinh vector 768 chiều| SQLite_Cache[(vector_store.db <br> chunk_vectors BLOB)]
+    
+    subgraph FAISS Building Phase (Khi hoàn thành 100%)
+        SQLite_Cache -->|Đọc theo lô 50k| Normalizer[L2 Normalization]
+        Normalizer -->|Add with IDs| FAISS_Flat[faiss.IndexFlatIP]
+        FAISS_Flat -->|Map IDs| FAISS_Index[faiss.IndexIDMap]
+        FAISS_Index -->|Save to Disk| File_Index[chunks_faiss.index]
+    end
+
+    File_Index -->|Nạp vào RAM khi Server Start| Search_Engine[laws.py / smart_search]

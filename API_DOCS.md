@@ -1,391 +1,337 @@
-# 📚 Tài Liệu API - DataLuatVN
+# 📚 Tài Liệu API - dataluatvn (LuatBot Ultimate)
 
-Tài liệu này cung cấp hướng dẫn chi tiết cách kết nối và sử dụng các API của hệ thống Dữ liệu Pháp luật Việt Nam.
+Tài liệu này cung cấp đặc tả kỹ thuật chi tiết của tất cả các API Endpoint thuộc hệ thống Dữ liệu Pháp luật Việt Nam và AI Chatbot RAG 7 Tầng.
+
+---
 
 ## 🔐 Xác Thực (Authentication)
 
-Tất cả các endpoint truy xuất dữ liệu luật (bắt đầu bằng `/laws/`) **đều yêu cầu API Key**.
+Hệ thống cung cấp hai cơ chế xác thực riêng biệt tùy thuộc vào đối tượng sử dụng:
 
-Bạn có 2 cách để truyền API Key:
-1. **Qua Header (Khuyên dùng):** Thêm header `X-API-Key: dlvn_xxxxxxxxxxxxxxxxxxxxxxxx`
-2. **Qua Query Parameter:** Thêm `?api_key=dlvn_xxxxxxxxxxxxxxxxxxxxxxxx` vào cuối URL.
+### 1. Dành cho Ứng dụng tích hợp (Sử dụng API Key)
+Mọi endpoint tra cứu dữ liệu (bắt đầu bằng `/laws/`, `/anle/`, `/phapdien/`, `/assistant/`) đều yêu cầu phải truyền API Key hợp lệ.
+Bạn có thể truyền API Key bằng 2 cách:
+- **Cách 1 (Khuyên dùng):** Thêm Header `X-API-Key: dlvn_xxxxxxxxxxxxxxxxxxxxxxxx`
+- **Cách 2:** Thêm tham số Query `?api_key=dlvn_xxxxxxxxxxxxxxxxxxxxxxxx` vào URL.
+*Để tạo API Key mới, đăng nhập vào trang quản trị tại: `http://[IP_SERVER]:2004/admin`*
 
-*Để tạo API Key, hãy truy cập trang quản trị tại: `http://[IP_SERVER]:2004/admin`*
+### 2. Dành cho Quản trị viên (Sử dụng JWT Bearer Token)
+Các endpoint quản trị dữ liệu (bắt đầu bằng `/admin/`) yêu cầu xác thực bằng mã Token JWT:
+- Header: `Authorization: Bearer <MÃ_JWT_TOKEN>`
+*Lấy mã JWT bằng cách gọi API `POST /auth/login`.*
 
 ---
 
-## 🚀 Các Endpoints Chính
+## 📡 1. Nhóm API AI Chatbot RAG 7 Tầng (`/assistant`)
 
-### 1. Kiểm tra trạng thái hệ thống
-- **Endpoint:** `GET /`
-- **Xác thực:** Không yêu cầu
-- **Mô tả:** Trả về trạng thái hoạt động của server và tổng số văn bản hiện có trong CSDL.
+Nhóm API kết nối trực tiếp với lõi xử lý AI thông minh tích hợp RAG 7 tầng, quản lý phiên và bộ nhớ người dùng.
 
-### 2. Tìm kiếm và Lọc văn bản (Có hỗ trợ Full-Text Search)
+### 1.1 Gửi câu hỏi cho Trợ lý ảo AI
+Gửi câu hỏi pháp luật tự nhiên của người dùng, lõi RAG 7 tầng sẽ tự động định tuyến, truy xuất lai (BM25 + FAISS + HippoRAG Graph), sinh câu trả lời tự kiểm duyệt (FLARE) và khóa trích dẫn (P-Cite).
+
+- **Endpoint:** `POST /assistant/chat`
+- **Xác thực:** Yêu cầu API Key
+- **Content-Type:** `application/json`
+- **Body Request:**
+  ```json
+  {
+    "prompt": "Quy định về việc sa thải nhân viên khi tự ý nghỉ việc 5 ngày?",
+    "session_id": "session_user_99"
+  }
+  ```
+  *Trong đó `session_id` (tùy chọn) dùng để chatbot ghi nhớ ngữ cảnh lịch sử chat của phiên hội thoại.*
+
+- **Response (JSON):**
+  ```json
+  {
+    "response": "Theo quy định tại Khoản 4 Điều 125 Bộ luật Lao động năm 2019 (Luật số 45/2019/QH14), người sử dụng lao động có quyền áp dụng hình thức xử lý kỷ luật sa thải đối với người lao động tự ý bỏ việc 05 ngày cộng dồn trong thời hạn 30 ngày hoặc 20 ngày cộng dồn trong thời hạn 365 ngày mà không có lý do chính đáng...",
+    "citations": [
+      {
+        "id": 38920,
+        "title": "Bộ luật Lao động năm 2019",
+        "so_ky_hieu": "45/2019/QH14",
+        "loai_van_ban": "Luật",
+        "tinh_trang_hieu_luc": "Còn hiệu lực"
+      }
+    ],
+    "domain": "civil_and_labor",
+    "flare_activated": false,
+    "search_count": 1
+  }
+  ```
+
+### 1.2 Xem trạng thái các nhà cung cấp LLM
+Lấy thông tin mô hình hiện tại đang được sử dụng chính, cấu hình chuỗi dự phòng (fallback) và danh sách các nhà cung cấp LLM được cấu hình trên server.
+
+- **Endpoint:** `GET /assistant/providers`
+- **Xác thực:** Yêu cầu API Key
+- **Response (JSON):**
+  ```json
+  {
+    "active_provider": "gemini",
+    "active_model": "gemini-1.5-flash",
+    "fallback_chain": ["cohere", "openai"],
+    "providers_status": {
+      "gemini": "ONLINE",
+      "cohere": "ONLINE",
+      "openai": "ONLINE"
+    }
+  }
+  ```
+
+### 1.3 Đổi LLM Provider tức thời (Runtime Hot-Swap)
+Chuyển đổi mô hình LLM chính của chatbot ngay lập tức mà không cần khởi động lại máy chủ API.
+
+- **Endpoint:** `POST /assistant/switch-provider`
+- **Xác thực:** Yêu cầu API Key
+- **Body Request:**
+  ```json
+  {
+    "provider": "cohere"
+  }
+  ```
+- **Response (JSON):**
+  ```json
+  {
+    "ok": true,
+    "message": "Đã chuyển đổi active provider sang cohere",
+    "active_model": "command-r-plus"
+  }
+  ```
+
+### 1.4 Xem hồ sơ ghi nhớ người dùng (Long-term Memory Profile)
+Xem các thông tin chi tiết mà bộ nhớ dài hạn Mem0 đã học và lưu trữ về người dùng qua các phiên chat (VD: ngành nghề, vị trí địa lý, chủ đề luật quan tâm).
+
+- **Endpoint:** `GET /assistant/user-profile/{user_id}`
+- **Xác thực:** Yêu cầu API Key
+- **Response (JSON):**
+  ```json
+  {
+    "user_id": "session_user_99",
+    "facts": [
+      "Người dùng sở hữu doanh nghiệp trong lĩnh vực công nghệ thông tin.",
+      "Người dùng quan tâm đến quy định về thuế giá trị gia tăng ở Tp. Hồ Chí Minh."
+    ],
+    "last_updated": "2026-06-08T14:35:10Z"
+  }
+  ```
+
+---
+
+## 📡 2. Nhóm API Văn Bản Pháp Luật (`/laws`)
+
+Nhóm API quản lý dữ liệu văn bản quy phạm pháp luật, liên kết nguồn luật và tìm kiếm lai.
+
+### 2.1 Tìm kiếm lai (FTS5 BM25 Search)
+Tìm kiếm văn bản pháp luật truyền thống khớp từ khóa chính xác dựa trên công cụ Full-Text Search FTS5 của SQLite.
+
 - **Endpoint:** `GET /laws/search`
 - **Xác thực:** Yêu cầu API Key
-- **Mô tả:** Tìm kiếm văn bản theo từ khóa và các bộ lọc. Hệ thống sử dụng **Full-Text Search (FTS5)** nên sẽ tự động sắp xếp các kết quả có độ liên quan cao nhất (relevance) lên đầu nếu bạn truyền từ khóa `q`.
+- **Query Parameters:**
+  *   `q` (string, optional): Từ khóa tìm kiếm.
+  *   `loai_van_ban` (string, optional): Lọc loại văn bản (Luật, Nghị định, Thông tư...).
+  *   `co_quan_ban_hanh` (string, optional): Cơ quan ban hành (Quốc hội, Chính phủ...).
+  *   `tinh_trang` (string, optional): Tình trạng hiệu lực (Còn hiệu lực, Hết hiệu lực...).
+  *   `linh_vuc` (string, optional): Lĩnh vực pháp luật.
+  *   `limit` (int, optional, default=20, max=100): Giới hạn kết quả.
+  *   `offset` (int, optional, default=0): Vị trí bắt đầu phân trang.
+  *   `require_content` (bool, optional, default=false): Chỉ lấy văn bản có nội dung HTML thô.
+- **Response (JSON):**
+  ```json
+  {
+    "total": 142,
+    "limit": 2,
+    "offset": 0,
+    "total_pages": 71,
+    "current_page": 1,
+    "has_next": true,
+    "has_previous": false,
+    "results": [
+      {
+        "id": 38920,
+        "title": "Bộ luật Lao động năm 2019",
+        "so_ky_hieu": "45/2019/QH14",
+        "loai_van_ban": "Luật",
+        "tinh_trang_hieu_luc": "Còn hiệu lực",
+        "ngay_ban_hanh": "2019-11-20"
+      }
+    ]
+  }
+  ```
 
-**Tham số (Query Parameters):**
-| Tham số | Bắt buộc | Kiểu | Mô tả |
-|---|---|---|---|
-| `q` | Không | string | Từ khóa tìm kiếm (khớp với tiêu đề hoặc số ký hiệu). |
-| `loai_van_ban` | Không | string | Lọc theo loại (VD: "Luật", "Nghị định"). |
-| `co_quan_ban_hanh` | Không | string | Lọc theo cơ quan (VD: "Quốc hội"). |
-| `tinh_trang` | Không | string | Tình trạng hiệu lực (VD: "Còn hiệu lực"). |
-| `linh_vuc` | Không | string | Lọc theo lĩnh vực pháp luật. |
-| `limit` | Không | int | Số lượng kết quả tối đa (Mặc định: 20, Max: 100). |
-| `offset` | Không | int | Vị trí bắt đầu (dùng cho phân trang). |
-| `require_content`| Không | bool | Truyền `true` để bộ lọc tự động loại bỏ các văn bản cũ không có ruột HTML. Đảm bảo 100% kết quả trả về có thể xem toàn văn. |
+### 2.2 Tìm kiếm thông minh bằng ngữ nghĩa (Smart Semantic Search)
+Tìm kiếm thông tin theo ý nghĩa câu hỏi bằng mô hình dense vector nhúng phối hợp chỉ mục FAISS. Trả về kết quả phù hợp ngay cả khi người dùng không dùng từ khóa chính xác trong luật.
 
-**Cấu trúc Phân trang (Pagination) trả về:**
-```json
-{
-  "total": 1399,
-  "limit": 20,
-  "offset": 0,
-  "total_pages": 70,
-  "current_page": 1,
-  "has_next": true,
-  "has_previous": false,
-  "results": [ ... ]
-}
-```
+- **Endpoint:** `GET /laws/smart-search`
+- **Xác thực:** Yêu cầu API Key
+- **Query Parameters:**
+  *   `q` (string, required): Câu hỏi hoặc đoạn văn bản cần tìm kiếm ngữ nghĩa.
+  *   `limit` (int, optional, default=5): Số lượng đoạn văn bản phù hợp muốn lấy.
+- **Response (JSON):**
+  ```json
+  {
+    "query": "quy định nghỉ phép năm của người lao động",
+    "results": [
+      {
+        "chunk_id": 1058291,
+        "law_id": 38920,
+        "title": "Bộ luật Lao động năm 2019",
+        "so_ky_hieu": "45/2019/QH14",
+        "score": 0.892,
+        "content_chunk": "Điều 113. Nghỉ hằng năm: Người lao động làm việc đủ 12 tháng cho một người sử dụng lao động thì được nghỉ hằng năm, hưởng nguyên lương theo hợp đồng lao động..."
+      }
+    ]
+  }
+  ```
 
-**Ví dụ cURL:**
-```bash
-curl -H "X-API-Key: dlvn_123456" "http://localhost:2004/laws/search?q=đất+đai&require_content=true"
-```
+### 2.3 Xem chi tiết toàn văn văn bản
+Lấy thông tin siêu dữ liệu đầy đủ kèm nội dung toàn văn HTML thô lưu trong `content_store.db`.
 
-### 3. Lấy Chi Tiết Toàn Văn
 - **Endpoint:** `GET /laws/{law_id}`
 - **Xác thực:** Yêu cầu API Key
-- **Mô tả:** Lấy toàn bộ metadata và nội dung HTML dài của văn bản.
+- **Response (JSON):**
+  ```json
+  {
+    "id": 38920,
+    "title": "Bộ luật Lao động năm 2019",
+    "so_ky_hieu": "45/2019/QH14",
+    "content_html": "<p><strong>Điều 1. Phạm vi điều chỉnh</strong>...</p>",
+    "tinh_trang_hieu_luc": "Còn hiệu lực",
+    "ngay_ban_hanh": "2019-11-20",
+    "co_quan_ban_hanh": "Quốc hội",
+    "loai_van_ban": "Luật",
+    "nguoi_ky": "Nguyễn Thị Kim Ngân"
+  }
+  ```
 
-**Ví dụ cURL:**
-```bash
-curl -H "X-API-Key: dlvn_123456" http://localhost:2004/laws/38920
-```
+### 2.4 Xem quan hệ liên kết pháp lý
+Lấy danh sách các văn bản có quan hệ sửa đổi, thay thế, căn cứ ban hành hoặc hướng dẫn thi hành với văn bản hiện tại.
 
-### 4. Tra Cứu Quan Hệ Pháp Lý
 - **Endpoint:** `GET /laws/{law_id}/relationships`
 - **Xác thực:** Yêu cầu API Key
-- **Mô tả:** Trả về danh sách các văn bản có liên quan (VD: văn bản thay thế, văn bản hướng dẫn, bị sửa đổi...).
+- **Response (JSON):**
+  ```json
+  {
+    "law_id": 38920,
+    "relationships": [
+      {
+        "other_doc_id": 41250,
+        "so_ky_hieu": "145/2020/NĐ-CP",
+        "title": "Nghị định 145/2020/NĐ-CP quy định chi tiết và hướng dẫn thi hành một số điều của Bộ luật Lao động...",
+        "relationship": "hướng dẫn thi hành"
+      }
+    ]
+  }
+  ```
 
-**Ví dụ cURL:**
-```bash
-curl -H "X-API-Key: dlvn_123456" http://localhost:2004/laws/38920/relationships
-```
+### 2.5 Dữ liệu cây phả hệ pháp lý (Lineage Tree Node/Edge)
+Trả về cấu trúc Node và Edge của mạng lưới phả hệ pháp lý liên kết với văn bản, phục vụ trực tiếp cho thư viện vẽ đồ thị tương tác phía Frontend (như `vis-network`).
 
-### 5. Lấy Danh Mục (Dropdown)
-Các endpoint này dùng để render bộ lọc cho Frontend.
-- **Loại văn bản:** `GET /laws/categories/types`
-- **Lĩnh vực:** `GET /laws/categories/fields`
-- **Cơ quan ban hành:** `GET /laws/categories/agencies`
-
-**Xác thực:** Yêu cầu API Key
+- **Endpoint:** `GET /laws/{law_id}/lineage`
+- **Xác thực:** Yêu cầu API Key
+- **Response (JSON):**
+  ```json
+  {
+    "nodes": [
+      {
+        "id": 38920,
+        "label": "Bộ luật 45/2019/QH14",
+        "title": "Bộ luật Lao động năm 2019",
+        "color": "#10B981"
+      },
+      {
+        "id": 41250,
+        "label": "Nghị định 145/2020/NĐ-CP",
+        "title": "Nghị định hướng dẫn thi hành Bộ luật Lao động...",
+        "color": "#3B82F6"
+      }
+    ],
+    "edges": [
+      {
+        "from": 41250,
+        "to": 38920,
+        "label": "hướng dẫn thi hành",
+        "arrows": "to"
+      }
+    ]
+  }
+  ```
 
 ---
 
-### 6. Tra Cứu Án Lệ & Bản Án
-- **Tìm kiếm:** `GET /anle/search?q=từ_khóa`
-- **Xem chi tiết:** `GET /anle/{doc_name}`
-- **Thống kê:** `GET /anle/stats`
-- **Danh mục:** `GET /anle/categories/case-types` và `GET /anle/categories/court-levels`
+## 📡 3. Nhóm API Án Lệ (`/anle`)
 
-**Xác thực:** Yêu cầu API Key
+Quản lý thông tin Án Lệ Việt Nam.
 
-### 7. Tra Cứu Bộ Pháp Điển
-- **Tìm kiếm:** `GET /phapdien/search?q=từ_khóa`
-- **Xem chi tiết:** `GET /phapdien/{article_anchor}`
-- **Danh mục đề mục:** `GET /phapdien/subjects`
-- **Danh mục chủ đề:** `GET /phapdien/topics`
-- **Thuật ngữ (Glossary):** `GET /phapdien/glossary`
-- **Thống kê:** `GET /phapdien/stats`
-
-**Xác thực:** Yêu cầu API Key
+*   `GET /anle/stats`: Thống kê tổng số lượng án lệ.
+*   `GET /anle/search?q=đất+đai`: Tìm kiếm án lệ bằng chỉ mục FTS5.
+*   `GET /anle/{doc_name}`: Lấy chi tiết toàn văn nội dung án lệ định dạng Markdown.
 
 ---
 
-## 🛠️ Admin CRUD API (Quản trị dữ liệu)
+## 📡 4. Nhóm API Pháp Điển (`/phapdien`)
 
-Các endpoint này dành cho **admin** để tạo mới, chỉnh sửa, xóa dữ liệu pháp luật khi phát hiện sai sót.
+Tra cứu cấu trúc Bộ Pháp Điển Việt Nam.
 
-**Xác thực:** Yêu cầu **JWT Bearer Token** (đăng nhập admin tại `/admin`).
+*   `GET /phapdien/stats`: Thống kê tổng số đề mục, chủ đề pháp điển.
+*   `GET /phapdien/search?q=thuế`: Tìm kiếm nội dung điều khoản pháp điển.
+*   `GET /phapdien/{article_anchor}`: Xem chi tiết điều khoản pháp điển theo khóa định danh.
 
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-```
+---
 
-### 8. CRUD Văn bản Pháp luật
+## 🛠️ 5. Nhóm API Quản Trị Hệ Thống (`/admin`)
 
-#### Tạo văn bản mới
+*Lưu ý: Tất cả các API dưới đây đều yêu cầu Header `Authorization: Bearer <JWT_TOKEN>`*
+
+### 5.1 Đăng nhập lấy mã JWT
+- **Endpoint:** `POST /auth/login`
+- **Body Request (JSON):**
+  ```json
+  {
+    "username": "admin",
+    "password": "mật_khẩu_của_bạn"
+  }
+  ```
+- **Response (JSON):**
+  ```json
+  {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "bearer"
+  }
+  ```
+
+### 5.2 CRUD Văn bản Pháp luật
+
+#### Thêm mới văn bản
 - **Endpoint:** `POST /admin/laws`
-- **Body (JSON):**
+- **Response:**
+  ```json
+  {
+    "ok": true,
+    "message": "Đã tạo văn bản ID 153421",
+    "id": "153421"
+  }
+  ```
 
-| Trường | Bắt buộc | Kiểu | Mô tả |
-|---|---|---|---|
-| `title` | ✅ | string | Tiêu đề văn bản |
-| `so_ky_hieu` | Không | string | Số ký hiệu (VD: "01/2024/NĐ-CP") |
-| `ngay_ban_hanh` | Không | string | Ngày ban hành |
-| `loai_van_ban` | Không | string | Loại văn bản |
-| `co_quan_ban_hanh` | Không | string | Cơ quan ban hành |
-| `tinh_trang_hieu_luc` | Không | string | Tình trạng hiệu lực |
-| `ngay_co_hieu_luc` | Không | string | Ngày có hiệu lực |
-| `ngay_het_hieu_luc` | Không | string | Ngày hết hiệu lực |
-| `nganh` | Không | string | Ngành |
-| `linh_vuc` | Không | string | Lĩnh vực |
-| `nguoi_ky` | Không | string | Người ký |
-| `chuc_danh` | Không | string | Chức danh |
-| `pham_vi` | Không | string | Phạm vi |
-| `nguon_thu_thap` | Không | string | Nguồn thu thập |
-| `ngay_dang_cong_bao` | Không | string | Ngày đăng công báo |
-| `thong_tin_ap_dung` | Không | string | Thông tin áp dụng |
-| `content_html` | Không | string | Nội dung HTML toàn văn |
-
-**Ví dụ cURL:**
-```bash
-curl -X POST http://localhost:2004/admin/laws \
-  -H "Authorization: Bearer YOUR_JWT" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Luật Đất đai năm 2024",
-    "so_ky_hieu": "31/2024/QH15",
-    "loai_van_ban": "Luật",
-    "co_quan_ban_hanh": "Quốc hội",
-    "tinh_trang_hieu_luc": "Còn hiệu lực"
-  }'
-```
-
-**Response:**
-```json
-{
-  "ok": true,
-  "message": "Đã tạo văn bản ID 99999",
-  "id": "99999"
-}
-```
-
-#### Cập nhật văn bản
+#### Cập nhật thông tin văn bản
 - **Endpoint:** `PUT /admin/laws/{law_id}`
-- **Body:** Chỉ gửi các trường cần sửa (partial update).
-
-```bash
-curl -X PUT http://localhost:2004/admin/laws/38920 \
-  -H "Authorization: Bearer YOUR_JWT" \
-  -H "Content-Type: application/json" \
-  -d '{"tinh_trang_hieu_luc": "Hết hiệu lực toàn bộ", "nguoi_ky": "Nguyễn Văn A"}'
-```
+- **Body Request (JSON):** Gửi các trường cần chỉnh sửa (hỗ trợ partial update).
+- **Response:**
+  ```json
+  {
+    "ok": true,
+    "message": "Đã cập nhật văn bản ID 38920",
+    "id": "38920"
+  }
+  ```
 
 #### Xóa văn bản
 - **Endpoint:** `DELETE /admin/laws/{law_id}`
-- **Lưu ý:** Xóa vĩnh viễn bản ghi + FTS index + relationships + content HTML.
-
-```bash
-curl -X DELETE http://localhost:2004/admin/laws/38920 \
-  -H "Authorization: Bearer YOUR_JWT"
-```
-
----
-
-### 9. CRUD Án Lệ & Bản Án
-
-#### Tạo Án Lệ mới
-- **Endpoint:** `POST /admin/anle`
-- **Body (JSON):**
-
-| Trường | Bắt buộc | Kiểu | Mô tả |
-|---|---|---|---|
-| `doc_name` | ✅ | string | Mã văn bản (unique) |
-| `title` | ✅ | string | Tiêu đề bản án |
-| `doc_code` | Không | string | Số hiệu |
-| `doc_type` | Không | string | Loại văn bản |
-| `case_type` | Không | string | Loại vụ án |
-| `doc_subtype` | Không | string | Phân loại phụ |
-| `year` | Không | int | Năm |
-| `issue_date` | Không | string | Ngày ban hành |
-| `issuing_authority` | Không | string | Cơ quan ban hành |
-| `court_level` | Không | string | Cấp tòa |
-| `jurisdiction` | Không | string | Thẩm quyền |
-| `subject` | Không | string | Chủ đề |
-| `markdown` | Không | string | Toàn văn markdown |
-| `precedent_number` | Không | string | Số Án Lệ |
-| `adopted_date` | Không | string | Ngày thông qua |
-| `applied_article_code` | Không | string | Mã điều luật áp dụng |
-| `principle_text` | Không | string | Nguyên tắc pháp lý |
-| `pdf_url` | Không | string | URL file PDF |
-
-**Ví dụ cURL:**
-```bash
-curl -X POST http://localhost:2004/admin/anle \
-  -H "Authorization: Bearer YOUR_JWT" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "doc_name": "AL-2024-01",
-    "title": "Án lệ số 01/2024/AL về tranh chấp đất đai",
-    "case_type": "Dân sự",
-    "court_level": "Tòa án nhân dân tối cao",
-    "year": 2024,
-    "precedent_number": "01/2024/AL"
-  }'
-```
-
-#### Cập nhật Án Lệ
-- **Endpoint:** `PUT /admin/anle/{doc_name}`
-
-```bash
-curl -X PUT http://localhost:2004/admin/anle/AL-2024-01 \
-  -H "Authorization: Bearer YOUR_JWT" \
-  -H "Content-Type: application/json" \
-  -d '{"court_level": "TAND Cấp cao tại Hà Nội"}'
-```
-
-#### Xóa Án Lệ
-- **Endpoint:** `DELETE /admin/anle/{doc_name}`
-
-```bash
-curl -X DELETE http://localhost:2004/admin/anle/AL-2024-01 \
-  -H "Authorization: Bearer YOUR_JWT"
-```
-
----
-
-### 10. CRUD Bộ Pháp Điển
-
-#### Tạo Điều khoản mới
-- **Endpoint:** `POST /admin/phapdien`
-- **Body (JSON):**
-
-| Trường | Bắt buộc | Kiểu | Mô tả |
-|---|---|---|---|
-| `article_anchor` | ✅ | string | Mã định danh (unique) |
-| `article_title` | ✅ | string | Tiêu đề Điều khoản |
-| `chapter_title` | Không | string | Tiêu đề Chương |
-| `subject_id` | Không | string | Mã Đề mục |
-| `subject_title` | Không | string | Tên Đề mục |
-| `topic_id` | Không | string | Mã Chủ đề |
-| `topic_number` | Không | int | Số thứ tự |
-| `topic_title` | Không | string | Tên Chủ đề |
-| `content_text` | Không | string | Nội dung văn bản |
-| `source_url` | Không | string | URL nguồn |
-| `source_note_text` | Không | string | Ghi chú nguồn |
-| `related_note_text` | Không | string | Ghi chú liên quan |
-
-**Ví dụ cURL:**
-```bash
-curl -X POST http://localhost:2004/admin/phapdien \
-  -H "Authorization: Bearer YOUR_JWT" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "article_anchor": "dieu-1-luat-dat-dai-2024",
-    "article_title": "Điều 1. Phạm vi điều chỉnh",
-    "subject_title": "Đất đai",
-    "content_text": "Luật này quy định về chế độ sở hữu đất đai..."
-  }'
-```
-
-#### Cập nhật Điều khoản
-- **Endpoint:** `PUT /admin/phapdien/{article_anchor}`
-
-```bash
-curl -X PUT http://localhost:2004/admin/phapdien/dieu-1-luat-dat-dai-2024 \
-  -H "Authorization: Bearer YOUR_JWT" \
-  -H "Content-Type: application/json" \
-  -d '{"content_text": "Nội dung đã được cập nhật..."}'
-```
-
-#### Xóa Điều khoản
-- **Endpoint:** `DELETE /admin/phapdien/{article_anchor}`
-
-```bash
-curl -X DELETE http://localhost:2004/admin/phapdien/dieu-1-luat-dat-dai-2024 \
-  -H "Authorization: Bearer YOUR_JWT"
-```
-
----
-
-### Response chung cho CRUD
-
-Tất cả endpoints CRUD trả về cùng format:
-
-```json
-{
-  "ok": true,
-  "message": "Đã tạo/cập nhật/xóa ...",
-  "id": "38920"
-}
-```
-
-**Lỗi thường gặp:**
-
-| HTTP Code | Mô tả |
-|---|---|
-| `401` | Chưa đăng nhập / JWT hết hạn |
-| `404` | Không tìm thấy bản ghi |
-| `409` | Trùng lặp (duplicate doc_name/article_anchor) |
-| `422` | Dữ liệu gửi lên không hợp lệ |
-
----
-
-## 🔗 Tích Hợp Frontend (Javascript Ví Dụ)
-
-### Tra cứu dữ liệu (dùng API Key)
-
-```javascript
-const API_KEY = "dlvn_YOUR_API_KEY_HERE";
-const BASE_URL = "http://localhost:2004";
-
-async function searchLaws(keyword) {
-    const url = new URL(`${BASE_URL}/laws/search`);
-    url.searchParams.append("q", keyword);
-    url.searchParams.append("require_content", "true");
-
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {
-            "X-API-Key": API_KEY
-        }
-    });
-    
-    if (response.ok) {
-        const data = await response.json();
-        console.log(`Tìm thấy ${data.total} kết quả!`, data.results);
-    } else {
-        console.error("Lỗi xác thực hoặc server", await response.text());
-    }
-}
-```
-
-### Admin CRUD (dùng JWT)
-
-```javascript
-const JWT_TOKEN = "eyJhbGciOi..."; // Lấy từ POST /auth/login
-
-// Cập nhật văn bản
-async function updateLaw(lawId, changes) {
-    const response = await fetch(`${BASE_URL}/admin/laws/${lawId}`, {
-        method: "PUT",
-        headers: {
-            "Authorization": `Bearer ${JWT_TOKEN}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(changes)
-    });
-    
-    const result = await response.json();
-    if (result.ok) {
-        console.log("✅", result.message);
-    } else {
-        console.error("❌", result.detail || result.message);
-    }
-}
-
-// Ví dụ: sửa tình trạng hiệu lực
-updateLaw(38920, { tinh_trang_hieu_luc: "Hết hiệu lực toàn bộ" });
-```
-
-## 📖 Swagger UI
-Tài liệu tương tác trực tiếp (cho phép test API ngay trên trình duyệt) được tự động tạo tại:
-- **Swagger UI:** `http://[IP_SERVER]:2004/docs`
-- **ReDoc:** `http://[IP_SERVER]:2004/redoc`
-
+- **Response:**
+  ```json
+  {
+    "ok": true,
+    "message": "Đã xóa vĩnh viễn văn bản ID 38920",
+    "id": "38920"
+  }
+  ```

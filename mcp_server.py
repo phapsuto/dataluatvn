@@ -9,6 +9,9 @@ import json
 import sqlite3
 import re
 import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from bs4 import BeautifulSoup, NavigableString
 
 DB_NAME = os.environ.get("DB_PATH", "vietnamese_legal_documents.db")
 CONTENT_DB = os.environ.get("CONTENT_DB_PATH", "content_store.db")
@@ -33,22 +36,108 @@ def get_content_db():
     return None
 
 def clean_html(html_str: str) -> str:
-    """Chuyển đổi nội dung HTML thô sang dạng Text sạch dễ đọc cho LLM."""
+    """Chuyển đổi nội dung HTML thô sang dạng Markdown sạch tối giản tiết kiệm token cho LLM."""
     if not html_str:
         return ""
-    # Thay thế thẻ ngắt khối bằng dòng mới
-    text = re.sub(r'</?(p|div|tr|h1|h2|h3|h4|h5|h6|br|li)[^>]*>', '\n', html_str)
-    # Loại bỏ toàn bộ các thẻ HTML khác
-    text = re.sub(r'<[^>]+>', '', text)
-    # Chuẩn hóa khoảng trắng và dòng trống
-    text = re.sub(r'\n+', '\n', text)
-    text = re.sub(r' +', ' ', text)
-    return text.strip()
+    
+    # Chuẩn hóa khoảng trắng đặc biệt và thực thể HTML phổ biến trước khi parse
+    html_str = html_str.replace("\xa0", " ").replace("&nbsp;", " ")
+    
+    soup = BeautifulSoup(html_str, "html.parser")
+    
+    # Loại bỏ các thẻ không chứa nội dung text hữu ích cho LLM
+    trash_tags = ["script", "style", "head", "title", "meta", "link", "img", "video", 
+                  "audio", "iframe", "noscript", "svg", "canvas", "map", "object", "embed"]
+    for tag in trash_tags:
+        for element in soup.find_all(tag):
+            element.decompose()
+
+    # Chuyển đổi thẻ <a> sang text thuần (bỏ href để tiết kiệm token)
+    for a_tag in soup.find_all("a"):
+        text = a_tag.get_text().strip()
+        a_tag.replace_with(NavigableString(text) if text else "")
+
+    def convert_element(element) -> str:
+        if isinstance(element, NavigableString):
+            return element.string if element.string else ""
+            
+        tag_name = element.name
+        
+        # Xử lý hàng trong bảng (Table Row)
+        if tag_name == "tr":
+            cells = []
+            is_header = False
+            for child in element.children:
+                if child.name in ["td", "th"]:
+                    cell_text = "".join(convert_element(c) for c in child.children).strip()
+                    cell_text = re.sub(r'\s+', ' ', cell_text)  # Thu nhỏ khoảng trắng trong cell
+                    if child.name == "th":
+                        is_header = True
+                        cells.append(f"**{cell_text}**")
+                    else:
+                        cells.append(cell_text)
+            if cells:
+                row_str = "| " + " | ".join(cells) + " |"
+                if is_header:
+                    separator = "| " + " | ".join(["---"] * len(cells)) + " |"
+                    return f"\n{row_str}\n{separator}"
+                return f"\n{row_str}"
+            return ""
+            
+        children_text = "".join(convert_element(child) for child in element.children)
+        
+        if tag_name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+            level = int(tag_name[1])
+            return f"\n\n{'#' * level} {children_text.strip()}\n\n"
+        elif tag_name == "p":
+            return f"\n\n{children_text.strip()}\n\n"
+        elif tag_name == "div":
+            text = children_text.strip()
+            return f"\n{text}\n" if text else ""
+        elif tag_name == "br":
+            return "\n"
+        elif tag_name == "li":
+            return f"\n- {children_text.strip()}"
+        elif tag_name in ["ul", "ol"]:
+            return f"\n{children_text}\n"
+        elif tag_name in ["strong", "b"]:
+            inner = children_text.strip()
+            return f" **{inner}** " if inner else ""
+        elif tag_name in ["em", "i"]:
+            inner = children_text.strip()
+            return f" *{inner}* " if inner else ""
+        elif tag_name == "table":
+            table_md = "\n".join(line.strip() for line in children_text.splitlines() if line.strip())
+            return f"\n\n{table_md}\n\n"
+            
+        return children_text
+
+    markdown_text = convert_element(soup)
+    
+    # Làm sạch khoảng trắng dòng sau khi chuyển đổi
+    lines = []
+    for line in markdown_text.splitlines():
+        cleaned_line = line.strip()
+        if cleaned_line:
+            cleaned_line = re.sub(r'[ \t]+', ' ', cleaned_line)
+            lines.append(cleaned_line)
+        else:
+            lines.append("")
+            
+    result_text = "\n".join(lines)
+    result_text = re.sub(r'\n{3,}', '\n\n', result_text)
+    result_text = re.sub(r'\n+\-\s', '\n- ', result_text)
+    
+    return result_text.strip()
+
+stdout_lock = threading.Lock()
 
 def send_response(response_dict: dict):
-    """Gửi phản hồi JSON-RPC qua stdout."""
-    sys.stdout.write(json.dumps(response_dict) + "\n")
-    sys.stdout.flush()
+    """Gửi phản hồi JSON-RPC qua stdout (Thread-safe)."""
+    payload = json.dumps(response_dict) + "\n"
+    with stdout_lock:
+        sys.stdout.write(payload)
+        sys.stdout.flush()
 
 def handle_tool_call(name: str, arguments: dict) -> dict:
     """Xử lý gọi công cụ từ phía AI client."""
@@ -314,10 +403,120 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
             
     return {"content": [{"type": "text", "text": f"Lỗi: Không tìm thấy tool '{name}'."}]}
 
+def process_request(req: dict):
+    """Xử lý yêu cầu trong một worker thread riêng biệt để đảm bảo đa nhiệm."""
+    try:
+        method = req.get("method")
+        req_id = req.get("id")
+        
+        if method == "initialize":
+            res = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {}
+                    },
+                    "serverInfo": {
+                        "name": "dataluatvn-mcp",
+                        "version": "1.0.0"
+                    }
+                }
+            }
+            send_response(res)
+            
+        elif method == "notifications/initialized":
+            log("Khởi tạo hoàn tất. Client đã sẵn sàng kết nối.")
+            
+        elif method == "tools/list":
+            res = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {
+                    "tools": [
+                        {
+                            "name": "search_laws",
+                            "description": "Tìm kiếm văn bản pháp luật Việt Nam bằng từ khóa (FTS) và các bộ lọc.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "q": {"type": "string", "description": "Từ khóa tìm kiếm (ví dụ: đất đai, thuế)"},
+                                    "loai_van_ban": {"type": "string", "description": "Lọc theo loại văn bản (ví dụ: Luật, Nghị định, Thông tư)"},
+                                    "tinh_trang": {"type": "string", "description": "Lọc theo tình trạng hiệu lực (ví dụ: Còn hiệu lực)"},
+                                    "limit": {"type": "integer", "description": "Giới hạn số kết quả trả về (mặc định: 5)"}
+                                },
+                                "required": ["q"]
+                            }
+                        },
+                        {
+                            "name": "get_document",
+                            "description": "Lấy chi tiết toàn văn (văn bản thô sạch) và metadata của văn bản bằng ID hoặc Số ký hiệu.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "integer", "description": "ID văn bản trong database (ví dụ: 96122)"},
+                                    "so_ky_hieu": {"type": "string", "description": "Số ký hiệu văn bản (ví dụ: 80/2015/QH13)"}
+                                }
+                            }
+                        },
+                        {
+                            "name": "get_law_lineage",
+                            "description": "Lấy sơ đồ cây phả hệ pháp luật (văn bản căn cứ, hướng dẫn thi hành, sửa đổi) của văn bản.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "integer", "description": "ID văn bản"}
+                                },
+                                "required": ["id"]
+                            }
+                        },
+                        {
+                            "name": "check_law_overlaps",
+                            "description": "Kiểm tra sự chồng chéo, xung đột quy định và đề xuất áp dụng theo Điều 156 Luật ban hành VBQPPL.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "integer", "description": "ID văn bản"}
+                                },
+                                "required": ["id"]
+                            }
+                        }
+                    ]
+                }
+            }
+            send_response(res)
+            
+        elif method == "tools/call":
+            params = req.get("params", {})
+            name = params.get("name")
+            arguments = params.get("arguments", {})
+            
+            result = handle_tool_call(name, arguments)
+            res = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": result
+            }
+            send_response(res)
+            
+        else:
+            if req_id is not None:
+                send_response({
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "error": {
+                        "code": -32601,
+                        "message": f"Phương thức không hợp lệ: {method}"
+                    }
+                })
+    except Exception as e:
+        log(f"Lỗi xử lý yêu cầu: {str(e)}")
+
 def main():
     log("Khởi động dataluatvn MCP Server...")
+    executor = ThreadPoolExecutor(max_workers=10)
     
-    # Đọc tuần tự từ stdin
     while True:
         try:
             line = sys.stdin.readline()
@@ -325,112 +524,10 @@ def main():
                 break
             
             req = json.loads(line)
-            method = req.get("method")
-            req_id = req.get("id")
-            
-            if method == "initialize":
-                res = {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "result": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {
-                            "tools": {}
-                        },
-                        "serverInfo": {
-                            "name": "dataluatvn-mcp",
-                            "version": "1.0.0"
-                        }
-                    }
-                }
-                send_response(res)
-                
-            elif method == "notifications/initialized":
-                log("Khởi tạo hoàn tất. Client đã sẵn sàng kết nối.")
-                
-            elif method == "tools/list":
-                res = {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "result": {
-                        "tools": [
-                            {
-                                "name": "search_laws",
-                                "description": "Tìm kiếm văn bản pháp luật Việt Nam bằng từ khóa (FTS) và các bộ lọc.",
-                                "inputSchema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "q": {"type": "string", "description": "Từ khóa tìm kiếm (ví dụ: đất đai, thuế)"},
-                                        "loai_van_ban": {"type": "string", "description": "Lọc theo loại văn bản (ví dụ: Luật, Nghị định, Thông tư)"},
-                                        "tinh_trang": {"type": "string", "description": "Lọc theo tình trạng hiệu lực (ví dụ: Còn hiệu lực)"},
-                                        "limit": {"type": "integer", "description": "Giới hạn số kết quả trả về (mặc định: 5)"}
-                                    },
-                                    "required": ["q"]
-                                }
-                            },
-                            {
-                                "name": "get_document",
-                                "description": "Lấy chi tiết toàn văn (văn bản thô sạch) và metadata của văn bản bằng ID hoặc Số ký hiệu.",
-                                "inputSchema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {"type": "integer", "description": "ID văn bản trong database (ví dụ: 96122)"},
-                                        "so_ky_hieu": {"type": "string", "description": "Số ký hiệu văn bản (ví dụ: 80/2015/QH13)"}
-                                    }
-                                }
-                            },
-                            {
-                                "name": "get_law_lineage",
-                                "description": "Lấy sơ đồ cây phả hệ pháp luật (văn bản căn cứ, hướng dẫn thi hành, sửa đổi) của văn bản.",
-                                "inputSchema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {"type": "integer", "description": "ID văn bản"}
-                                    },
-                                    "required": ["id"]
-                                }
-                            },
-                            {
-                                "name": "check_law_overlaps",
-                                "description": "Kiểm tra sự chồng chéo, xung đột quy định và đề xuất áp dụng theo Điều 156 Luật ban hành VBQPPL.",
-                                "inputSchema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {"type": "integer", "description": "ID văn bản"}
-                                    },
-                                    "required": ["id"]
-                                }
-                            }
-                        ]
-                    }
-                }
-                send_response(res)
-                
-            elif method == "tools/call":
-                params = req.get("params", {})
-                name = params.get("name")
-                arguments = params.get("arguments", {})
-                
-                result = handle_tool_call(name, arguments)
-                res = {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "result": result
-                }
-                send_response(res)
-                
-            else:
-                if req_id is not None:
-                    send_response({
-                        "jsonrpc": "2.0",
-                        "id": req_id,
-                        "error": {
-                            "code": -32601,
-                            "message": f"Phương thức không hợp lệ: {method}"
-                        }
-                    })
+            executor.submit(process_request, req)
         except Exception as e:
-            log(f"Lỗi phân tích cú pháp yêu cầu: {str(e)}")
+            log(f"Lỗi đọc hoặc phân tích cú pháp yêu cầu: {str(e)}")
 
 if __name__ == "__main__":
     main()
+
