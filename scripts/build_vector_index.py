@@ -196,8 +196,53 @@ def main():
         print(f"💾 Đang lưu FAISS index vào file: {FAISS_INDEX_FILE}")
         faiss.write_index(index, FAISS_INDEX_FILE)
         print(f"🎉 Đã xây dựng xong chỉ mục FAISS với {index.ntotal} vectors!")
+        
+        # Xây dựng đồ thị tri thức bổ trợ
+        build_document_graph(limit=args.limit)
     else:
         print("❌ Không tìm thấy vector nào để xây dựng chỉ mục.")
+
+def build_document_graph(limit=None):
+    from app.utils.light_graph_manager import LightGraphManager
+    from app.config import CONTENT_DB
+    
+    print("\n🕸️  Đang xây dựng Đồ thị tri thức pháp lý (Light Graph Store)...")
+    LightGraphManager.init_db()
+    
+    conn = sqlite3.connect(MAIN_DB)
+    conn.execute(f"ATTACH DATABASE '{CONTENT_DB}' AS content_db")
+    cursor = conn.cursor()
+    
+    query = """
+        SELECT d.id, d.title, d.so_ky_hieu, c.content_html 
+        FROM documents d
+        JOIN content_db.document_content c ON d.id = c.doc_id
+    """
+    if limit:
+        query += f" LIMIT {limit}"
+        
+    try:
+        cursor.execute(query)
+        processed = 0
+        while True:
+            rows = cursor.fetchmany(1000)
+            if not rows:
+                break
+            for row in rows:
+                doc_id, title, so_ky_hieu, content_html = row
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(content_html or "", "html.parser")
+                text = soup.get_text()
+                
+                LightGraphManager.index_document_graph(doc_id, title or "", so_ky_hieu or "", text)
+                processed += 1
+                if processed % 5000 == 0:
+                    print(f"  - Đã nạp {processed} văn bản vào đồ thị tri thức...")
+        print(f"🎉 Đã hoàn thành xây dựng đồ thị tri thức cho {processed} văn bản!")
+    except Exception as e:
+        print(f"⚠️  Lỗi khi xây dựng đồ thị tri thức: {e}")
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     main()

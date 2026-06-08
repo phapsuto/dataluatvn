@@ -52,6 +52,65 @@ def split_large_chunk(text, max_words=400, overlap=100):
             break
     return sub_chunks
 
+def split_article_by_clauses(paragraphs, article_header, max_words=400, overlap=100):
+    if not paragraphs:
+        return []
+    
+    words_count = len(" ".join(paragraphs).split())
+    if words_count <= max_words:
+        return ["\n".join(paragraphs)]
+        
+    clause_pattern = re.compile(r'^(\d+)[\.\)]\s+(.*)')
+    
+    preamble_paras = []
+    clauses = []
+    current_clause = []
+    
+    for para in paragraphs:
+        para_clean = para.strip()
+        match = clause_pattern.match(para_clean)
+        if match:
+            if current_clause:
+                clauses.append(current_clause)
+            current_clause = [para]
+        else:
+            if current_clause:
+                current_clause.append(para)
+            else:
+                preamble_paras.append(para)
+                
+    if current_clause:
+        clauses.append(current_clause)
+        
+    if not clauses:
+        full_text = "\n".join(paragraphs)
+        return split_large_chunk(full_text, max_words=max_words, overlap=overlap)
+        
+    preamble_text = "\n".join(preamble_paras)
+    preamble_word_len = len(preamble_text.split())
+    clause_chunks = []
+    
+    for cl in clauses:
+        cl_text = "\n".join(cl)
+        combined_text = f"{preamble_text}\n{cl_text}" if preamble_text else cl_text
+        combined_words = len(combined_text.split())
+        
+        if combined_words <= max_words:
+            clause_chunks.append(combined_text)
+        else:
+            remaining_limit = max_words - preamble_word_len
+            if remaining_limit < 50:
+                remaining_limit = max_words
+                preamble_to_use = ""
+            else:
+                preamble_to_use = preamble_text
+                
+            sub_chunks = split_large_chunk(cl_text, max_words=remaining_limit, overlap=overlap)
+            for sc in sub_chunks:
+                clause_chunks.append(f"{preamble_to_use}\n{sc}" if preamble_to_use else sc)
+                
+    return clause_chunks
+
 def parse_html_to_chunks(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     content_container = soup.find(id="content") or soup.find(class_="noi-dung") or soup
@@ -89,7 +148,7 @@ def parse_html_to_chunks(html_content):
                 raw_chunks.append({
                     "chunk_type": current_type,
                     "chunk_header": current_header,
-                    "chunk_text": "\n".join(current_chunk)
+                    "chunk_paras": current_chunk
                 })
                 current_chunk = []
             
@@ -107,13 +166,14 @@ def parse_html_to_chunks(html_content):
         raw_chunks.append({
             "chunk_type": current_type,
             "chunk_header": current_header,
-            "chunk_text": "\n".join(current_chunk)
+            "chunk_paras": current_chunk
         })
         
     final_chunks = []
     chunk_index = 0
     for rc in raw_chunks:
-        text = rc["chunk_text"]
+        paras = rc["chunk_paras"]
+        text = "\n".join(paras)
         words_count = len(text.split())
         
         if words_count <= 400:
@@ -126,9 +186,11 @@ def parse_html_to_chunks(html_content):
             })
             chunk_index += 1
         else:
-            sub_texts = split_large_chunk(text, max_words=400, overlap=100)
+            sub_texts = split_article_by_clauses(paras, rc["chunk_header"], max_words=400, overlap=100)
             for sub_idx, sub_text in enumerate(sub_texts):
-                sub_header = f"{rc['chunk_header']} (Phần {sub_idx + 1})"
+                sub_header = rc["chunk_header"]
+                if len(sub_texts) > 1:
+                    sub_header += f" (Phần {sub_idx + 1})"
                 final_chunks.append({
                     "chunk_index": chunk_index,
                     "chunk_type": rc["chunk_type"],

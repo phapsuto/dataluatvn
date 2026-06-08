@@ -70,7 +70,21 @@ def ultimate_retrieve(
                 "score": item.get("score") or 0.0
             })
             
-    # 3. Perform 1-hop Graph Expansion (HippoRAG style)
+    # 3. Perform 1-hop Graph Expansion (HippoRAG style & LightGraph Store)
+    try:
+        from app.utils.light_graph_manager import LightGraphManager
+        seed_ids = [c["doc_id"] for c in initial_candidates[:5]]
+        connected_ids = LightGraphManager.query_graph_connections(seed_ids, max_depth=1)
+        for cid in connected_ids:
+            if cid not in seen_docs:
+                seen_docs.add(cid)
+                initial_candidates.append({
+                    "doc_id": cid,
+                    "score": 0.5
+                })
+    except Exception as e:
+        print(f"⚠️ LightGraphManager traversal warning: {e}")
+        
     expanded_docs = graph_expand_results(initial_candidates, query=query, hops=1, max_nodes=20)
     expanded_doc_ids = [doc["id"] for doc in expanded_docs]
     

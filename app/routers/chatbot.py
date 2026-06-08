@@ -230,42 +230,151 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     # ── STEP 2: LOAD LONG-TERM MEMORY (Tầng 2) ──
     memory_context = LegalUserMemory.get_relevant_memories(session_id, prompt)
     
-    # ── STEP 3 & 4: ULTIMATE RETRIEVAL (Tầng 3 + 4) ──
-    print(f"🔍 [Retrieval] Searching database for query: '{prompt}' (Filters: {route_res['doc_type_filter']})")
-    formatted_chunks, citation_map = ultimate_retrieve(
-        query=prompt,
-        domain_filter=route_res["doc_type_filter"],
-        top_k=5
-    )
-    
-    # ── STEP 5: FLARE ACTIVE RETRIEVAL (Tầng 5) ──
-    # We aggregate the stream events to respond back with a single JSON payload to preserve frontend contract
-    final_text = ""
-    flare_activated = False
-    search_count = 0
-    final_citations = citation_map
-    
-    try:
-        async for event in flare_generate_stream(
-            query=prompt,
-            initial_context=formatted_chunks,
-            citation_map=citation_map,
-            domain_filter=route_res["doc_type_filter"]
-        ):
-            ev_type = event.get("type")
-            if ev_type == "token":
-                final_text += event["content"]
-            elif ev_type == "status":
-                flare_activated = event["flare_activated"]
-                search_count = event["search_count"]
-                final_citations = event["citation_map"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi trong quá trình RAG / FLARE Generation: {str(e)}")
+    # ── STEP 3 & 4: ADAPTIVE RETRIEVAL (Tầng 3 + 4) ──
+    if route_res.get("routing_level") == 2:
+        # Level 2: Simple Lookup using FTS5 (no vector, no graph)
+        print(f"⚡ [Adaptive Routing] Level 2 (Simple Lookup) detected for query: '{prompt}'")
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-    citations_list = list(final_citations.values())
+        # Match using FTS5 on chunks_fts
+        query_terms = " AND ".join([f'"{w}"' for w in prompt.split() if len(w) > 1])
+        fts_query = """
+            SELECT c.doc_id, c.chunk_header, c.chunk_text, d.title, d.so_ky_hieu, d.loai_van_ban, d.tinh_trang_hieu_luc
+            FROM document_chunks c
+            JOIN documents d ON c.doc_id = d.id
+            JOIN chunks_fts f ON f.rowid = c.id
+            WHERE chunks_fts MATCH ?
+            LIMIT 3
+        """
+        formatted_parts = []
+        citation_map = {}
+        try:
+            cursor.execute(fts_query, (query_terms,))
+            rows = cursor.fetchall()
+            for r_idx, row in enumerate(rows):
+                doc_id, chunk_header, chunk_text, title, so_ky_hieu, loai_van_ban, tinh_trang = row
+                cid_label = f"C{r_idx+1}"
+                formatted_parts.append(f"[{cid_label}] [{title} - Số hiệu: {so_ky_hieu} - {chunk_header}]\n{chunk_text}")
+                citation_map[cid_label] = {
+                    "id": doc_id,
+                    "title": title,
+                    "so_ky_hieu": so_ky_hieu,
+                    "loai_van_ban": loai_van_ban,
+                    "tinh_trang_hieu_luc": tinh_trang
+                }
+            formatted_chunks = "\n\n====================\n\n".join(formatted_parts)
+        except Exception as e:
+            print(f"⚠️ Level 2 FTS lookup fallback to ultimate_retrieve due to: {e}")
+            formatted_chunks, citation_map = ultimate_retrieve(query=prompt, domain_filter=route_res["doc_type_filter"], top_k=3)
+        finally:
+            conn.close()
+            
+        flare_activated = False
+        search_count = 0
+    else:
+        # Level 3: Complex Retrieval (FTS5 + FAISS + HippoRAG Graph Expansion + Cohere Rerank)
+        print(f"🔍 [Retrieval] Searching database for Level 3 query: '{prompt}' (Filters: {route_res['doc_type_filter']})")
+        formatted_chunks, citation_map = ultimate_retrieve(
+            query=prompt,
+            domain_filter=route_res["doc_type_filter"],
+            top_k=5
+        )
+        flare_activated = False
+        search_count = 1
+
+    # ── STEP 5: SPECULATIVE RAG (DRAFT-THEN-VERIFY) (Tầng 5) ──
+    final_text = ""
+    citations_list = list(citation_map.values())
     
+    if formatted_chunks:
+        try:
+            import asyncio
+            
+            # Helper to get full response from LLM
+            async def get_llm_response(msgs: List[Dict[str, str]], sys_p: str, prov: str) -> str:
+                old_prov = LLMGateway._active_provider
+                LLMGateway._active_provider = prov
+                try:
+                    tokens = []
+                    async for token in LLMGateway.call_stream(msgs, sys_p):
+                        tokens.append(token)
+                    return "".join(tokens)
+                finally:
+                    LLMGateway._active_provider = old_prov
+
+            # Split context chunks
+            chunks_list = formatted_chunks.split("\n\n====================\n\n")
+            
+            # Partition chunks into subsets for parallel drafting
+            subsets = []
+            if len(chunks_list) > 3:
+                subsets.append(chunks_list[:3])
+                subsets.append(chunks_list[3:])
+            else:
+                subsets.append(chunks_list)
+                
+            # Draft generation in parallel using gemini (Gemini 2.0 Flash)
+            async def generate_draft(sub_chunks: List[str], idx: int) -> str:
+                context = "\n\n".join(sub_chunks)
+                sys_prompt = (
+                    "Bạn là trợ lý pháp lý ảo. Hãy đọc kỹ phần tài liệu pháp luật được cung cấp dưới đây và viết một bản thảo nháp ngắn gọn (dưới 200 từ) trả lời câu hỏi của người dùng.\n"
+                    "Trích dẫn chính xác ký hiệu neo [C1], [C2], v.v. từ tài liệu gốc. Nếu tài liệu không liên quan đến câu hỏi, hãy ghi 'Không có thông tin liên quan'.\n"
+                    f"--- Tài liệu gốc ---\n{context}"
+                )
+                return await get_llm_response([{"role": "user", "content": prompt}], sys_prompt, "gemini")
+
+            draft_tasks = [generate_draft(sub, idx) for idx, sub in enumerate(subsets)]
+            drafts = await asyncio.gather(*draft_tasks, return_exceptions=True)
+            
+            clean_drafts = []
+            for d in drafts:
+                if isinstance(d, str) and "Không có thông tin liên quan" not in d:
+                    clean_drafts.append(d)
+                    
+            if not clean_drafts:
+                clean_drafts = [str(d) for d in drafts if isinstance(d, str)]
+                
+            # Verification step on the active provider (e.g. gemini_pro or fpt)
+            drafts_context = "\n\n=== BẢN THẢO NHÁP PHÁP LÝ ===\n" + "\n\n".join(clean_drafts)
+            
+            verify_system_prompt = (
+                "Bạn là LuatBot - Trợ lý pháp lý AI chuyên sâu về luật Việt Nam.\n"
+                "Dưới đây là câu hỏi của người dùng kèm theo các bản thảo nháp pháp lý được tổng hợp từ tài liệu gốc chính xác.\n"
+                "Nhiệm vụ của bạn:\n"
+                "1. Đối soát các bản thảo nháp này, loại bỏ các thông tin mâu thuẫn, sai lệch hoặc không chính xác.\n"
+                "2. Tổng hợp thành một câu trả lời hoàn chỉnh, chuyên nghiệp, chính xác 100% bằng Tiếng Việt.\n"
+                "3. Giữ nguyên và khóa chặt các trích dẫn neo [C1], [C2] từ các bản thảo nháp để người dùng đối chiếu.\n"
+                f"{drafts_context}"
+            )
+            
+            tokens = []
+            async for token in LLMGateway.call_stream([{"role": "user", "content": prompt}], verify_system_prompt):
+                tokens.append(token)
+            final_text = "".join(tokens)
+            
+        except Exception as e:
+            print(f"⚠️ Speculative RAG failed: {e}. Fallback to standard FLARE generation.")
+            try:
+                async for event in flare_generate_stream(
+                    query=prompt,
+                    initial_context=formatted_chunks,
+                    citation_map=citation_map,
+                    domain_filter=route_res["doc_type_filter"]
+                ):
+                    ev_type = event.get("type")
+                    if ev_type == "token":
+                        final_text += event["content"]
+                    elif ev_type == "status":
+                        flare_activated = event["flare_activated"]
+                        search_count = event["search_count"]
+                        citations_list = list(event["citation_map"].values())
+            except Exception as ex:
+                raise HTTPException(status_code=500, detail=f"Lỗi RAG Generation: {str(ex)}")
+    else:
+        final_text = "Không tìm thấy tài liệu pháp lý liên quan phù hợp để trả lời câu hỏi của bạn."
+        
     # ── STEP 6: SAVE INTERACTION TO MEMORY (Tầng 2) ──
-    # Save the interaction in background to avoid blocking the user
     try:
         LegalUserMemory.save_interaction(session_id, prompt, final_text, citations_list)
     except Exception as e:
@@ -307,7 +416,6 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
         except Exception as e:
             print(f"⚠️ Error saving session message log: {e}")
 
-    # Return structured JSON matching the old response schema plus appended metadata fields
     return {
         "response": final_text,
         "citations": citations_list,

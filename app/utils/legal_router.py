@@ -155,10 +155,36 @@ def route_query(query: str) -> Dict[str, Any]:
     if best_domain == "out_of_scope" and best_score < 0.25:
         best_domain = "dan_su"
         is_legal = True
+
+    # Xác định Cấp độ Định tuyến (Adaptive Routing Level)
+    routing_level = 3  # Mặc định là Level 3 (Complex RAG)
+    if not is_legal or best_domain in ["chitchat", "out_of_scope"]:
+        routing_level = 1
+    else:
+        # Regex kiểm tra trích dẫn số hiệu hoặc điều khoản pháp luật chính xác
+        citation_patterns = [
+            r"(điều|khoản|điểm)\s+\d+",
+            r"\d+/\d{4}/[a-z0-9\-]+",
+            r"(luật|nghị\s+định|thông\s+tư|quyết\s+định)\s+số\s+\d+",
+            r"(hiến\s+pháp|bộ\s+luật|luật)\s+\d{4}"
+        ]
+        is_simple = False
+        for pat in citation_patterns:
+            if re.search(pat, query_clean, re.IGNORECASE):
+                is_simple = True
+                break
+        
+        # Nếu câu hỏi cực ngắn (dưới 6 từ hoặc dưới 35 ký tự), coi là tra cứu từ khóa đơn giản
+        if len(query.strip()) < 35 or len(query.split()) < 6:
+            is_simple = True
+            
+        if is_simple:
+            routing_level = 2
         
     return {
         "domain": best_domain,
         "confidence": best_score,
         "doc_type_filter": DOMAIN_FILTERS.get(best_domain, []),
-        "is_legal": is_legal
+        "is_legal": is_legal,
+        "routing_level": routing_level
     }

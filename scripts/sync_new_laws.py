@@ -425,6 +425,9 @@ async def run_sync():
                     co_quan, tinh_trang, ngay_hieu_luc, content_html
                 )
 
+                # Đồng bộ chỉ mục tìm kiếm và đồ thị tri thức gia tăng
+                index_document_incrementally(doc_id, final_title, final_so_hieu, loai_vb, content_html)
+
                 stats["new_docs"] += 1
                 stats["recent"] = ([{
                     "id": doc_id,
@@ -490,6 +493,91 @@ async def run_sync():
     log(f"   📊 Tổng DB: {total_before:,} → {total_after:,}")
     log("=" * 60)
 
+
+def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, content_html):
+    """
+    Tự động chia nhỏ, sinh vector nhúng, lưu vào FAISS index và xây dựng đồ thị tri thức
+    cho tài liệu mới đồng bộ.
+    """
+    if not content_html:
+        return
+        
+    try:
+        from bs4 import BeautifulSoup
+        from scratch.build_chunks_v2 import parse_html_to_chunks
+        from app.utils.light_graph_manager import LightGraphManager
+        import sqlite3
+        import numpy as np
+        import faiss
+        
+        log(f"   ⚡ Bắt đầu đồng bộ chỉ mục gia tăng cho văn bản ID: {doc_id}...")
+        
+        # 1. Cắt văn bản thành các chunks
+        chunks = parse_html_to_chunks(content_html)
+        if not chunks:
+            return
+            
+        # 2. Xây dựng đồ thị tri thức (Knowledge Graph)
+        soup = BeautifulSoup(content_html, "html.parser")
+        text = soup.get_text()
+        LightGraphManager.index_document_graph(doc_id, title, so_ky_hieu, text)
+        
+        # 3. Kết nối CSDL chính để lưu các chunks
+        conn = sqlite3.connect(DB_NAME, timeout=30)
+        cursor = conn.cursor()
+        
+        chunks_data = []
+        for c in chunks:
+            chunk_header = c["chunk_header"] or ""
+            chunk_text = c["chunk_text"] or ""
+            chunk_with_meta = f"[{so_ky_hieu}] [{loai_van_ban}] [{title}] [{chunk_header}]\n{chunk_text}"
+            
+            cursor.execute("""
+                INSERT OR REPLACE INTO document_chunks 
+                (doc_id, chunk_index, chunk_type, chunk_header, chunk_text, chunk_with_meta, token_estimate)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (doc_id, c["chunk_index"], c["chunk_type"], chunk_header, chunk_text, chunk_with_meta, c["token_estimate"]))
+            
+            chunk_uid = cursor.lastrowid
+            chunks_data.append((chunk_uid, chunk_with_meta))
+            
+        conn.commit()
+        conn.close()
+        
+        # 4. Sinh vector embeddings cho các chunks mới
+        from sentence_transformers import SentenceTransformer
+        model_name = "bkai-foundation-models/vietnamese-bi-encoder"
+        model = SentenceTransformer(model_name, device="cpu")
+        
+        texts = [cd[1] for cd in chunks_data]
+        embeddings = model.encode(texts, batch_size=len(texts), convert_to_numpy=True)
+        
+        # 5. Lưu vectors vào cache vector_store.db
+        v_conn = sqlite3.connect("vector_store.db", timeout=30)
+        v_cursor = v_conn.cursor()
+        for (chunk_uid, _), emb in zip(chunks_data, embeddings):
+            v_cursor.execute(
+                "INSERT OR REPLACE INTO chunk_vectors (chunk_id, vector) VALUES (?, ?)",
+                (chunk_uid, emb.tobytes())
+            )
+        v_conn.commit()
+        v_conn.close()
+        
+        # 6. Cập nhật FAISS Index trực tiếp trên file
+        faiss_index_file = "chunks_faiss.index"
+        if os.path.exists(faiss_index_file):
+            index = faiss.read_index(faiss_index_file)
+            
+            xb = embeddings.astype(np.float32)
+            faiss.normalize_L2(xb)
+            
+            ids = np.array([cd[0] for cd in chunks_data], dtype=np.int64)
+            index.add_with_ids(xb, ids)
+            faiss.write_index(index, faiss_index_file)
+            log(f"   ⚡ Đã cập nhật {len(chunks_data)} vectors vào FAISS index ({faiss_index_file})")
+            
+    except Exception as e:
+        log(f"   ⚠️ Lỗi đồng bộ index gia tăng cho ID {doc_id}: {e}")
 
 def main():
     with open(PID_FILE, "w") as f:
