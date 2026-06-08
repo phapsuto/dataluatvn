@@ -129,8 +129,19 @@ def ultimate_retrieve(
     # Re-sort candidates based on updated score
     chunk_candidates = sorted(chunk_candidates, key=lambda x: x["score"], reverse=True)
     
-    # 4. Perform Cohere Rerank if API Key is available
+    # 4. Perform Reranking (Cohere API or local FlashRank)
     final_chunks = []
+    
+    # Helper for local FlashRank reranking
+    def local_rerank_fallback(q: str, candidates: list, n: int) -> list:
+        try:
+            from app.utils.reranker_manager import get_reranker
+            reranker = get_reranker()
+            return reranker.rerank(q, candidates[:20], top_n=n)
+        except Exception as err:
+            print(f"⚠️ FlashRank local rerank failed: {err}. Using raw sorted order.")
+            return candidates[:n]
+
     if COHERE_API_KEY and chunk_candidates:
         try:
             # Call Cohere Rerank API
@@ -151,18 +162,21 @@ def ultimate_retrieve(
                 rerank_results = response.json().get("results") or []
                 for r in rerank_results:
                     idx = r["index"]
-                    item = chunk_candidates[idx]
+                    item = chunk_candidates[idx].copy()
                     item["score"] = r["relevance_score"]
                     final_chunks.append(item)
             else:
-                print(f"⚠️ Cohere API error: {response.text}. Using local ranking fallback.")
-                final_chunks = chunk_candidates[:top_k]
+                print(f"⚠️ Cohere API error: {response.text}. Using local FlashRank reranker.")
+                final_chunks = local_rerank_fallback(query, chunk_candidates, top_k)
         except Exception as e:
-            print(f"⚠️ Cohere Rerank failed: {e}. Using local ranking fallback.")
-            final_chunks = chunk_candidates[:top_k]
+            print(f"⚠️ Cohere Rerank failed: {e}. Using local FlashRank reranker.")
+            final_chunks = local_rerank_fallback(query, chunk_candidates, top_k)
     else:
-        # Fallback to local scored list (already sorted)
-        final_chunks = chunk_candidates[:top_k]
+        # No Cohere key, use local FlashRank reranker directly
+        if chunk_candidates:
+            final_chunks = local_rerank_fallback(query, chunk_candidates, top_k)
+        else:
+            final_chunks = []
         
     # 5. Format results with Citation anchors [Cx]
     formatted_parts = []

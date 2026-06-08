@@ -15,6 +15,7 @@ build/
 *.pkl
 *.index
 users_memory_faiss/
+.flashrank_cache/
 
 # ─── Database (quá lớn, không push lên git) ───
 *.db

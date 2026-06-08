@@ -135,6 +135,60 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     prompt = req.prompt.strip()
     session_id = req.session_id or "default_user"
     
+    # ── TẦNG SEMANTIC CACHE (RAG Gen 3) ──
+    try:
+        from app.utils.semantic_cache_manager import get_cache_manager
+        cache_mgr = get_cache_manager()
+        is_hit, cached_response, cached_citations = cache_mgr.lookup(prompt)
+        if is_hit:
+            print(f"🎯 [Semantic Cache] HIT for query: '{prompt}'")
+            
+            # Save history to session chat db
+            if session_id:
+                try:
+                    m_conn = get_memory_db()
+                    m_cursor = m_conn.cursor()
+                    m_cursor.execute("SELECT 1 FROM chat_sessions WHERE session_id = ?", (session_id,))
+                    if not m_cursor.fetchone():
+                        now_iso = datetime.now(timezone.utc).isoformat()
+                        m_cursor.execute("SELECT 1 FROM user_profiles WHERE user_id = ?", ('default_user',))
+                        if not m_cursor.fetchone():
+                            m_cursor.execute(
+                                "INSERT INTO user_profiles (user_id, full_name, created_at) VALUES (?, ?, ?)",
+                                ('default_user', 'Default Portal User', now_iso)
+                            )
+                        m_cursor.execute(
+                            "INSERT INTO chat_sessions (session_id, user_id, title, created_at) VALUES (?, ?, ?, ?)",
+                            (session_id, 'default_user', prompt[:30] + ('...' if len(prompt) > 30 else ''), now_iso)
+                        )
+                        m_conn.commit()
+
+                    now_iso = datetime.now(timezone.utc).isoformat()
+                    m_cursor.execute(
+                        "INSERT INTO chat_messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
+                        (session_id, "user", prompt, now_iso)
+                    )
+                    m_cursor.execute(
+                        "INSERT INTO chat_messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
+                        (session_id, "assistant", cached_response, now_iso)
+                    )
+                    m_conn.commit()
+                    m_conn.close()
+                except Exception as e:
+                    print(f"⚠️ Error saving session message log (cache hit): {e}")
+            
+            # Convert citation_map to list of citations
+            citations_list = list(cached_citations.values()) if isinstance(cached_citations, dict) else (cached_citations or [])
+            return {
+                "response": cached_response,
+                "citations": citations_list,
+                "domain": "cached",
+                "flare_activated": False,
+                "search_count": 0
+            }
+    except Exception as e:
+        print(f"⚠️ Semantic cache lookup warning: {e}")
+
     # ── STEP 1: SEMANTIC ROUTING (Tầng 1) ──
     route_res = route_query(prompt)
     domain = route_res["domain"]
@@ -373,7 +427,16 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
                 raise HTTPException(status_code=500, detail=f"Lỗi RAG Generation: {str(ex)}")
     else:
         final_text = "Không tìm thấy tài liệu pháp lý liên quan phù hợp để trả lời câu hỏi của bạn."
-        
+
+    # ── CẬP NHẬT SEMANTIC CACHE (RAG Gen 3) ──
+    if final_text and domain not in ["chitchat", "out_of_scope"] and "Không tìm thấy tài liệu" not in final_text:
+        try:
+            from app.utils.semantic_cache_manager import get_cache_manager
+            cache_mgr = get_cache_manager()
+            cache_mgr.update(prompt, final_text, citation_map)
+        except Exception as e:
+            print(f"⚠️ Failed to update semantic cache: {e}")
+
     # ── STEP 6: SAVE INTERACTION TO MEMORY (Tầng 2) ──
     try:
         LegalUserMemory.save_interaction(session_id, prompt, final_text, citations_list)
