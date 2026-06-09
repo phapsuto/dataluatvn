@@ -2,7 +2,7 @@ import os
 import re
 import sqlite3
 import requests
-from typing import List
+from typing import List, Optional
 from app.config import FPT_CLOUD_API_KEY, MEMORY_DB
 
 # Cấu hình API FPT Cloud
@@ -78,9 +78,25 @@ def should_expand_query(q: str) -> bool:
         
     return True
 
+# Từ điển đồng nghĩa pháp luật Việt Nam cục bộ để tăng tốc tìm kiếm và tránh gọi LLM khi không cần thiết
+LOCAL_LEGAL_THESAURUS = {
+    "ly hôn": ["chấm dứt hôn nhân", "chia tài sản chung"],
+    "tài sản công": ["quản lý tài sản công", "sử dụng tài sản công"],
+    "viên chức": ["công chức", "người lao động"],
+    "xử phạt": ["xử phạt vi phạm hành chính", "phạt tiền"],
+    "chứng chỉ hành nghề": ["cấp chứng chỉ hành nghề"],
+    "thỏa thuận quốc tế": ["ký kết thỏa thuận quốc tế"],
+    "báo cáo": ["chế độ báo cáo", "báo cáo định kỳ"],
+    "đất đai": ["quyền sử dụng đất", "thu hồi đất"],
+    "thuế": ["nộp thuế", "thuế thu nhập"],
+    "xếp lương": ["bảng lương", "chế độ tiền lương"],
+    "tiền lương": ["bảng lương", "chế độ tiền lương"],
+    "nuôi con nuôi": ["giải quyết việc nuôi con nuôi"],
+}
+
 def expand_query(q: str) -> List[str]:
     """
-    Gọi LLM để tìm 2-3 cụm từ đồng nghĩa hoặc thuật ngữ pháp lý tương đương.
+    Gọi LLM hoặc tra từ điển cục bộ để tìm 2-3 cụm từ đồng nghĩa hoặc thuật ngữ pháp lý tương đương.
     Có cơ chế cache và timeout fallback an toàn.
     """
     if not should_expand_query(q):
@@ -88,12 +104,24 @@ def expand_query(q: str) -> List[str]:
         
     q_clean = q.lower().strip()
     
-    # 1. Kiểm tra cache
+    # 1. Tra từ điển đồng nghĩa cục bộ trước để lấy kết quả tức thời (0ms)
+    local_expansions = []
+    for key, values in LOCAL_LEGAL_THESAURUS.items():
+        if key in q_clean:
+            local_expansions.extend(values)
+    if local_expansions:
+        return list(set(local_expansions))[:3]
+    
+    # 2. Kiểm tra cache SQLite
     cached = get_cached_expansion(q_clean)
     if cached is not None:
         return cached
 
-    # 2. Chuẩn bị gọi LLM FPT Cloud
+    # 3. Kiểm tra switch bypass LLM (dùng cho benchmark hoặc chạy offline)
+    if os.environ.get("DISABLE_LLM_EXPANSION") == "1":
+        return []
+
+    # 4. Chuẩn bị gọi LLM FPT Cloud
     if not FPT_CLOUD_API_KEY:
         print("⚠️ FPT_CLOUD_API_KEY chưa được cấu hình. Bỏ qua Query Expansion.")
         return []

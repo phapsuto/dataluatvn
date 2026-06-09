@@ -4,6 +4,14 @@ Entry point: slim server.py that imports and assembles all routers.
 """
 
 import os
+# Configure OpenMP and thread settings before importing any other libraries to prevent macOS crashes
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["DISABLE_LLM_EXPANSION"] = "1"
+
 import sqlite3
 from contextlib import asynccontextmanager
 

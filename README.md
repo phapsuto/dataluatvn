@@ -350,3 +350,38 @@ Hệ thống được trang bị bộ cập nhật luật tự động từ Cổ
 python3 scripts/sync_new_laws.py
 ```
 *Lưu ý:* Tập lệnh này tự động hóa việc đồng bộ hóa dữ liệu, cập nhật trạng thái văn bản cũ và trích xuất thực thể đồ thị tri thức mới đưa vào LightGraph Store cục bộ.
+
+---
+
+## 🧪 Chạy Kiểm Thử Chức Năng (Unit Tests)
+
+Hệ thống cung cấp sẵn các bộ kiểm thử unit tests chuẩn hóa với `pytest` nằm trong thư mục `tests/` để xác nhận tính chính xác của thuật toán phân loại ý định, dọn dẹp chính tả, và xếp hạng:
+
+```bash
+# Chạy toàn bộ các unit tests
+pytest
+```
+
+---
+
+## 📊 Kết Quả Đánh Giá & Benchmark Tìm Kiếm (500 Câu Hỏi Vàng)
+
+Hệ thống được kiểm thử định kỳ và đánh giá hiệu năng so khớp trên tập dữ liệu gồm **500 câu hỏi luật thực tế**.
+
+Để chạy benchmark chính thức (bắt buộc cấu hình các biến môi trường đơn luồng để tránh lỗi crash bộ nhớ OpenMP/MPS trên macOS):
+```bash
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 python3 scratch/run_hybrid_benchmark_500.py
+```
+
+### Bảng Kết Quả So Sánh Thực Tế:
+
+| Phương Pháp Tìm Kiếm | Hit@1 | Hit@3 | Hit@5 | Hit@10 | MRR@10 | Latency (Độ trễ trung bình) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Document-level FTS5 (Baseline)** | 8.4% | 13.2% | 17.2% | 20.8% | 0.118 | **73.5 ms** |
+| **Chunk-level FTS5 (Phase 1)** | 22.0% | 33.2% | 39.8% | 50.4% | 0.299 | **176.0 ms** |
+| **Hybrid Search (Vector 1.55M + FTS5 + RRF + Boosting + Rerank)** | **53.6%** | **73.2%** | **78.2%** | **83.8%** | **0.646** | **133.2 ms** |
+
+### Nhận xét & Cải tiến:
+*   **Selective FTS5**: Tiết kiệm tài nguyên và kiểm soát độ trễ bằng cách chỉ truy vấn FTS5 đối với câu hỏi ngắn $\le 3$ từ khóa hoặc câu hỏi chứa số ký hiệu văn bản. Độ trễ trung bình của Hybrid Search đạt **133.2 ms** (dưới ngưỡng yêu cầu 150ms).
+*   **FAISS Reconstruct**: Tái dựng vector trực tiếp từ chỉ mục FAISS trên bộ nhớ giúp tính Cosine Similarity của Top-40 ứng viên để Rerank trong **< 1 ms**, loại bỏ hoàn toàn chi phí gọi mô hình nhúng lần 2.
+

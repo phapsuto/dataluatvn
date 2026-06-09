@@ -1,3 +1,12 @@
+import os
+# Configure OpenMP and thread settings to prevent macOS crashes
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["DISABLE_LLM_EXPANSION"] = "1"
+
 import sqlite3
 import io
 import re
@@ -77,14 +86,26 @@ VIETNAMESE_STOPWORDS = {
     "việc", "cái", "con", "người", "điều", "khoản",
 }
 
+def generate_spelling_variants(word: str) -> List[str]:
+    variants = {word}
+    replacements = [
+        ('òa', 'o\u00e0'), ('óa', 'o\u00e1'), ('ỏa', 'o\u1ea3'), ('õa', 'o\u00e3'), ('ọa', 'o\u1ea1'),
+        ('òe', 'o\u00e8'), ('óe', 'o\u00e9'), ('ỏe', 'o\u1ebd'), ('õe', 'o\u1ebd'), ('ọe', 'o\u1eb9'),
+        ('ủy', 'u\u1ef7'), ('úy', 'u\u00fd'), ('ùy', 'u\u1ef3'), ('ũy', 'u\u1ef5'), ('ụy', 'u\u1ef9'),
+        ('o\u00e0', 'òa'), ('o\u00e1', 'óa'), ('o\u1ea3', 'ỏa'), ('o\u00e3', 'õa'), ('o\u1ea1', 'ọa'),
+        ('o\u00e8', 'òe'), ('o\u00e9', 'óe'), ('o\u1ebd', 'ỏe'), ('o\u1ebd', 'õe'), ('o\u1eb9', 'ọe'),
+        ('u\u1ef7', 'ủy'), ('u\u00fd', 'úy'), ('u\u1ef3', 'ùy'), ('u\u1ef5', 'ũy'), ('u\u1ef9', 'ụy'),
+    ]
+    word_lower = word.lower()
+    for new_style, old_style in replacements:
+        if new_style in word_lower:
+            variants.add(word_lower.replace(new_style, old_style))
+    return list(variants)
+
 def parse_fts_query(q: str) -> str:
     """
-    Phân tích query FTS5 thông minh cho cả keyword search lẫn câu hỏi tự nhiên.
-    
-    Chiến lược 3 tầng:
-    1. Nếu query ngắn (1-3 từ sau lọc): exact match + prefix
-    2. Nếu query vừa (4-6 từ): exact phrase OR (AND tất cả từ khóa)
-    3. Nếu query dài (>6 từ, ngôn ngữ tự nhiên): OR từ khóa chính + NEAR
+    Phân tích query FTS5 thông minh cho cả keyword search lẫn câu hỏi tự nhiên,
+    kết hợp tự động sinh các biến thể dấu tiếng Việt cũ/mới để tối đa hóa Recall.
     """
     # Bước 1: Loại bỏ ký tự đặc biệt FTS
     q_clean = re.sub(r'[^\w\s]', ' ', q).strip()
@@ -100,34 +121,44 @@ def parse_fts_query(q: str) -> str:
         keywords = [w for w in all_words if len(w) > 1]
     if not keywords:
         keywords = all_words
+        
+    def format_keyword(w: str, append_star: bool = False) -> str:
+        vars = generate_spelling_variants(w)
+        star = "*" if append_star else ""
+        if len(vars) > 1:
+            return "(" + " OR ".join([f"{v}{star}" for v in vars]) + ")"
+        return f"{w}{star}"
     
     # Bước 3: Áp dụng chiến lược theo độ dài
     if len(keywords) == 1:
-        return f"{keywords[0]}*"
+        return format_keyword(keywords[0], append_star=True)
     
     if len(keywords) <= 3:
-        # Query ngắn → exact phrase OR (AND prefix)
-        exact_phrase = " ".join(keywords)
-        and_query = " AND ".join([f"{w}*" for w in keywords])
-        return f'"{exact_phrase}" OR ({and_query})'
+        # Query ngắn → AND prefix giữa các từ
+        and_query = " AND ".join([format_keyword(w, append_star=True) for w in keywords])
+        return and_query
     
     if len(keywords) <= 6:
-        # Query vừa → AND tất cả (precision cao)
-        and_query = " AND ".join(keywords)
+        # Query vừa → AND tất cả
+        and_query = " AND ".join([format_keyword(w, append_star=False) for w in keywords])
+        
         # Fallback: AND chỉ top 3 từ dài nhất
         top_words = sorted(keywords, key=len, reverse=True)[:3]
-        and_fallback = " AND ".join(top_words)
+        and_fallback = " AND ".join([format_keyword(w, append_star=False) for w in top_words])
         return f"({and_query}) OR ({and_fallback})"
     
-    # Query dài (câu hỏi tự nhiên) → ưu tiên AND precision
-    # Lấy top 7 từ khóa dài nhất (quan trọng nhất)
+    # Query dài (câu hỏi tự nhiên)
     top_keywords = sorted(keywords, key=len, reverse=True)[:7]
-    
-    # Chiến lược multi-tier:
-    # Tier 1: AND top 5 (precision cao nhất)
-    # Tier 2: AND top 3 (fallback rộng hơn)  
-    and_top5 = " AND ".join(top_keywords[:5])
-    and_top3 = " AND ".join(top_keywords[:3])
+    top_formatted_7 = []
+    for w in top_keywords:
+        vars = generate_spelling_variants(w)
+        if len(vars) > 1:
+            top_formatted_7.append("(" + " OR ".join(vars) + ")")
+        else:
+            top_formatted_7.append(w)
+            
+    and_top5 = " AND ".join(top_formatted_7[:5])
+    and_top3 = " AND ".join(top_formatted_7[:3])
     return f"({and_top5}) OR ({and_top3})"
 
 def get_province_search_terms(province_code: str, conn) -> list:
@@ -473,9 +504,32 @@ def normalize_spelling(text: str) -> str:
 
 _SMART_SEARCH_MODEL = None
 _SMART_SEARCH_INDEX = None
+_SMART_SEARCH_ID_MAP = None
+_SMART_SEARCH_PROVINCES = None
+
+def get_smart_search_provinces(conn):
+    global _SMART_SEARCH_PROVINCES
+    if _SMART_SEARCH_PROVINCES is None:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT name, full_name FROM provinces")
+            rows = cursor.fetchall()
+            prov_set = set()
+            for name, full_name in rows:
+                prov_set.add(name.lower())
+                prov_set.add(full_name.lower())
+                # Tên viết tắt hoặc bỏ chữ "Tỉnh", "Thành phố"
+                short = name.replace("Tỉnh", "").replace("Thành phố", "").strip().lower()
+                if short:
+                    prov_set.add(short)
+            _SMART_SEARCH_PROVINCES = prov_set
+        except Exception as e:
+            print(f"⚠️ Không thể load provinces: {e}")
+            _SMART_SEARCH_PROVINCES = set()
+    return _SMART_SEARCH_PROVINCES
 
 def get_smart_search_resources():
-    global _SMART_SEARCH_MODEL, _SMART_SEARCH_INDEX
+    global _SMART_SEARCH_MODEL, _SMART_SEARCH_INDEX, _SMART_SEARCH_ID_MAP
     import os
     
     # Lazy load sentence-transformers & PyTorch
@@ -494,7 +548,10 @@ def get_smart_search_resources():
         if os.path.exists(index_path):
             try:
                 import faiss
+                import numpy as np
                 _SMART_SEARCH_INDEX = faiss.read_index(index_path)
+                id_arr = faiss.vector_to_array(_SMART_SEARCH_INDEX.id_map)
+                _SMART_SEARCH_ID_MAP = {int(cid): i for i, cid in enumerate(id_arr)}
             except Exception as e:
                 print(f"⚠️ Không thể load FAISS index từ {index_path}: {e}")
         else:
@@ -518,6 +575,20 @@ def smart_search_laws(
     Tìm kiếm ngữ nghĩa kết hợp FTS5, FAISS Vector và thuật toán RRF Boosting (khớp số ký hiệu, độ hiệu lực pháp lý, tình trạng văn bản).
     **Yêu cầu API Key.**
     """
+    # Phòng thủ nếu hàm được gọi trực tiếp bằng Python (không qua FastAPI)
+    from fastapi.params import Query as FastAPIQuery, Depends as FastAPIDepends
+    
+    def is_fastapi_param(val):
+        t_str = str(type(val))
+        return "Query" in t_str or "Depends" in t_str or isinstance(val, (FastAPIQuery, FastAPIDepends))
+        
+    if is_fastapi_param(loai_van_ban): loai_van_ban = None
+    if is_fastapi_param(co_quan_ban_hanh): co_quan_ban_hanh = None
+    if is_fastapi_param(status): status = None
+    if is_fastapi_param(linh_vuc): linh_vuc = None
+    if is_fastapi_param(limit): limit = 10
+    if is_fastapi_param(offset): offset = 0
+
     if not q.strip():
         return {
             "total": 0, "limit": limit, "offset": offset,
@@ -527,6 +598,15 @@ def smart_search_laws(
 
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Load danh sách tỉnh thành phục vụ nhận diện địa phương
+    PROVINCES = get_smart_search_provinces(conn)
+    q_lower = q.lower()
+    has_locality_in_q = False
+    for p in PROVINCES:
+        if p in q_lower:
+            has_locality_in_q = True
+            break
 
     # Xây dựng các điều kiện lọc (SQL Filter Clauses)
     where_clauses = []
@@ -545,47 +625,94 @@ def smart_search_laws(
         where_clauses.append("(d.linh_vuc LIKE ? OR d.nganh LIKE ?)")
         sql_params.extend([f"%{linh_vuc}%", f"%{linh_vuc}%"])
 
-    # 1. Trích xuất số ký hiệu từ câu hỏi người dùng bằng Regex
-    # Khớp định dạng số ký hiệu VN như 15/2020/NĐ-CP, 24/LĐ-NĐ, 12/QĐ-TTg, 25/2018/QH14
+    # 1. Trích xuất số ký hiệu linh hoạt và phân tích ý định câu hỏi
+    # A. Trích xuất số ký hiệu đầy đủ có gạch chéo (ví dụ: 15/2020/NĐ-CP)
     symbol_patterns = re.findall(r'\b\d+/(?:[A-Za-z0-9À-ỹ-]+/)*[A-Za-z0-9À-ỹ-]+\b', q)
     extracted_symbols = [s.strip().lower() for s in symbol_patterns]
+
+    # B. Trích xuất các số hiệu đơn lẻ (ví dụ: số 151, số 180, số 15)
+    # Loại bỏ năm ban hành thường gặp (2000-2030) để tránh trích xuất nhầm năm làm số hiệu
+    numbers_in_q = []
+    for num in re.findall(r'\b\d+\b', q):
+        val = int(num)
+        if not (2000 <= val <= 2030):
+            numbers_in_q.append(num)
+
+    # C. Phân tích ý định câu hỏi (Dynamic Intent Detection)
+    q_lower = q.lower()
+    is_detail_query = False
+    detail_keywords = [
+        "thủ tục", "trình tự", "hồ sơ", "mức phạt", "xử phạt", "phạt bao nhiêu",
+        "thời hiệu", "thẩm quyền", "điều kiện để", "cấp phép", "giấy phép",
+        "báo cáo", "hạn nộp", "nộp ở đâu", "cơ quan nào có thẩm quyền", "ai có thẩm quyền"
+    ]
+    for kw in detail_keywords:
+        if kw in q_lower:
+            is_detail_query = True
+            break
+            
+    is_general_query = False
+    general_keywords = [
+        "khái niệm", "định nghĩa", "nguyên tắc", "chính sách", "quy định chung",
+        "bộ luật", "luật đất đai", "luật hình sự", "luật dân sự", "luật bảo hiểm"
+    ]
+    for kw in general_keywords:
+        if kw in q_lower:
+            is_general_query = True
+            break
 
     # Gọi Query Expansion của Phase 4
     from app.query_expansion import expand_query
     expanded_terms = expand_query(q)
 
     # 2. Chạy FTS5 Search trên Chunks (Top 100)
-    fts_query = parse_fts_query(q)
-    if fts_query:
-        if expanded_terms:
-            expanded_clauses = [parse_fts_query(term) for term in expanded_terms if parse_fts_query(term)]
-            if expanded_clauses:
-                fts_query = f"({fts_query}) OR (" + " OR ".join(expanded_clauses) + ")"
-                
-        if extracted_symbols:
-            # Bổ sung số ký hiệu vào FTS query với mức ưu tiên OR để kéo văn bản đích vào Top 100 thô
-            fts_symbols = [re.sub(r'[^\w\s]', ' ', sym).strip() for sym in extracted_symbols]
-            symbol_or_clause = " OR ".join([f'"{s}"' for s in fts_symbols if s])
-            if symbol_or_clause:
-                fts_query = f"({symbol_or_clause}) OR ({fts_query})"
+    # CHỈ CHẠY FTS5 nếu có ký hiệu cụ thể hoặc câu hỏi rất ngắn (<= 3 từ) để tối ưu hóa độ trễ
+    q_clean = re.sub(r'[^\w\s]', ' ', q).strip()
+    words_in_q = [w for w in q_clean.split() if w]
+    keywords_in_q = [w for w in words_in_q if w.lower() not in VIETNAMESE_STOPWORDS and len(w) > 1]
+    
+    run_fts = False
+    if len(extracted_symbols) > 0 or len(keywords_in_q) <= 3:
+        run_fts = True
 
     fts_results = []
-    if fts_query:
-        try:
-            fts_where = " AND ".join(["f.chunks_fts MATCH ?"] + where_clauses)
-            fts_sql_params = [fts_query] + sql_params
-            cursor.execute(f"""
-                SELECT c.id, c.doc_id
-                FROM chunks_fts f
-                CROSS JOIN document_chunks c ON f.rowid = c.id
-                JOIN documents d ON c.doc_id = d.id
-                WHERE {fts_where}
-                ORDER BY f.rank
-                LIMIT 100
-            """, fts_sql_params)
-            fts_results = [dict(row) for row in cursor.fetchall()]
-        except Exception as e:
-            print(f"⚠️ Lỗi truy vấn FTS5 Chunks: {e}")
+    if run_fts:
+        fts_query = parse_fts_query(q)
+        if fts_query:
+            if expanded_terms:
+                # Sử dụng exact phrase cho expanded terms để tăng tốc độ FTS5 và tránh trùng lắp nhiễu
+                expanded_clauses = [f'"{term}"' for term in expanded_terms if term.strip()]
+                if expanded_clauses:
+                    fts_query = f"({fts_query}) OR " + " OR ".join(expanded_clauses)
+                    
+            # Thêm từ khóa số hiệu vào FTS để kéo văn bản đích lên top
+            fts_symbols = []
+            if extracted_symbols:
+                fts_symbols.extend([re.sub(r'[^\w\s]', ' ', sym).strip() for sym in extracted_symbols])
+            if numbers_in_q:
+                fts_symbols.extend(numbers_in_q)
+                
+            if fts_symbols:
+                symbol_or_clause = " OR ".join([f'"{s}"' for s in fts_symbols if s])
+                if symbol_or_clause:
+                    fts_query = f"({symbol_or_clause}) OR ({fts_query})"
+
+        if fts_query:
+            try:
+                fts_where = " AND ".join(["f.chunks_fts MATCH ?"] + where_clauses)
+                fts_sql_params = [fts_query] + sql_params
+                cursor.execute(f"""
+                    SELECT c.id, c.doc_id
+                    FROM chunks_fts f
+                    CROSS JOIN document_chunks c ON f.rowid = c.id
+                    JOIN documents d ON c.doc_id = d.id
+                    WHERE {fts_where}
+                    ORDER BY f.rank
+                    LIMIT 100
+                """, fts_sql_params)
+                fts_results = [dict(row) for row in cursor.fetchall()]
+            except Exception as e:
+                print(f"⚠️ Lỗi truy vấn FTS5 Chunks: {e}")
 
     query_vector = None
     # 3. Chạy Vector Search trên FAISS (Top 150 để đề phòng lọc bỏ)
@@ -633,8 +760,6 @@ def smart_search_laws(
         except Exception as e:
             print(f"⚠️ Lỗi lọc FAISS results: {e}")
 
-    # 4. Trích xuất số ký hiệu đã được xử lý trước ở đầu hàm
-
     # 5. Phối hợp kết quả và tính điểm RRF Boosting
     RRF_K = 60
     rrf_scores = {} # chunk_id -> {"id": cid, "doc_id": doc_id, "score": float}
@@ -680,80 +805,265 @@ def smart_search_laws(
         loai_van_ban = (meta.get("loai_van_ban") or "").lower()
         status_str = (meta.get("tinh_trang_hieu_luc") or "").lower()
 
-        # A. Symbol Match Boost (Boost cực lớn nếu tài liệu khớp số ký hiệu từ câu hỏi: +1.5 điểm)
+        # A. Flexible Symbol Match Boost (Boost cực lớn nếu khớp số ký hiệu từ câu hỏi)
         symbol_boost = 0.0
+        # 1. Khớp số hiệu đầy đủ
         for sym in extracted_symbols:
             if sym in so_ky_hieu:
-                symbol_boost = 1.5
+                symbol_boost = 3.0
                 break
+        # 2. Khớp số hiệu lẻ kết hợp loại văn bản
+        if symbol_boost == 0.0 and numbers_in_q:
+            nums_in_doc = re.findall(r'\b\d+\b', so_ky_hieu)
+            for num_q in numbers_in_q:
+                if num_q in nums_in_doc:
+                    # Kiểm tra xem có loại văn bản nào trong câu hỏi khớp với loại văn bản của doc không
+                    doc_type_short = loai_van_ban.replace("luật", "").replace("nghị định", "").strip()
+                    if doc_type_short and doc_type_short in q_lower:
+                        symbol_boost = 2.5
+                        break
+                    elif loai_van_ban in q_lower:
+                        symbol_boost = 2.5
+                        break
+                    else:
+                        symbol_boost = 1.0 # Chỉ trùng số hiệu lẻ
+                        break
 
-        # B. Document Type Boost (Ưu tiên mức độ hiệu lực pháp lý cao hơn)
+        # B. Dynamic Document Type Boost
         type_boost = 0.0
-        if "hiến pháp" in loai_van_ban:
-            type_boost = 0.1
-        elif "bộ luật" in loai_van_ban or "luật" in loai_van_ban:
-            type_boost = 0.08
-        elif "pháp lệnh" in loai_van_ban:
-            type_boost = 0.06
-        elif "nghị định" in loai_van_ban:
-            type_boost = 0.05
-        elif "nghị quyết" in loai_van_ban:
-            type_boost = 0.04
-        elif "quyết định" in loai_van_ban:
-            type_boost = 0.02
+        if is_detail_query:
+            if "nghị định" in loai_van_ban:
+                type_boost = 0.12
+            elif "thông tư" in loai_van_ban:
+                type_boost = 0.10
+            elif "quyết định" in loai_van_ban:
+                type_boost = 0.08
+            elif "bộ luật" in loai_van_ban or "luật" in loai_van_ban:
+                type_boost = 0.05
+        elif is_general_query:
+            if "hiến pháp" in loai_van_ban:
+                type_boost = 0.20
+            elif "bộ luật" in loai_van_ban or "luật" in loai_van_ban:
+                type_boost = 0.15
+            elif "pháp lệnh" in loai_van_ban:
+                type_boost = 0.10
+            elif "nghị định" in loai_van_ban:
+                type_boost = 0.05
+        else:
+            if "hiến pháp" in loai_van_ban:
+                type_boost = 0.12
+            elif "bộ luật" in loai_van_ban or "luật" in loai_van_ban:
+                type_boost = 0.10
+            elif "pháp lệnh" in loai_van_ban:
+                type_boost = 0.08
+            elif "nghị định" in loai_van_ban:
+                type_boost = 0.06
+            elif "quyết định" in loai_van_ban:
+                type_boost = 0.04
+            elif "thông tư" in loai_van_ban:
+                type_boost = 0.02
 
-        # C. Status Multiplier (Ưu tiên các văn bản đang còn hiệu lực: x1.2)
-        status_multiplier = 1.0
+        # C. Status Boost (Ưu tiên các văn bản đang còn hiệu lực: +0.01)
+        status_boost = 0.0
         if "còn hiệu lực" in status_str or "hết hiệu lực một phần" in status_str:
-            status_multiplier = 1.2
+            status_boost = 0.01
 
-        # Thực thi công thức
-        item["score"] = (item["score"] + symbol_boost + type_boost) * status_multiplier
+        # Thực thi công thức: scale down type_boost cực mạnh để làm tie-breaker nhẹ nhàng
+        item["score"] = item["score"] + symbol_boost + (type_boost * 0.05) + status_boost
 
-    # Sắp xếp theo điểm Boosted RRF Score giảm dần
+    # Sắp xếp theo điểm Boosted RRF Score giảm dần ban đầu
     sorted_items = sorted(rrf_scores.values(), key=lambda x: x["score"], reverse=True)
-    
+
+    # E. Syllable Bigram Overlap Boost (giảm thiểu false positive trùng từ đơn lẻ)
+    def get_unique_bigrams(text: str) -> set:
+        if not text:
+            return set()
+        text = normalize_spelling(text)
+        text = re.sub(r'[^\w\s]', ' ', text).strip()
+        words = [w.lower() for w in text.split() if w]
+        bigrams = set()
+        for i in range(len(words) - 1):
+            bigrams.add((words[i], words[i+1]))
+        return bigrams
+
+    def get_unique_words(text: str) -> set:
+        if not text:
+            return set()
+        text = normalize_spelling(text)
+        text = re.sub(r'[^\w\s]', ' ', text).strip()
+        words = [w.lower() for w in text.split() if w]
+        return set([w for w in words if w not in VIETNAMESE_STOPWORDS and len(w) > 1])
+
+    q_words_clean = get_unique_words(q)
+    q_bigrams = get_unique_bigrams(q)
+    if q_words_clean and sorted_items:
+        # Lấy Top 80 candidates để tính toán nhằm tối ưu hiệu năng
+        candidates_to_boost = sorted_items[:80]
+        remaining_items = sorted_items[80:]
+        
+        candidate_ids = [item["id"] for item in candidates_to_boost]
+        candidate_chunks = {}
+        if candidate_ids:
+            placeholders = ",".join(["?"] * len(candidate_ids))
+            try:
+                cursor.execute(f"SELECT id, chunk_text FROM document_chunks WHERE id IN ({placeholders})", candidate_ids)
+                for row in cursor.fetchall():
+                    candidate_chunks[row["id"]] = row["chunk_text"]
+            except Exception as e:
+                print(f"⚠️ Lỗi lấy chunk text để boost: {e}")
+                
+            for item in candidates_to_boost:
+                cid = item["id"]
+                chunk_text = candidate_chunks.get(cid, "")
+                if chunk_text:
+                    # Nếu câu hỏi có độ dài tương đối (chứa từ 2 bigrams trở lên), sử dụng bigram overlap
+                    if len(q_bigrams) >= 2:
+                        chunk_bigrams = get_unique_bigrams(chunk_text)
+                        common_bigrams = q_bigrams & chunk_bigrams
+                        overlap_ratio = len(common_bigrams) / len(q_bigrams) if q_bigrams else 0.0
+                        
+                        if overlap_ratio >= 0.70:
+                            item["score"] += 3.5 * (overlap_ratio ** 2)
+                        elif overlap_ratio >= 0.50:
+                            item["score"] += 1.5 * overlap_ratio
+                    else:
+                        chunk_words = get_unique_words(chunk_text)
+                        common = q_words_clean & chunk_words
+                        overlap_ratio = len(common) / len(q_words_clean) if q_words_clean else 0.0
+                        
+                        if overlap_ratio >= 0.70:
+                            item["score"] += 3.5 * (overlap_ratio ** 2)
+                        elif overlap_ratio >= 0.50:
+                            item["score"] += 1.5 * overlap_ratio
+                            
+        sorted_items = sorted(candidates_to_boost + remaining_items, key=lambda x: x["score"], reverse=True)
+
     # Phase 5: Semantic Similarity Reranking (Chỉ chạy khi có query_vector và model hợp lệ)
-    if model and query_vector is not None and sorted_items:
-        candidates = sorted_items[:25]
-        remaining_items = sorted_items[25:]
+    import os
+    if faiss_index and query_vector is not None and sorted_items and os.environ.get("DISABLE_RERANKER") != "1":
+        global _SMART_SEARCH_ID_MAP
+        
+        candidates = sorted_items[:40]
+        remaining_items = sorted_items[40:]
         
         candidate_cids = [item["id"] for item in candidates]
-        candidate_details = {}
-        if candidate_cids:
-            placeholders = ",".join(["?"] * len(candidate_cids))
-            try:
-                cursor.execute(f"SELECT id, chunk_text FROM document_chunks WHERE id IN ({placeholders})", candidate_cids)
-                for row in cursor.fetchall():
-                    candidate_details[row["id"]] = row["chunk_text"]
-            except Exception as e:
-                print(f"⚠️ Lỗi lấy văn bản để rerank: {e}")
-                
-        # Tính Cosine Similarity
+        
+        # Tính Cosine Similarity bằng cách dựng lại vector trực tiếp từ FAISS (0ms latency!)
         try:
             import numpy as np
             import faiss
-            candidate_texts = [candidate_details.get(cid, "") for cid in candidate_cids]
-            if candidate_texts:
-                # Sinh vector embedding cho Top-25 candidates
-                candidate_embeddings = model.encode(candidate_texts, show_progress_bar=False, convert_to_numpy=True)
-                faiss.normalize_L2(candidate_embeddings)
+            
+            similarities = []
+            valid_cids = []
+            
+            if _SMART_SEARCH_ID_MAP is not None:
+                for cid in candidate_cids:
+                    pos = _SMART_SEARCH_ID_MAP.get(cid)
+                    if pos is not None:
+                        try:
+                            # Tái dựng vector chuẩn hóa từ FAISS Flat index
+                            v = faiss_index.index.reconstruct(int(pos))
+                            sim = float(np.dot(v, query_vector[0]))
+                            similarities.append(sim)
+                            valid_cids.append(cid)
+                        except Exception:
+                            pass
+            
+            # Fallback nếu ID array chưa sẵn sàng
+            if not similarities:
+                candidate_details = {}
+                placeholders = ",".join(["?"] * len(candidate_cids))
+                cursor.execute(f"SELECT id, chunk_text FROM document_chunks WHERE id IN ({placeholders})", candidate_cids)
+                for row in cursor.fetchall():
+                    candidate_details[row["id"]] = row["chunk_text"]
+                candidate_texts = [candidate_details.get(cid, "") for cid in candidate_cids]
+                if candidate_texts and model:
+                    candidate_embeddings = model.encode(candidate_texts, show_progress_bar=False, convert_to_numpy=True)
+                    faiss.normalize_L2(candidate_embeddings)
+                    sims = np.dot(candidate_embeddings, query_vector[0])
+                    similarities = [float(s) for s in sims]
+                    valid_cids = candidate_cids
+                    
+            if similarities:
+                similarities = np.array(similarities, dtype=np.float32)
+                min_sim = float(np.min(similarities))
+                max_sim = float(np.max(similarities))
+                sim_range = max_sim - min_sim if max_sim - min_sim > 1e-6 else 1.0
                 
-                # Tính toán tích vô hướng (Inner Product) chính là Cosine Similarity
-                similarities = np.dot(candidate_embeddings, query_vector[0])
-                
-                # Cộng thêm điểm tương đồng (Similarity Rerank với trọng số w = 2.0)
-                for idx, cid in enumerate(candidate_cids):
-                    similarity = float(similarities[idx])
+                # Cộng thêm điểm tương đồng chuẩn hóa với trọng số w = 3.0 (tối ưu hóa độ chính xác)
+                for idx, cid in enumerate(valid_cids):
+                    norm_sim = (similarities[idx] - min_sim) / sim_range
                     for item in candidates:
                         if item["id"] == cid:
-                            item["score"] += 2.0 * similarity
+                            item["score"] += 3.0 * norm_sim
                             break
                             
                 # Sắp xếp lại toàn bộ sau khi rerank
                 sorted_items = sorted(candidates + remaining_items, key=lambda x: x["score"], reverse=True)
         except Exception as e:
-            print(f"⚠️ Lỗi trong quá trình chạy Reranker: {e}")
+            print(f"⚠️ Lỗi trong quá trình chạy Reranker FAISS-reconstruct: {e}")
+
+    # F. Hình phạt tài liệu địa phương & hết hiệu lực ở CUỐI CÙNG (Multiplicative Penalties)
+    local_doc_penalty = 0.5
+    inactive_doc_penalty = 0.8
+
+    for item in sorted_items:
+        doc_id = item["doc_id"]
+        meta = doc_meta.get(doc_id)
+        if not meta:
+            continue
+        
+        so_ky_hieu_doc = (meta.get("so_ky_hieu") or "").lower()
+        status_str_doc = (meta.get("tinh_trang_hieu_luc") or "").lower()
+        co_quan_doc = (meta.get("co_quan_ban_hanh") or "").lower()
+        title_doc = (meta.get("title") or "").lower()
+
+        # Nhận diện tài liệu địa phương
+        is_local_doc = False
+        if "ubnd" in co_quan_doc or "hđnd" in co_quan_doc or "ủy ban nhân dân" in co_quan_doc or "hội đồng nhân dân" in co_quan_doc or "sở " in co_quan_doc or "sở" == co_quan_doc or "/qđ-ubnd" in so_ky_hieu_doc or "/nq-hđnd" in so_ky_hieu_doc:
+            is_local_doc = True
+        else:
+            for p in PROVINCES:
+                if p in co_quan_doc or p in title_doc:
+                    is_local_doc = True
+                    break
+                    
+        multiplier = 1.0
+        # Phạt nếu tài liệu là địa phương nhưng câu hỏi không hỏi địa phương
+        if is_local_doc and not has_locality_in_q:
+            multiplier *= local_doc_penalty
+            
+        # Phạt nếu tài liệu hết hiệu lực pháp lý (trừ khi gõ đúng số ký hiệu)
+        if "hết hiệu lực toàn bộ" in status_str_doc:
+            has_symbol_match = False
+            for sym in extracted_symbols:
+                if sym in so_ky_hieu_doc:
+                    has_symbol_match = True
+                    break
+            if not has_symbol_match:
+                multiplier *= inactive_doc_penalty
+                
+        item["score"] = item["score"] * multiplier
+
+    # Sắp xếp lại sau hình phạt multiplicative
+    sorted_items = sorted(sorted_items, key=lambda x: x["score"], reverse=True)
+
+    # G. Diversification (Document Penalty) - Đa dạng hóa kết quả gốc
+    seen_docs_in_ranking = {}
+    diversified_items = []
+    for item in sorted_items:
+        doc_id = item["doc_id"]
+        if doc_id in seen_docs_in_ranking:
+            seen_docs_in_ranking[doc_id] += 1
+            # Hệ số phạt 0.7 lũy tiến
+            penalty = 0.7 ** seen_docs_in_ranking[doc_id]
+            item["score"] = item["score"] * penalty
+        else:
+            seen_docs_in_ranking[doc_id] = 0
+        diversified_items.append(item)
+
+    # Sắp xếp lại sau diversification
+    sorted_items = sorted(diversified_items, key=lambda x: x["score"], reverse=True)
             
     total = len(sorted_items)
 

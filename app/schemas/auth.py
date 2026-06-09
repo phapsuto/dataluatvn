@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 
 
 class LoginRequest(BaseModel):
-    email: str = Field(..., example="phapsuto@gmail.com")
-    password: str = Field(..., example="••••••••")
+    email: str = Field(..., json_schema_extra={"example": "phapsuto@gmail.com"})
+    password: str = Field(..., json_schema_extra={"example": "••••••••"})
 
 
 class LoginResponse(BaseModel):
@@ -19,7 +19,7 @@ class UserInfo(BaseModel):
 
 
 class ApiKeyCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100, example="My App Key")
+    name: str = Field(..., min_length=1, max_length=100, json_schema_extra={"example": "My App Key"})
 
 
 class ApiKeyResponse(BaseModel):

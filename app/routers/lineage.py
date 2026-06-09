@@ -1,7 +1,7 @@
 import re
 import sqlite3
 from typing import List, Dict, Any, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from fastapi import APIRouter, Depends, Path, Query, HTTPException
 
 from app.dependencies import require_api_key
@@ -32,8 +32,7 @@ class GraphEdge(BaseModel):
     color: Dict[str, str]
     arrows: str
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 class LineageResponse(BaseModel):
     nodes: List[GraphNode]
