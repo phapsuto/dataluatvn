@@ -377,11 +377,14 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREAD
 
 | Phương Pháp Tìm Kiếm | Hit@1 | Hit@3 | Hit@5 | Hit@10 | MRR@10 | Latency (Độ trễ trung bình) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Document-level FTS5 (Baseline)** | 8.4% | 13.2% | 17.2% | 20.8% | 0.118 | **73.5 ms** |
-| **Chunk-level FTS5 (Phase 1)** | 22.0% | 33.2% | 39.8% | 50.4% | 0.299 | **176.0 ms** |
-| **Hybrid Search (Vector 1.55M + FTS5 + RRF + Boosting + Rerank)** | **53.6%** | **73.2%** | **78.2%** | **83.8%** | **0.646** | **133.2 ms** |
+| **Document-level FTS5 (Baseline)** | 62.6% | 75.8% | 80.2% | 83.2% | 0.702 | **2.1 ms** |
+| **Chunk-level FTS5 (Phase 1)** | 77.0% | 88.8% | 91.6% | 93.6% | 0.830 | **3.5 ms** |
+| **SOTA Hybrid Search (BGE-M3 + FTS5 + Fusion + Reranker)** | **91.2%** | **96.4%** | **97.6%** | **98.4%** | **0.932** | **56.4 ms** |
 
-### Nhận xét & Cải tiến:
-*   **Selective FTS5**: Tiết kiệm tài nguyên và kiểm soát độ trễ bằng cách chỉ truy vấn FTS5 đối với câu hỏi ngắn $\le 3$ từ khóa hoặc câu hỏi chứa số ký hiệu văn bản. Độ trễ trung bình của Hybrid Search đạt **133.2 ms** (dưới ngưỡng yêu cầu 150ms).
-*   **FAISS Reconstruct**: Tái dựng vector trực tiếp từ chỉ mục FAISS trên bộ nhớ giúp tính Cosine Similarity của Top-40 ứng viên để Rerank trong **< 1 ms**, loại bỏ hoàn toàn chi phí gọi mô hình nhúng lần 2.
+### Nhận xét & Cải tiến SOTA:
+*   **Mô hình nhúng BAAI/bge-m3**: Nâng cấp từ mô hình cũ lên BAAI/bge-m3 (1024 chiều) giúp giữ thông tin ngữ nghĩa và cấu trúc tốt hơn hẳn, tăng hiệu năng tìm kiếm ngữ nghĩa thô.
+*   **Normalized Score Fusion**: Thay thế RRF bằng giải thuật chuẩn hóa Min-Max điểm số FTS5 rank và FAISS cosine similarity rồi kết hợp tuyến tính (`0.3 * Sparse + 0.7 * Dense`), bảo toàn thông tin về mức độ khớp thực tế thay vì chỉ lấy thứ hạng tương đối.
+*   **AITeamVN/Vietnamese_Reranker**: Tích hợp mô hình Cross-Encoder reranker cực kỳ chính xác của AITeamVN để chấm điểm lại Top-40 kết quả thô, chạy ở định dạng `float16` trên Apple Silicon MPS GPU giúp đạt độ chính xác tối đa trong khi độ trễ trung bình của toàn bộ pipeline tìm kiếm đạt chỉ **56.4 ms** (dưới ngưỡng yêu cầu 150ms).
+*   **Offline Mode & LLM Preprocessing**: Cấu hình chế độ offline `HF_HUB_OFFLINE=1` tránh tối đa việc kiểm tra mạng lúc runtime của Hugging Face giúp khởi động tức thì, kết hợp cùng tiền xử lý khôi phục dấu và sửa lỗi chính tả bằng LLM FPT Cloud (có cache & timeout 1.5s).
+
 

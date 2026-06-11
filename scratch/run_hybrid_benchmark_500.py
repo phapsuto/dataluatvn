@@ -14,7 +14,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["DISABLE_LLM_EXPANSION"] = "0"
+os.environ["DISABLE_LLM_EXPANSION"] = "1"
 
 from app.routers.laws import smart_search_laws, get_smart_search_resources, parse_fts_query, chunk_search_laws
 

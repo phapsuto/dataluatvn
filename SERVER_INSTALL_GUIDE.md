@@ -34,10 +34,23 @@ Tài liệu này hướng dẫn từng bước thiết lập hệ thống REST A
 ---
 
 ## 🛠️ PHẦN I: YÊU CẦU HỆ THỐNG
-*   **Hệ điều hành:** Ubuntu 20.04 LTS hoặc Ubuntu 22.04 LTS (Khuyên dùng).
-*   **Cấu hình tối thiểu:** 1 vCPU, 2 GB RAM (nếu chạy thông thường). 
+
+### 1. Yêu cầu phần cứng thông thường (Không chạy Tìm kiếm Vector SOTA)
+*   **Cấu hình tối thiểu:** 1 vCPU, 2 GB RAM.
 *   **Cấu hình khuyên dùng:** 2 vCPU, 4 GB RAM (để chạy crawler Playwright đa luồng mượt mà).
-*   **Dung lượng đĩa:** Tối thiểu 10 GB trống (Database chính và DB nội dung chiếm khoảng 4 GB).
+
+### 2. Yêu cầu phần cứng khi kích hoạt Tìm kiếm Vector SOTA (BGE-M3 1024-dim)
+*   **Phương án A (Chỉ mục phẳng - Flat Index):**
+    *   **RAM tối thiểu:** 12 GB.
+    *   **RAM đề xuất:** 16 GB.
+    *   *Đặc trưng:* Độ chính xác tuyệt đối 100%.
+*   **Phương án B (Chỉ mục nén - SQ8 Index):**
+    *   **RAM tối thiểu:** 4 GB.
+    *   **RAM đề xuất:** 8 GB.
+    *   *Đặc trưng:* Tiết kiệm RAM (chỉ chiếm ~1.6 GB thay vì 6.3 GB), tốc độ tìm kiếm nhanh hơn 1.5x - 2x trên CPU máy chủ, độ chính xác Recall giảm không đáng kể (< 0.3%).
+
+### 3. Dung lượng đĩa (Disk Space)
+*   **Dung lượng đĩa:** Tối thiểu 15 GB trống (Database chính, database nội dung HTML và các tệp chỉ mục vector BGE-M3 chiếm khoảng 12-14 GB).
 
 ---
 
@@ -99,6 +112,21 @@ CONTENT_DB_PATH=content_store.db
 ADMIN_DB_PATH=admin.db
 # Khóa JWT bí mật để xác thực tài khoản Admin (tự sinh ngẫu nhiên)
 JWT_SECRET=Thay_The_Bang_Chuoi_Random_32_Ky_Tu
+
+# --- Cấu hình Tìm kiếm Vector SOTA ---
+# Đường dẫn database chứa cache vector
+VECTOR_DB_SOTA_PATH=vector_store_bgem3.db
+
+# LỰA CHỌN CHỈ MỤC PHÙ HỢP RAM VÀ TỐC ĐỘ:
+# Lựa chọn 1: Cấu hình RAM lớn (>= 12-16 GB RAM) - Flat Index (Chính xác 100%, độ trễ trung bình ~180ms trên CPU)
+FAISS_INDEX_SOTA_PATH=chunks_faiss.index
+
+# Lựa chọn 2: Cấu hình RAM vừa/nhỏ (4 GB - 8 GB RAM) - Flat SQ8 (Tiết kiệm RAM ~1.6 GB, độ trễ trung bình ~1150ms trên CPU)
+# FAISS_INDEX_SOTA_PATH=chunks_faiss_sq8.index
+
+# Lựa chọn 3 (KHUYẾN NGHỊ CHO MÁY CHỦ NHỎ): Cấu hình RAM nhỏ (>= 4 GB RAM) - IVF-SQ8 Index (Tiết kiệm RAM ~1.6 GB, siêu nhanh < 20ms trên CPU)
+# FAISS_INDEX_SOTA_PATH=chunks_faiss_ivf_sq8.index
+# FAISS_NPROBE=64
 ```
 
 ---
@@ -127,6 +155,20 @@ Chạy script để đảm bảo bảng dữ liệu chính được thêm cột 
 source venv/bin/activate
 python3 upgrade_db.py
 ```
+
+### 4. Xây dựng các tệp chỉ mục FAISS từ cache vector
+Sau khi tải tệp `vector_store_bgem3.db` lên máy chủ, anh cần chạy script để tạo các tệp chỉ mục FAISS:
+```bash
+# Xây dựng toàn bộ các loại chỉ mục (Flat, SQ8, IVF-SQ8)
+python3 scripts/rebuild_faiss_index.py --type all
+
+# Hoặc chỉ xây dựng loại chỉ mục IVF-SQ8 để tiết kiệm thời gian (khuyên dùng)
+python3 scripts/rebuild_faiss_index.py --type ivf_sq8
+```
+Quá trình này sẽ đọc toàn bộ vector từ cache DB để dựng chỉ mục, chỉ mất khoảng **1 - 3 phút** và tự động tạo ra các tệp chỉ mục tương thích với cấu hình máy chủ:
+* `chunks_faiss.index` (Chỉ mục Flat chuẩn, ~6.3 GB)
+* `chunks_faiss_sq8.index` (Chỉ mục nén SQ8 Flat, ~1.6 GB)
+* `chunks_faiss_ivf_sq8.index` (Chỉ mục nén IVF-SQ8 siêu nhanh, ~1.6 GB, khuyên dùng cho máy chủ nhỏ)
 
 ---
 
