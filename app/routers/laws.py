@@ -246,11 +246,11 @@ def search_laws(
             # Fallback về documents_fts (chỉ title) nếu chưa build content_fts
             try:
                 cursor.execute("SELECT 1 FROM content_fts LIMIT 1")
-                where_clauses.append("f MATCH ?")
+                where_clauses.append("content_fts MATCH ?")
                 params.append(fts_query)
                 from_clause = "documents d JOIN content_fts f ON d.id = f.rowid"
             except Exception:
-                where_clauses.append("f MATCH ?")
+                where_clauses.append("documents_fts MATCH ?")
                 params.append(fts_query)
                 from_clause = "documents d JOIN documents_fts f ON d.id = f.rowid"
 
