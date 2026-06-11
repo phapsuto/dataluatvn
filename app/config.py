@@ -16,6 +16,13 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "dlvn-jwt-secret-2024-phapsuto-interna
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_HOURS = 24 * 7  # 7 days
 
+# --- SOTA RAG Config ---
+VECTOR_DB_SOTA = os.environ.get("VECTOR_DB_SOTA_PATH", "vector_store.db")
+FAISS_INDEX_SOTA = os.environ.get("FAISS_INDEX_SOTA_PATH", "chunks_faiss.index")
+EMBEDDING_MODEL_SOTA = os.environ.get("EMBEDDING_MODEL_SOTA", "BAAI/bge-m3")
+RERANKER_MODEL_SOTA = os.environ.get("RERANKER_MODEL_SOTA", "AITeamVN/Vietnamese_Reranker")
+
+
 # --- Fixed Accounts (Internal Use Only) ---
 ACCOUNTS = {
     "phamkhoa3092003@gmail.com": hashlib.sha256("Apple0202".encode()).hexdigest(),

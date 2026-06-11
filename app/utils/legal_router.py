@@ -67,6 +67,7 @@ def get_utterance_embeddings(model) -> Dict[str, np.ndarray]:
     if not _UTTERANCE_EMBEDDINGS:
         for domain, texts in UTTERANCES.items():
             embeddings = model.encode(texts, show_progress_bar=False, convert_to_numpy=True)
+            embeddings = embeddings.astype(np.float32)
             faiss.normalize_L2(embeddings)
             _UTTERANCE_EMBEDDINGS[domain] = embeddings
     return _UTTERANCE_EMBEDDINGS
@@ -131,6 +132,7 @@ def route_query(query: str) -> Dict[str, Any]:
     # Standardize spelling and encode query
     q_norm = normalize_spelling(query)
     query_vector = model.encode([q_norm], show_progress_bar=False, convert_to_numpy=True)
+    query_vector = query_vector.astype(np.float32)
     faiss.normalize_L2(query_vector)
     
     # Fetch cached reference embeddings

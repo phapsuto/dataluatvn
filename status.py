@@ -25,9 +25,29 @@ GRAY = "\033[90m"
 
 CHECKPOINT_FILE = ".status_checkpoint.json"
 MAIN_DB = "vietnamese_legal_documents.db"
-VECTOR_DB = "vector_store.db"
-FAISS_INDEX = "chunks_faiss.index"
 API_PORT = 2004
+
+# Tự động phát hiện phiên bản index đang chạy hoặc được cấu hình
+is_sota_active = False
+try:
+    output = subprocess.check_output(["ps", "-ef"]).decode("utf-8")
+    for line in output.splitlines():
+        if "build_sota_index.py" in line and "grep" not in line:
+            is_sota_active = True
+            break
+except Exception:
+    pass
+
+if is_sota_active or os.path.exists("/tmp/vector_store_bgem3.db") or os.path.exists("vector_store_bgem3.db"):
+    VECTOR_DB = "/tmp/vector_store_bgem3.db" if os.path.exists("/tmp/vector_store_bgem3.db") else "vector_store_bgem3.db"
+    FAISS_INDEX = "/tmp/chunks_faiss_bgem3.index" if os.path.exists("/tmp/chunks_faiss_bgem3.index") else "chunks_faiss_bgem3.index"
+    ACTIVE_MODEL = "BAAI/bge-m3 (SOTA 1024-dim)"
+    BUILD_SCRIPT = "build_sota_index.py"
+else:
+    VECTOR_DB = "vector_store.db"
+    FAISS_INDEX = "chunks_faiss.index"
+    ACTIVE_MODEL = "vietnamese-bi-encoder (Legacy 768-dim)"
+    BUILD_SCRIPT = "build_vector_index.py"
 
 def get_db_count(db_path, query, params=()):
     if not os.path.exists(db_path):
@@ -79,6 +99,40 @@ def get_file_info(filepath):
     mtime_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
     return f"{GREEN}OK{RESET} ({format_size(size)}, {mtime_str})"
 
+def get_realtime_progress_from_log():
+    app_data_dir = os.path.expanduser("~/.gemini/antigravity-ide/brain")
+    if not os.path.exists(app_data_dir):
+        return None
+    
+    # Tìm tất cả file log
+    log_files = []
+    for root, dirs, files in os.walk(app_data_dir):
+        for f in files:
+            if f.endswith(".log"):
+                log_files.append(os.path.join(root, f))
+                
+    if not log_files:
+        return None
+        
+    # Sắp xếp theo thời gian sửa đổi gần nhất
+    log_files.sort(key=os.path.getmtime, reverse=True)
+    
+    # Quét tối đa 5 file log gần nhất
+    for log_path in log_files[:5]:
+        try:
+            with open(log_path, "r", errors="ignore") as f:
+                content = f.read()
+                # Kiểm tra xem đây có phải là log của build_sota_index hay không
+                if "build_sota_index.py" in content or "Tiến độ:" in content:
+                    lines = content.splitlines()
+                    # Quét ngược từ cuối file lên
+                    for line in reversed(lines):
+                        if "Tiến độ:" in line and "ETA:" in line:
+                            return line
+        except Exception:
+            pass
+    return None
+
 def main():
     print(f"\n{BOLD}{CYAN}🔍 HỆ THỐNG GIÁM SÁT TRẠNG THÁI DỰ ÁN LUATVIETNAM{RESET}")
     print(f"{GRAY}Thời gian quét: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{RESET}\n")
@@ -86,39 +140,71 @@ def main():
     # 1. Đọc số liệu từ DB
     total_chunks = get_db_count(MAIN_DB, "SELECT count(*) FROM document_chunks")
     indexed_vectors = get_db_count(VECTOR_DB, "SELECT count(*) FROM chunk_vectors")
-    
     pct = (indexed_vectors / total_chunks * 100) if total_chunks > 0 else 0
     
     now = time.time()
     speed_str = "Đang đo..."
     eta_str = "N/A"
     
-    # Tính tốc độ tức thời qua checkpoint file
-    checkpoint = {}
-    if os.path.exists(CHECKPOINT_FILE):
-        try:
-            with open(CHECKPOINT_FILE, "r") as f:
-                checkpoint = json.load(f)
-        except Exception:
-            pass
-            
-    if checkpoint and "time" in checkpoint and "vectors" in checkpoint:
-        delta_t = now - checkpoint["time"]
-        delta_v = indexed_vectors - checkpoint["vectors"]
-        if delta_t > 1.0 and delta_v >= 0:
-            speed = delta_v / delta_t
-            if speed > 0:
-                speed_str = f"{speed:.1f} chunks/s"
-                remaining = total_chunks - indexed_vectors
-                eta_sec = remaining / speed
-                eta_hours = eta_sec / 3600
-                eta_str = f"{eta_hours:.2f} giờ ({eta_sec/60:.1f} phút)"
+    # Thử lấy real-time từ log file của task nếu SOTA đang chạy
+    has_realtime = False
+    if is_sota_active:
+        realtime_line = get_realtime_progress_from_log()
+        if realtime_line:
+            try:
+                # Định dạng: "⚙️ Tiến độ: 925184/1552789 (59.6%) | Tốc độ: 16.1 chunks/s | ETA: 647.7 phút"
+                parts = realtime_line.split("|")
+                # Parse phần Tiến độ
+                prog_part = parts[0].replace("⚙️", "").replace("Tiến độ:", "").strip()
+                num_part, pct_part = prog_part.split("(")
+                curr_num, tot_num = num_part.strip().split("/")
+                
+                indexed_vectors = int(curr_num)
+                total_chunks = int(tot_num)
+                pct = float(pct_part.replace(")", "").replace("%", "").strip())
+                
+                # Parse Tốc độ
+                if len(parts) > 1:
+                    speed_str = parts[1].replace("Tốc độ:", "").strip()
+                # Parse ETA
+                if len(parts) > 2:
+                    eta_raw = parts[2].replace("ETA:", "").strip()
+                    if "phút" in eta_raw:
+                        mins = float(eta_raw.replace("phút", "").strip())
+                        eta_str = f"{mins/60:.2f} giờ ({mins:.1f} phút)"
+                    else:
+                        eta_str = eta_raw
+                has_realtime = True
+            except Exception:
+                pass
+
+    if not has_realtime:
+        # Tính tốc độ tức thời qua checkpoint file (code cũ)
+        checkpoint = {}
+        if os.path.exists(CHECKPOINT_FILE):
+            try:
+                with open(CHECKPOINT_FILE, "r") as f:
+                    checkpoint = json.load(f)
+            except Exception:
+                pass
+                
+        if checkpoint and "time" in checkpoint and "vectors" in checkpoint:
+            delta_t = now - checkpoint["time"]
+            delta_v = indexed_vectors - checkpoint["vectors"]
+            if delta_t > 1.0 and delta_v >= 0:
+                speed = delta_v / delta_t
+                if speed > 0:
+                    speed_str = f"{speed:.1f} chunks/s"
+                    remaining = total_chunks - indexed_vectors
+                    eta_sec = remaining / speed
+                    eta_hours = eta_sec / 3600
+                    eta_str = f"{eta_hours:.2f} giờ ({eta_sec/60:.1f} phút)"
+                else:
+                    speed_str = "0.0 chunks/s (Tạm dừng)"
+                    eta_str = "Vô hạn"
             else:
-                speed_str = "0.0 chunks/s (Tạm dừng)"
-                eta_str = "Vô hạn"
-        else:
-            speed_str = checkpoint.get("last_speed", "Đang đo...")
-            eta_str = checkpoint.get("last_eta", "N/A")
+                speed_str = checkpoint.get("last_speed", "Đang đo...")
+                eta_str = checkpoint.get("last_eta", "N/A")
             
     # Ghi lại checkpoint
     with open(CHECKPOINT_FILE, "w") as f:
@@ -133,7 +219,7 @@ def main():
     api_running = check_port(API_PORT)
     api_status = f"{GREEN}ĐANG LẮNG NGHE (Port {API_PORT}){RESET}" if api_running else f"{RED}OFFLINE (Port {API_PORT} không phản hồi){RESET}"
     
-    build_process = get_process_status("build_vector_index.py")
+    build_process = get_process_status(BUILD_SCRIPT)
     server_process = get_process_status("server.py")
     
     # 3. Thông tin files
@@ -151,6 +237,7 @@ def main():
     print("├────────────────────────────────────────────────────────────────────────┤")
     print(f"│  {BOLD}2. TIẾN ĐỘ THỰC HIỆN VECTOR EMBEDDINGS (PHASE 2){RESET}                      │")
     print("├────────────────────────────────────────────────────────────────────────┤")
+    print(f"│  • Mô hình hoạt động:     {ACTIVE_MODEL}".ljust(73) + "│")
     
     # Progress Bar
     bar_width = 30

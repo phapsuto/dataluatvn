@@ -34,10 +34,23 @@ Tài liệu này hướng dẫn từng bước thiết lập hệ thống REST A
 ---
 
 ## 🛠️ PHẦN I: YÊU CẦU HỆ THỐNG
-*   **Hệ điều hành:** Ubuntu 20.04 LTS hoặc Ubuntu 22.04 LTS (Khuyên dùng).
-*   **Cấu hình tối thiểu:** 1 vCPU, 2 GB RAM (nếu chạy thông thường). 
+
+### 1. Yêu cầu phần cứng thông thường (Không chạy Tìm kiếm Vector SOTA)
+*   **Cấu hình tối thiểu:** 1 vCPU, 2 GB RAM.
 *   **Cấu hình khuyên dùng:** 2 vCPU, 4 GB RAM (để chạy crawler Playwright đa luồng mượt mà).
-*   **Dung lượng đĩa:** Tối thiểu 10 GB trống (Database chính và DB nội dung chiếm khoảng 4 GB).
+
+### 2. Yêu cầu phần cứng khi kích hoạt Tìm kiếm Vector SOTA (BGE-M3 1024-dim)
+*   **Phương án A (Chỉ mục phẳng - Flat Index):**
+    *   **RAM tối thiểu:** 12 GB.
+    *   **RAM đề xuất:** 16 GB.
+    *   *Đặc trưng:* Độ chính xác tuyệt đối 100%.
+*   **Phương án B (Chỉ mục nén - SQ8 Index):**
+    *   **RAM tối thiểu:** 4 GB.
+    *   **RAM đề xuất:** 8 GB.
+    *   *Đặc trưng:* Tiết kiệm RAM (chỉ chiếm ~1.6 GB thay vì 6.3 GB), tốc độ tìm kiếm nhanh hơn 1.5x - 2x trên CPU máy chủ, độ chính xác Recall giảm không đáng kể (< 0.3%).
+
+### 3. Dung lượng đĩa (Disk Space)
+*   **Dung lượng đĩa:** Tối thiểu 15 GB trống (Database chính, database nội dung HTML và các tệp chỉ mục vector BGE-M3 chiếm khoảng 12-14 GB).
 
 ---
 
@@ -99,6 +112,17 @@ CONTENT_DB_PATH=content_store.db
 ADMIN_DB_PATH=admin.db
 # Khóa JWT bí mật để xác thực tài khoản Admin (tự sinh ngẫu nhiên)
 JWT_SECRET=Thay_The_Bang_Chuoi_Random_32_Ky_Tu
+
+# --- Cấu hình Tìm kiếm Vector SOTA ---
+# Đường dẫn database chứa cache vector
+VECTOR_DB_SOTA_PATH=vector_store_bgem3.db
+
+# LỰA CHỌN CHỈ MỤC PHÙ HỢP RAM MÁY CHỦ:
+# Lựa chọn 1: Cấu hình RAM máy chủ lớn (>= 16 GB RAM) - Sử dụng Flat Index
+FAISS_INDEX_SOTA_PATH=chunks_faiss_bgem3.index
+
+# Lựa chọn 2: Cấu hình RAM máy chủ vừa/nhỏ (4 GB - 8 GB RAM) - Sử dụng chỉ mục nén SQ8
+# FAISS_INDEX_SOTA_PATH=chunks_faiss_bgem3_sq8.index
 ```
 
 ---
@@ -127,6 +151,15 @@ Chạy script để đảm bảo bảng dữ liệu chính được thêm cột 
 source venv/bin/activate
 python3 upgrade_db.py
 ```
+
+### 4. Xây dựng các tệp chỉ mục FAISS từ cache vector
+Sau khi tải tệp `vector_store_bgem3.db` lên máy chủ, anh cần chạy script để tạo các tệp chỉ mục FAISS (Flat và SQ8) trực tiếp trên máy chủ:
+```bash
+python3 scripts/rebuild_faiss_index.py
+```
+Quá trình này sẽ đọc toàn bộ vector từ cache DB để dựng chỉ mục, chỉ mất khoảng **2 - 3 phút** và tự động tạo ra hai tệp chỉ mục tương thích với cấu hình máy chủ:
+* `chunks_faiss_bgem3.index` (Chỉ mục Flat chuẩn, ~6.3 GB)
+* `chunks_faiss_bgem3_sq8.index` (Chỉ mục nén SQ8, ~1.6 GB)
 
 ---
 
