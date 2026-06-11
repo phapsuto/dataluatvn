@@ -79,3 +79,38 @@ DISABLE_RERANKER=1 FAISS_INDEX_SOTA_PATH=chunks_faiss_ivf_sq8.index OMP_NUM_THRE
 3.  **Normalized Score Fusion:**
     *   Sử dụng công thức fusion chuẩn hóa Min-Max giúp kết hợp hài hòa giữa FTS5 (Sparse) và FAISS (Dense), đẩy hiệu suất tìm kiếm từ 20.8% lên trên 90.8%.
 
+---
+
+## 🔄 4. Hướng Dẫn Cơ Chế Đồng Bộ Gia Tăng & Chuẩn Hóa TokenJuice (Mới)
+
+Để giữ cho hệ thống luôn cập nhật văn bản pháp luật mới mỗi ngày mà không cần build lại toàn bộ cơ sở dữ liệu từ đầu (mất từ 1-8 tiếng), dự án đã tích hợp cơ chế **Đồng bộ Gia tăng** kết hợp với bộ parser chuẩn hóa **TokenJuice-style**.
+
+### A. Bộ Parser TokenJuice-style (`html_to_clean_markdown`)
+*   **Vị trí**: Nằm trong [build_chunks_v2.py](file:///Users/tonguyen/Library/CloudStorage/OneDrive-Personal/DrTo/luatvietnam/scratch/build_chunks_v2.py).
+*   **Nguyên lý**: 
+    1. Trích xuất nội dung HTML thô từ văn bản luật, loại bỏ các thẻ định dạng thừa, inline CSS, các thẻ div/span rác.
+    2. Chuyển đổi các cấu trúc tiêu đề (Điều, Khoản, Điểm) sang định dạng **Markdown chuẩn** (`# Điều...`, `* Khoản...`).
+    3. Việc chuyển đổi này giúp mô hình Embedding BGE-M3 nhận diện phân cấp điều khoản tốt hơn rất nhiều, tăng chỉ số Recall và độ chính xác của ngữ cảnh nạp vào LLM.
+    4. Các biểu thức chính quy (Regex) phân tách văn bản đã được cập nhật để tương thích ngược với cả dạng text thô và Markdown có dấu `#`.
+
+### B. Tiến Trình Đồng Bộ Gia Tăng (`sync_new_laws.py`)
+*   **Vị trí**: [sync_new_laws.py](file:///Users/tonguyen/Library/CloudStorage/OneDrive-Personal/DrTo/luatvietnam/scripts/sync_new_laws.py).
+*   **Các bước thực hiện tự động**:
+    1. **Tải luật mới**: Quét các văn bản luật mới cập nhật trên hệ thống.
+    2. **Phân tách & Clean HTML**: Áp dụng bộ parser TokenJuice-style để tạo ra các Markdown chunks sạch.
+    3. **Sinh vector & Lưu trữ**: Gọi mô hình nhúng BGE-M3 (chạy offline) để sinh embedding cho các chunks mới, sau đó lưu trực tiếp vào cơ sở dữ liệu `vector_store.db` để tránh phải tính toán lại sau này.
+    4. **Cập nhật đồng thời các Chỉ mục FAISS**:
+        *   Tự động đọc và thêm (append) các vector mới vào chỉ mục Flat mặc định (`chunks_faiss.index`).
+        *   Tự động thêm vào chỉ mục lượng tử hóa SQ8 (`chunks_faiss_sq8.index`).
+        *   Tự động thêm vào chỉ mục nén IVF-SQ8 (`chunks_faiss_ivf_sq8.index`) sử dụng phương thức `add_with_ids`.
+    5. Ghi nhận ID của các văn bản đã xử lý để đảm bảo không trùng lặp và ghi nhận log rõ ràng.
+
+### C. Cách chạy đồng bộ thủ công hoặc đặt Cronjob
+Bạn có thể chạy trực tiếp lệnh sau để kiểm tra và cập nhật luật mới:
+```bash
+python3 scripts/sync_new_laws.py
+```
+Để chạy tự động hàng ngày (ví dụ vào lúc 2 giờ sáng), bạn có thể cấu hình Crontab trên server:
+```bash
+0 2 * * * cd /Users/tonguyen/Library/CloudStorage/OneDrive-Personal/DrTo/luatvietnam && OMP_NUM_THREADS=1 python3 scripts/sync_new_laws.py >> logs/sync.log 2>&1
+```
