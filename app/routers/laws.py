@@ -1512,48 +1512,55 @@ def classify_relationship(doc_a: dict, doc_b: dict) -> str:
     a_type = doc_a.get("loai_van_ban") or ""
     
     b_title_lower = b_title.lower()
+    b_type_lower = b_type.lower().strip()
+    a_type_lower = a_type.lower().strip()
+    b_authority_lower = b_authority.lower()
     
-    # Check if local
+    # 1. Local document check
     if is_local_doc(b_authority, b_title, b_symbol):
-        return "Văn bản áp dụng địa phương (Quét Dọc)"
+        rel = "Văn bản áp dụng địa phương (Quét Dọc)"
+    # 2. Amendment check
+    elif any(k in b_title_lower for k in ["sửa đổi", "bổ sung", "thay thế", "bãi bỏ"]):
+        rel = "Văn bản sửa đổi, bổ sung, thay thế (Quét Ngang)"
+    # 3. Cong van check
+    elif "công văn" in b_type_lower:
+        rel = "Công văn hướng dẫn nghiệp vụ (Quét Ngang)"
+    # 4. Van ban hop nhat check
+    elif "hợp nhất" in b_type_lower:
+        rel = "Văn bản hợp nhất (Quét Ngang)"
+    # 5. Supreme Court Judges' Council Resolution check
+    elif "nghị quyết" in b_type_lower and ("hội đồng thẩm phán" in b_authority_lower or "tòa án nhân dân tối cao" in b_authority_lower):
+        rel = "Nghị quyết HĐTP hướng dẫn áp dụng (Quét Ngang)"
+    # 6. Systemic linkage check: both are major laws (Constitution, Code, Law)
+    elif ("hiến pháp" in a_type_lower or "bộ luật" in a_type_lower or a_type_lower == "luật" or a_type_lower.startswith("luật ")) and \
+         ("hiến pháp" in b_type_lower or "bộ luật" in b_type_lower or b_type_lower == "luật" or b_type_lower.startswith("luật ")):
+        rel = "Liên kết đồng bộ hệ thống (Quét Ngang)"
+    # 7. Specific vertical scans
+    elif "nghị định" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
+        rel = "Nghị định hướng dẫn thi hành (Quét Dọc)"
+    elif "thông tư" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
+        rel = "Thông tư hướng dẫn chi tiết (Quét Dọc)"
+    elif "thông tư" in b_type_lower and "nghị định" in a_type_lower:
+        rel = "Thông tư hướng dẫn thực hiện Nghị định (Quét Dọc)"
+    elif "nghị quyết" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
+        rel = "Nghị quyết hướng dẫn thực hiện (Quét Dọc)"
+    # 8. Fallback levels
+    else:
+        level_a = get_doc_level(a_type)
+        level_b = get_doc_level(b_type)
+        if level_b > level_a:
+            rel = "Văn bản hướng dẫn, quy định chi tiết (Quét Dọc)"
+        else:
+            rel = "Văn bản dẫn chiếu, liên quan (Quét Ngang)"
+
+    # Append status warning suffix
+    b_status = (doc_b.get("tinh_trang_hieu_luc") or "").lower().strip()
+    if "hết hiệu lực một phần" in b_status:
+        rel += " (Hết hiệu lực một phần)"
+    elif "hết hiệu lực" in b_status or "hết hiệu lực toàn bộ" in b_status:
+        rel += " (Đã hết hiệu lực)"
         
-    # Check if amendment
-    if any(k in b_title_lower for k in ["sửa đổi", "bổ sung", "thay thế", "bãi bỏ"]):
-        return "Văn bản sửa đổi, bổ sung, thay thế (Quét Ngang)"
-        
-    # Check if Công văn
-    if b_type and "công văn" in b_type.lower():
-        return "Công văn hướng dẫn nghiệp vụ (Quét Ngang)"
-        
-    # Check if Văn bản hợp nhất
-    if b_type and "hợp nhất" in b_type.lower():
-        return "Văn bản hợp nhất (Quét Ngang)"
-        
-    # Specific vertical scans
-    if b_type and a_type:
-        a_type_lower = a_type.lower()
-        b_type_lower = b_type.lower()
-        
-        if "nghị định" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
-            return "Nghị định hướng dẫn thi hành (Quét Dọc)"
-            
-        if "thông tư" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
-            return "Thông tư hướng dẫn chi tiết (Quét Dọc)"
-            
-        if "thông tư" in b_type_lower and "nghị định" in a_type_lower:
-            return "Thông tư hướng dẫn thực hiện Nghị định (Quét Dọc)"
-            
-        if "nghị quyết" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
-            return "Nghị quyết hướng dẫn thực hiện (Quét Dọc)"
-            
-    # Fallback based on levels
-    level_a = get_doc_level(a_type)
-    level_b = get_doc_level(b_type)
-    
-    if level_b > level_a:
-        return "Văn bản hướng dẫn, quy định chi tiết (Quét Dọc)"
-        
-    return "Văn bản dẫn chiếu, liên quan (Quét Ngang)"
+    return rel
 
 
 @router.get("/{law_id}/relationships", response_model=List[RelationshipInfo], tags=["🔗 Quan hệ pháp lý (Luật)"], summary="Quan hệ pháp lý")
@@ -1566,7 +1573,7 @@ def get_law_relationships(
     cursor = conn.cursor()
 
     # 1. Lấy metadata của văn bản hiện tại
-    cursor.execute("SELECT id, title, so_ky_hieu, loai_van_ban, co_quan_ban_hanh FROM documents WHERE id = ?", (law_id,))
+    cursor.execute("SELECT id, title, so_ky_hieu, loai_van_ban, co_quan_ban_hanh, tinh_trang_hieu_luc FROM documents WHERE id = ?", (law_id,))
     doc_row = cursor.fetchone()
     if not doc_row:
         conn.close()
@@ -1578,13 +1585,15 @@ def get_law_relationships(
     # 2. Truy vấn các mối quan hệ cứng có sẵn trong DB
     query = """
         SELECT r.doc_id, r.other_doc_id, r.relationship,
-               d.title as other_doc_title, d.so_ky_hieu as other_doc_so_ky_hieu
+               d.title as other_doc_title, d.so_ky_hieu as other_doc_so_ky_hieu,
+               d.tinh_trang_hieu_luc as other_doc_tinh_trang_hieu_luc
         FROM relationships r
         JOIN documents d ON r.other_doc_id = d.id
         WHERE r.doc_id = ?
         UNION
         SELECT r.doc_id, r.other_doc_id, r.relationship,
-               d.title as other_doc_title, d.so_ky_hieu as other_doc_so_ky_hieu
+               d.title as other_doc_title, d.so_ky_hieu as other_doc_so_ky_hieu,
+               d.tinh_trang_hieu_luc as other_doc_tinh_trang_hieu_luc
         FROM relationships r
         JOIN documents d ON r.doc_id = d.id
         WHERE r.other_doc_id = ?
@@ -1599,6 +1608,18 @@ def get_law_relationships(
     
     for row in rows:
         r_dict = dict(row)
+        
+        # Append status warning suffix to hardcoded relationship label if the other doc is expired
+        other_status = (r_dict.get("other_doc_tinh_trang_hieu_luc") or "").lower().strip()
+        status_suffix = ""
+        if "hết hiệu lực một phần" in other_status:
+            status_suffix = " (Hết hiệu lực một phần)"
+        elif "hết hiệu lực" in other_status or "hết hiệu lực toàn bộ" in other_status:
+            status_suffix = " (Đã hết hiệu lực)"
+            
+        if status_suffix:
+            r_dict["relationship"] = r_dict["relationship"] + status_suffix
+            
         relationships_list.append(r_dict)
         
         # Ghi nhận ID liên kết để tránh trùng lặp
@@ -1617,7 +1638,7 @@ def get_law_relationships(
             
             # Query content_fts tìm các văn bản dẫn chiếu (giới hạn 2000 dòng cho an toàn)
             cursor.execute("""
-                SELECT d.id, d.title, d.so_ky_hieu, d.loai_van_ban, d.co_quan_ban_hanh
+                SELECT d.id, d.title, d.so_ky_hieu, d.loai_van_ban, d.co_quan_ban_hanh, d.tinh_trang_hieu_luc
                 FROM content_fts f
                 JOIN documents d ON f.rowid = d.id
                 WHERE f.content_text MATCH ?
