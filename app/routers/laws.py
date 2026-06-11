@@ -371,6 +371,7 @@ def search_laws(
     else:
         order_clause = (
             "CASE WHEN d.tinh_trang_hieu_luc IN ('Hết hiệu lực toàn bộ', 'Hết hiệu lực') THEN 0 ELSE 1 END DESC, "
+            "substr(d.ngay_ban_hanh, 7, 4) DESC, substr(d.ngay_ban_hanh, 4, 2) DESC, substr(d.ngay_ban_hanh, 1, 2) DESC, "
             "CASE LOWER(d.loai_van_ban) "
             "  WHEN 'hiến pháp' THEN 10 "
             "  WHEN 'bộ luật' THEN 9 "
@@ -382,7 +383,7 @@ def search_laws(
             "  WHEN 'thông tư' THEN 4 "
             "  ELSE 1 "
             "END DESC, "
-            "substr(d.ngay_ban_hanh, 7, 4) DESC, substr(d.ngay_ban_hanh, 4, 2) DESC, substr(d.ngay_ban_hanh, 1, 2) DESC, d.id DESC"
+            "d.id DESC"
         )
 
     if q_has_fts:
