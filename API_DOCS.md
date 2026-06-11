@@ -27,7 +27,7 @@ Các endpoint quản trị dữ liệu (bắt đầu bằng `/admin/`) yêu cầ
 Nhóm API kết nối trực tiếp với lõi xử lý AI thông minh tích hợp RAG 7 tầng, quản lý phiên và bộ nhớ người dùng.
 
 ### 1.1 Gửi câu hỏi cho Trợ lý ảo AI
-Gửi câu hỏi pháp luật tự nhiên của người dùng, lõi RAG 7 tầng sẽ tự động định tuyến, truy xuất lai (BM25 + FAISS + HippoRAG Graph), sinh câu trả lời tự kiểm duyệt (FLARE) và khóa trích dẫn (P-Cite).
+Gửi câu hỏi pháp luật tự nhiên của người dùng, lõi RAG 7 tầng sẽ tự động định tuyến, truy xuất lai (BM25 + FAISS + HippoRAG Graph), sinh câu trả lời tự kiểm duyệt (FLARE) và khóa trích dẫn (P-Cite) định hình theo mô hình IRAC.
 
 - **Endpoint:** `POST /assistant/chat`
 - **Xác thực:** Yêu cầu API Key
@@ -44,7 +44,7 @@ Gửi câu hỏi pháp luật tự nhiên của người dùng, lõi RAG 7 tần
 - **Response (JSON):**
   ```json
   {
-    "response": "Theo quy định tại Khoản 4 Điều 125 Bộ luật Lao động năm 2019 (Luật số 45/2019/QH14), người sử dụng lao động có quyền áp dụng hình thức xử lý kỷ luật sa thải đối với người lao động tự ý bỏ việc 05 ngày cộng dồn trong thời hạn 30 ngày hoặc 20 ngày cộng dồn trong thời hạn 365 ngày mà không có lý do chính đáng...",
+    "response": "**VẤN ĐỀ PHÁP LÝ (ISSUE):** Điều kiện và hình thức xử lý kỷ luật sa thải đối với người lao động tự ý nghỉ việc 5 ngày không có lý do chính đáng.\n\n**1. Xác định Vấn đề & Đạo luật gốc (Quét Dọc)**\nQuan hệ lao động và hình thức kỷ luật sa thải chịu sự điều chỉnh của Bộ luật Lao động năm 2019...\n\n**2. Quy định chi tiết & Văn bản hướng dẫn (Quét Dọc)**\nTheo quy định tại Khoản 4 Điều 125 Bộ luật Lao động năm 2019 [C1]...",
     "citations": [
       {
         "id": 38920,
@@ -205,23 +205,28 @@ Lấy thông tin siêu dữ liệu đầy đủ kèm nội dung toàn văn HTML 
   ```
 
 ### 2.4 Xem quan hệ liên kết pháp lý
-Lấy danh sách các văn bản có quan hệ sửa đổi, thay thế, căn cứ ban hành hoặc hướng dẫn thi hành với văn bản hiện tại.
+Lấy danh sách các văn bản có quan hệ sửa đổi, thay thế, căn cứ ban hành, hướng dẫn thi hành hoặc liên kết đồng bộ hệ thống với văn bản hiện tại.
 
 - **Endpoint:** `GET /laws/{law_id}/relationships`
 - **Xác thực:** Yêu cầu API Key
 - **Response (JSON):**
   ```json
-  {
-    "law_id": 38920,
-    "relationships": [
-      {
-        "other_doc_id": 41250,
-        "so_ky_hieu": "145/2020/NĐ-CP",
-        "title": "Nghị định 145/2020/NĐ-CP quy định chi tiết và hướng dẫn thi hành một số điều của Bộ luật Lao động...",
-        "relationship": "hướng dẫn thi hành"
-      }
-    ]
-  }
+  [
+    {
+      "doc_id": 41250,
+      "other_doc_id": 38920,
+      "relationship": "Nghị định hướng dẫn thi hành (Quét Dọc)",
+      "other_doc_title": "Nghị định 145/2020/NĐ-CP quy định chi tiết và hướng dẫn thi hành một số điều của Bộ luật Lao động...",
+      "other_doc_so_ky_hieu": "145/2020/NĐ-CP"
+    },
+    {
+      "doc_id": 179251,
+      "other_doc_id": 38920,
+      "relationship": "Nghị quyết HĐTP hướng dẫn áp dụng (Quét Ngang) (Đã hết hiệu lực)",
+      "other_doc_title": "Nghị quyết hướng dẫn áp dụng...",
+      "other_doc_so_ky_hieu": "03/2025/NQ-HĐTP"
+    }
+  ]
   ```
 
 ### 2.5 Dữ liệu cây phả hệ pháp lý (Lineage Tree Node/Edge)
