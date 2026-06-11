@@ -246,13 +246,13 @@ def search_laws(
             # Fallback về documents_fts (chỉ title) nếu chưa build content_fts
             try:
                 cursor.execute("SELECT 1 FROM content_fts LIMIT 1")
-                where_clauses.append("content_fts MATCH ?")
+                where_clauses.append("f MATCH ?")
                 params.append(fts_query)
-                from_clause = "documents d JOIN content_fts ON d.id = content_fts.rowid"
+                from_clause = "documents d JOIN content_fts f ON d.id = f.rowid"
             except Exception:
-                where_clauses.append("documents_fts MATCH ?")
+                where_clauses.append("f MATCH ?")
                 params.append(fts_query)
-                from_clause = "documents d JOIN documents_fts ON d.id = documents_fts.rowid"
+                from_clause = "documents d JOIN documents_fts f ON d.id = f.rowid"
 
     if province_code:
         terms = get_province_search_terms(province_code, conn)
@@ -295,15 +295,40 @@ def search_laws(
 
     order_params = []
     if q:
-        # ORDERING cho search: Relevance trước, status/type sau
-        # 1. Exact match so_ky_hieu (người dùng tìm đúng số hiệu)
-        # 2. FTS rank (BM25 relevance — quan trọng nhất cho tìm kiếm nội dung)
-        # 3. Status hiệu lực (Còn > Hết một phần > NULL > Hết)
-        # 4. Loại văn bản (Luật > Nghị định > Thông tư)
-        # 5. Ngày ban hành mới nhất
+        # ORDERING cho search: Smart Sorting kết hợp Proximity & Relevance
+        # 1. Khớp chính xác Số ký hiệu
+        # 2. Khớp chính xác hoặc gần đúng Tiêu đề (Title Boost)
+        # 3. Đối với các văn bản khớp Tiêu đề, ưu tiên tình trạng hiệu lực và năm ban hành mới nhất
+        # 4. FTS rank (BM25 relevance)
+        # 5. Các tiêu chí phụ cho kết quả FTS
         order_clause = (
             "CASE WHEN d.so_ky_hieu = ? THEN 2 WHEN d.so_ky_hieu LIKE ? THEN 1 ELSE 0 END DESC, "
-            "content_fts.rank, "
+            "CASE "
+            "  WHEN replace(replace(LOWER(d.title), char(13), ''), char(10), ' ') = ? THEN 100 "
+            "  WHEN replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') = ? THEN 100 "
+            "  WHEN replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') LIKE ? THEN 50 "
+            "  ELSE 0 "
+            "END DESC, "
+            "CASE "
+            "  WHEN (replace(replace(LOWER(d.title), char(13), ''), char(10), ' ') = ? "
+            "        OR replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') = ? "
+            "        OR replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') LIKE ?) THEN "
+            "    CASE "
+            "      WHEN d.tinh_trang_hieu_luc LIKE '%Còn hiệu lực%' THEN 3 "
+            "      WHEN d.tinh_trang_hieu_luc LIKE '%Hết hiệu lực một phần%' THEN 2 "
+            "      WHEN d.tinh_trang_hieu_luc IS NULL OR d.tinh_trang_hieu_luc = '' THEN 1 "
+            "      ELSE 0 "
+            "    END "
+            "  ELSE 0 "
+            "END DESC, "
+            "CASE "
+            "  WHEN (replace(replace(LOWER(d.title), char(13), ''), char(10), ' ') = ? "
+            "        OR replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') = ? "
+            "        OR replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') LIKE ?) THEN "
+            "    CAST(substr(d.ngay_ban_hanh, 7, 4) AS INTEGER) "
+            "  ELSE 0 "
+            "END DESC, "
+            "f.rank, "
             "CASE "
             "  WHEN d.tinh_trang_hieu_luc LIKE '%Còn hiệu lực%' THEN 3 "
             "  WHEN d.tinh_trang_hieu_luc LIKE '%Hết hiệu lực một phần%' THEN 2 "
@@ -325,7 +350,13 @@ def search_laws(
             "substr(d.ngay_ban_hanh, 7, 4) DESC, substr(d.ngay_ban_hanh, 4, 2) DESC, substr(d.ngay_ban_hanh, 1, 2) DESC, d.id DESC"
         )
         q_strip = q.strip()
-        order_params = [q_strip, f"%{q_strip}%"]
+        q_lower = q_strip.lower()
+        order_params = [
+            q_strip, f"%{q_strip}%", 
+            q_lower, q_lower, f"%{q_lower}%",
+            q_lower, q_lower, f"%{q_lower}%",
+            q_lower, q_lower, f"%{q_lower}%"
+        ]
     else:
         order_clause = (
             "CASE WHEN d.tinh_trang_hieu_luc IN ('Hết hiệu lực toàn bộ', 'Hết hiệu lực') THEN 0 ELSE 1 END DESC, "
