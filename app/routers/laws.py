@@ -555,8 +555,17 @@ def get_smart_search_resources():
                 import faiss
                 import numpy as np
                 _SMART_SEARCH_INDEX = faiss.read_index(index_path)
-                id_arr = faiss.vector_to_array(_SMART_SEARCH_INDEX.id_map)
-                _SMART_SEARCH_ID_MAP = {int(cid): i for i, cid in enumerate(id_arr)}
+                if hasattr(_SMART_SEARCH_INDEX, "id_map"):
+                    id_arr = faiss.vector_to_array(_SMART_SEARCH_INDEX.id_map)
+                    _SMART_SEARCH_ID_MAP = {int(cid): i for i, cid in enumerate(id_arr)}
+                else:
+                    _SMART_SEARCH_ID_MAP = {}
+                
+                # Cấu hình nprobe cho các loại chỉ mục IVF (Inverted File)
+                if hasattr(_SMART_SEARCH_INDEX, "nprobe"):
+                    nprobe_val = int(os.environ.get("FAISS_NPROBE", "64"))
+                    _SMART_SEARCH_INDEX.nprobe = nprobe_val
+                    print(f"🎯 Chỉ mục FAISS loại IVF được thiết lập nprobe = {nprobe_val}")
             except Exception as e:
                 print(f"⚠️ Không thể load FAISS index từ {index_path}: {e}")
         else:

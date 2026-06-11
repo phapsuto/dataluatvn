@@ -117,12 +117,16 @@ JWT_SECRET=Thay_The_Bang_Chuoi_Random_32_Ky_Tu
 # Đường dẫn database chứa cache vector
 VECTOR_DB_SOTA_PATH=vector_store_bgem3.db
 
-# LỰA CHỌN CHỈ MỤC PHÙ HỢP RAM MÁY CHỦ:
-# Lựa chọn 1: Cấu hình RAM máy chủ lớn (>= 16 GB RAM) - Sử dụng Flat Index
-FAISS_INDEX_SOTA_PATH=chunks_faiss_bgem3.index
+# LỰA CHỌN CHỈ MỤC PHÙ HỢP RAM VÀ TỐC ĐỘ:
+# Lựa chọn 1: Cấu hình RAM lớn (>= 12-16 GB RAM) - Flat Index (Chính xác 100%, độ trễ trung bình ~180ms trên CPU)
+FAISS_INDEX_SOTA_PATH=chunks_faiss.index
 
-# Lựa chọn 2: Cấu hình RAM máy chủ vừa/nhỏ (4 GB - 8 GB RAM) - Sử dụng chỉ mục nén SQ8
-# FAISS_INDEX_SOTA_PATH=chunks_faiss_bgem3_sq8.index
+# Lựa chọn 2: Cấu hình RAM vừa/nhỏ (4 GB - 8 GB RAM) - Flat SQ8 (Tiết kiệm RAM ~1.6 GB, độ trễ trung bình ~1150ms trên CPU)
+# FAISS_INDEX_SOTA_PATH=chunks_faiss_sq8.index
+
+# Lựa chọn 3 (KHUYẾN NGHỊ CHO MÁY CHỦ NHỎ): Cấu hình RAM nhỏ (>= 4 GB RAM) - IVF-SQ8 Index (Tiết kiệm RAM ~1.6 GB, siêu nhanh < 20ms trên CPU)
+# FAISS_INDEX_SOTA_PATH=chunks_faiss_ivf_sq8.index
+# FAISS_NPROBE=64
 ```
 
 ---
@@ -153,13 +157,18 @@ python3 upgrade_db.py
 ```
 
 ### 4. Xây dựng các tệp chỉ mục FAISS từ cache vector
-Sau khi tải tệp `vector_store_bgem3.db` lên máy chủ, anh cần chạy script để tạo các tệp chỉ mục FAISS (Flat và SQ8) trực tiếp trên máy chủ:
+Sau khi tải tệp `vector_store_bgem3.db` lên máy chủ, anh cần chạy script để tạo các tệp chỉ mục FAISS:
 ```bash
-python3 scripts/rebuild_faiss_index.py
+# Xây dựng toàn bộ các loại chỉ mục (Flat, SQ8, IVF-SQ8)
+python3 scripts/rebuild_faiss_index.py --type all
+
+# Hoặc chỉ xây dựng loại chỉ mục IVF-SQ8 để tiết kiệm thời gian (khuyên dùng)
+python3 scripts/rebuild_faiss_index.py --type ivf_sq8
 ```
-Quá trình này sẽ đọc toàn bộ vector từ cache DB để dựng chỉ mục, chỉ mất khoảng **2 - 3 phút** và tự động tạo ra hai tệp chỉ mục tương thích với cấu hình máy chủ:
-* `chunks_faiss_bgem3.index` (Chỉ mục Flat chuẩn, ~6.3 GB)
-* `chunks_faiss_bgem3_sq8.index` (Chỉ mục nén SQ8, ~1.6 GB)
+Quá trình này sẽ đọc toàn bộ vector từ cache DB để dựng chỉ mục, chỉ mất khoảng **1 - 3 phút** và tự động tạo ra các tệp chỉ mục tương thích với cấu hình máy chủ:
+* `chunks_faiss.index` (Chỉ mục Flat chuẩn, ~6.3 GB)
+* `chunks_faiss_sq8.index` (Chỉ mục nén SQ8 Flat, ~1.6 GB)
+* `chunks_faiss_ivf_sq8.index` (Chỉ mục nén IVF-SQ8 siêu nhanh, ~1.6 GB, khuyên dùng cho máy chủ nhỏ)
 
 ---
 
