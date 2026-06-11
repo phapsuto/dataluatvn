@@ -1464,15 +1464,118 @@ def get_law_detail(
 
 # ─────────────────── RELATIONSHIPS ───────────────────
 
+def get_doc_level(loai_van_ban: Optional[str]) -> int:
+    if not loai_van_ban:
+        return 99
+    l = loai_van_ban.lower().strip()
+    if "hiến pháp" in l:
+        return 1
+    if "bộ luật" in l or "luật" in l:
+        return 2
+    if "pháp lệnh" in l:
+        return 3
+    if "lệnh" in l:
+        return 4
+    if "nghị định" in l:
+        return 5
+    if "thông tư" in l:
+        return 6
+    if "quyết định" in l:
+        return 7
+    if "chỉ thị" in l:
+        return 8
+    if "công văn" in l:
+        return 9
+    return 10
+
+
+def is_local_doc(co_quan_ban_hanh: Optional[str], title: Optional[str], so_ky_hieu: Optional[str]) -> bool:
+    for field in [co_quan_ban_hanh, title, so_ky_hieu]:
+        if not field:
+            continue
+        f = field.lower()
+        if "ủy ban nhân dân" in f or "ubnd" in f or "hội đồng nhân dân" in f or "hđnd" in f:
+            return True
+    return False
+
+
+def classify_relationship(doc_a: dict, doc_b: dict) -> str:
+    """
+    doc_a: The cited document (our target, law_id)
+    doc_b: The citing document (discovered from FTS match)
+    """
+    b_title = doc_b.get("title") or ""
+    b_type = doc_b.get("loai_van_ban") or ""
+    b_authority = doc_b.get("co_quan_ban_hanh") or ""
+    b_symbol = doc_b.get("so_ky_hieu") or ""
+    
+    a_type = doc_a.get("loai_van_ban") or ""
+    
+    b_title_lower = b_title.lower()
+    
+    # Check if local
+    if is_local_doc(b_authority, b_title, b_symbol):
+        return "Văn bản áp dụng địa phương (Quét Dọc)"
+        
+    # Check if amendment
+    if any(k in b_title_lower for k in ["sửa đổi", "bổ sung", "thay thế", "bãi bỏ"]):
+        return "Văn bản sửa đổi, bổ sung, thay thế (Quét Ngang)"
+        
+    # Check if Công văn
+    if b_type and "công văn" in b_type.lower():
+        return "Công văn hướng dẫn nghiệp vụ (Quét Ngang)"
+        
+    # Check if Văn bản hợp nhất
+    if b_type and "hợp nhất" in b_type.lower():
+        return "Văn bản hợp nhất (Quét Ngang)"
+        
+    # Specific vertical scans
+    if b_type and a_type:
+        a_type_lower = a_type.lower()
+        b_type_lower = b_type.lower()
+        
+        if "nghị định" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
+            return "Nghị định hướng dẫn thi hành (Quét Dọc)"
+            
+        if "thông tư" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
+            return "Thông tư hướng dẫn chi tiết (Quét Dọc)"
+            
+        if "thông tư" in b_type_lower and "nghị định" in a_type_lower:
+            return "Thông tư hướng dẫn thực hiện Nghị định (Quét Dọc)"
+            
+        if "nghị quyết" in b_type_lower and ("luật" in a_type_lower or "bộ luật" in a_type_lower or "hiến pháp" in a_type_lower):
+            return "Nghị quyết hướng dẫn thực hiện (Quét Dọc)"
+            
+    # Fallback based on levels
+    level_a = get_doc_level(a_type)
+    level_b = get_doc_level(b_type)
+    
+    if level_b > level_a:
+        return "Văn bản hướng dẫn, quy định chi tiết (Quét Dọc)"
+        
+    return "Văn bản dẫn chiếu, liên quan (Quét Ngang)"
+
+
 @router.get("/{law_id}/relationships", response_model=List[RelationshipInfo], tags=["🔗 Quan hệ pháp lý (Luật)"], summary="Quan hệ pháp lý")
 def get_law_relationships(
     law_id: int = Path(..., description="ID văn bản"),
     _key=Depends(require_api_key),
 ):
-    """Tra cứu mạng lưới liên kết pháp lý. **Yêu cầu API Key.**"""
+    """Tra cứu mạng lưới liên kết pháp lý theo phương pháp Quét Dọc - Quét Ngang. **Yêu cầu API Key.**"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # 1. Lấy metadata của văn bản hiện tại
+    cursor.execute("SELECT id, title, so_ky_hieu, loai_van_ban, co_quan_ban_hanh FROM documents WHERE id = ?", (law_id,))
+    doc_row = cursor.fetchone()
+    if not doc_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy văn bản có ID {law_id}")
+        
+    doc_a = dict(doc_row)
+    so_ky_hieu_a = doc_a.get("so_ky_hieu")
+
+    # 2. Truy vấn các mối quan hệ cứng có sẵn trong DB
     query = """
         SELECT r.doc_id, r.other_doc_id, r.relationship,
                d.title as other_doc_title, d.so_ky_hieu as other_doc_so_ky_hieu
@@ -1489,8 +1592,63 @@ def get_law_relationships(
 
     cursor.execute(query, (law_id, law_id))
     rows = cursor.fetchall()
+    
+    # Chuyển đổi thành list dict và ghi nhận related_ids đã có để deduplicate
+    relationships_list = []
+    seen_related_ids = set()
+    
+    for row in rows:
+        r_dict = dict(row)
+        relationships_list.append(r_dict)
+        
+        # Ghi nhận ID liên kết để tránh trùng lặp
+        if r_dict["doc_id"] == law_id:
+            seen_related_ids.add(r_dict["other_doc_id"])
+        else:
+            seen_related_ids.add(r_dict["doc_id"])
+
+    # 3. Quét FTS5 tìm văn bản dẫn chiếu ẩn trong nội dung toàn văn
+    # Bỏ qua nếu là văn bản "Không số" hoặc trống để tránh false positive hàng loạt
+    if so_ky_hieu_a and "không số" not in so_ky_hieu_a.lower() and so_ky_hieu_a.strip():
+        tokens = re.findall(r'\w+', so_ky_hieu_a)
+        if tokens:
+            phrase = " ".join(tokens)
+            fts_query = f'"{phrase}"'
+            
+            # Query content_fts tìm các văn bản dẫn chiếu (giới hạn 2000 dòng cho an toàn)
+            cursor.execute("""
+                SELECT d.id, d.title, d.so_ky_hieu, d.loai_van_ban, d.co_quan_ban_hanh
+                FROM content_fts f
+                JOIN documents d ON f.rowid = d.id
+                WHERE f.content_text MATCH ?
+                LIMIT 2000
+            """, (fts_query,))
+            citing_docs = cursor.fetchall()
+            
+            for doc_row_b in citing_docs:
+                doc_b = dict(doc_row_b)
+                b_id = doc_b["id"]
+                
+                # Bỏ qua nếu trùng chính nó hoặc đã có trong quan hệ cứng
+                if b_id == law_id or b_id in seen_related_ids:
+                    continue
+                    
+                seen_related_ids.add(b_id)
+                
+                # Phân loại mối quan hệ theo phương pháp Quét Dọc - Quét Ngang
+                rel_label = classify_relationship(doc_a, doc_b)
+                
+                # Thêm vào kết quả
+                relationships_list.append({
+                    "doc_id": b_id,
+                    "other_doc_id": law_id,
+                    "relationship": rel_label,
+                    "other_doc_title": doc_b["title"],
+                    "other_doc_so_ky_hieu": doc_b["so_ky_hieu"]
+                })
+
     conn.close()
-    return [dict(row) for row in rows]
+    return relationships_list
 
 
 @router.get("/{law_id}/article-modifications", response_model=List[ArticleModification], tags=["🔗 Quan hệ pháp lý (Luật)"], summary="Các điều khoản bị sửa đổi")
