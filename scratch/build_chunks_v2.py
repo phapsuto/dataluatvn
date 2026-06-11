@@ -111,37 +111,84 @@ def split_article_by_clauses(paragraphs, article_header, max_words=400, overlap=
                 
     return clause_chunks
 
-def parse_html_to_chunks(html_content):
+def html_to_clean_markdown(html_content):
+    if not html_content:
+        return ""
+    
     soup = BeautifulSoup(html_content, 'html.parser')
     content_container = soup.find(id="content") or soup.find(class_="noi-dung") or soup
     
-    # Remove script and style elements
-    for script in content_container(["script", "style"]):
-        script.extract()
+    # Remove script, style, and useless elements
+    for tag in content_container(["script", "style", "svg", "iframe", "img"]):
+        tag.extract()
         
-    # Inject newlines after block elements
-    block_tags = ['p', 'br', 'div', 'tr', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'td']
-    for tag in content_container.find_all(block_tags):
-        tag.insert_after('\n')
+    # Convert headings
+    for h in content_container.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+        level = int(h.name[1])
+        h.replace_with(f"\n\n{'#' * level} {h.get_text().strip()}\n\n")
+        
+    # Convert bold/italic
+    for strong in content_container.find_all(['strong', 'b']):
+        text = strong.get_text().strip()
+        if text:
+            strong.replace_with(f" **{text}** ")
+            
+    for em in content_container.find_all(['em', 'i']):
+        text = em.get_text().strip()
+        if text:
+            em.replace_with(f" *{text}* ")
+            
+    # Convert list items
+    for li in content_container.find_all('li'):
+        text = li.get_text().strip()
+        if text:
+            li.replace_with(f"\n* {text}")
+            
+    # Convert tables to markdown table
+    for tr in content_container.find_all('tr'):
+        tds = [td.get_text().strip() for td in tr.find_all(['td', 'th'])]
+        if tds:
+            tr.replace_with("\n| " + " | ".join(tds) + " |\n")
+            
+    # Convert br and p to newlines
+    for br in content_container.find_all('br'):
+        br.replace_with('\n')
+        
+    for p in content_container.find_all('p'):
+        p.insert_after('\n')
         
     text = content_container.get_text()
-    lines = [clean_text(line) for line in text.split('\n')]
-    paragraphs = [line for line in lines if line]
+    
+    # Clean up double spacing and blank lines (TokenJuice style compaction)
+    lines = []
+    for line in text.split('\n'):
+        cleaned = line.replace('\xa0', ' ').strip()
+        cleaned = re.sub(r' +', ' ', cleaned)
+        if cleaned:
+            lines.append(cleaned)
+            
+    return "\n".join(lines)
+
+def parse_html_to_chunks(html_content):
+    markdown_text = html_to_clean_markdown(html_content)
+    lines = markdown_text.split('\n')
+    paragraphs = [line.strip() for line in lines if line.strip()]
     
     raw_chunks = []
     current_chunk = []
     current_header = "Phần mở đầu"
     current_type = "preamble"
     
-    article_pattern = re.compile(r'^Điều\s+(\d+[a-zA-Z]*)\s*[\.\-:]?\s*(.*)', re.IGNORECASE)
-    chapter_pattern = re.compile(r'^(Chương|Phần|Mục)\s+([IVXLCDM\d]+)\s*[\.\-:]?\s*(.*)', re.IGNORECASE)
+    # Modified regexes to handle optional leading Markdown hashes
+    article_pattern = re.compile(r'^#*\s*Điều\s+(\d+[a-zA-Z]*)\s*[\.\-:]?\s*(.*)', re.IGNORECASE)
+    chapter_pattern = re.compile(r'^#*\s*(Chương|Phần|Mục)\s+([IVXLCDM\d]+)\s*[\.\-:]?\s*(.*)', re.IGNORECASE)
     
     for para in paragraphs:
         match_art = article_pattern.match(para)
         match_chap = chapter_pattern.match(para)
         
         if match_chap:
-            current_header = para
+            current_header = para.replace("#", "").strip()
             current_chunk.append(para)
         elif match_art:
             if current_chunk:

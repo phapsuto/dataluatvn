@@ -25,8 +25,10 @@ import platform
 from urllib.parse import quote
 from playwright.async_api import async_playwright
 
-DB_NAME = "vietnamese_legal_documents.db"
-CONTENT_DB = "content_store.db"
+# Thêm thư mục gốc vào path để import config
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from app.config import DB_NAME, CONTENT_DB, VECTOR_DB_SOTA, FAISS_INDEX_SOTA, EMBEDDING_MODEL_SOTA
+
 LOG_NAME = "sync.log"
 PROGRESS_FILE = "sync_progress.json"
 PID_FILE = "sync.pid"
@@ -496,8 +498,8 @@ async def run_sync():
 
 def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, content_html):
     """
-    Tự động chia nhỏ, sinh vector nhúng, lưu vào FAISS index và xây dựng đồ thị tri thức
-    cho tài liệu mới đồng bộ.
+    Tự động chia nhỏ, sinh vector nhúng bằng BGE-M3, lưu vào cache SQLite và xây dựng đồ thị tri thức,
+    sau đó cập nhật gia tăng các chỉ mục FAISS (Flat, SQ8, IVF-SQ8) cho tài liệu mới đồng bộ.
     """
     if not content_html:
         return
@@ -544,16 +546,17 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
         conn.commit()
         conn.close()
         
-        # 4. Sinh vector embeddings cho các chunks mới
+        # 4. Sinh vector embeddings bằng model BGE-M3 (1024-dim)
         from sentence_transformers import SentenceTransformer
-        model_name = "bkai-foundation-models/vietnamese-bi-encoder"
-        model = SentenceTransformer(model_name, device="cpu")
+        model = SentenceTransformer(EMBEDDING_MODEL_SOTA, device="cpu")
+        model.max_seq_length = 512
         
         texts = [cd[1] for cd in chunks_data]
         embeddings = model.encode(texts, batch_size=len(texts), convert_to_numpy=True)
+        embeddings = embeddings.astype(np.float32)
         
-        # 5. Lưu vectors vào cache vector_store.db
-        v_conn = sqlite3.connect("vector_store.db", timeout=30)
+        # 5. Lưu vectors vào cache VECTOR_DB_SOTA
+        v_conn = sqlite3.connect(VECTOR_DB_SOTA, timeout=30)
         v_cursor = v_conn.cursor()
         for (chunk_uid, _), emb in zip(chunks_data, embeddings):
             v_cursor.execute(
@@ -563,19 +566,31 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
         v_conn.commit()
         v_conn.close()
         
-        # 6. Cập nhật FAISS Index trực tiếp trên file
-        faiss_index_file = "chunks_faiss.index"
-        if os.path.exists(faiss_index_file):
-            index = faiss.read_index(faiss_index_file)
+        # 6. Cập nhật các FAISS Index tồn tại trên ổ đĩa
+        flat_file = FAISS_INDEX_SOTA
+        if flat_file.endswith("_sq8.index"):
+            flat_file = flat_file.replace("_sq8.index", ".index")
+        elif flat_file.endswith("_ivf_sq8.index"):
+            flat_file = flat_file.replace("_ivf_sq8.index", ".index")
             
-            xb = embeddings.astype(np.float32)
-            faiss.normalize_L2(xb)
-            
-            ids = np.array([cd[0] for cd in chunks_data], dtype=np.int64)
-            index.add_with_ids(xb, ids)
-            faiss.write_index(index, faiss_index_file)
-            log(f"   ⚡ Đã cập nhật {len(chunks_data)} vectors vào FAISS index ({faiss_index_file})")
-            
+        sq8_file = flat_file.replace(".index", "_sq8.index")
+        ivf_sq8_file = flat_file.replace(".index", "_ivf_sq8.index")
+        
+        # Chuẩn hóa L2 trước khi đưa vào FAISS
+        xb = embeddings.copy()
+        faiss.normalize_L2(xb)
+        ids = np.array([cd[0] for cd in chunks_data], dtype=np.int64)
+        
+        for idx_file in [flat_file, sq8_file, ivf_sq8_file]:
+            if os.path.exists(idx_file):
+                try:
+                    index = faiss.read_index(idx_file)
+                    index.add_with_ids(xb, ids)
+                    faiss.write_index(index, idx_file)
+                    log(f"   ⚡ Đã cập nhật gia tăng {len(chunks_data)} vectors vào FAISS index: {idx_file}")
+                except Exception as ex:
+                    log(f"   ⚠️ Lỗi cập nhật gia tăng file index {idx_file}: {ex}")
+                    
     except Exception as e:
         log(f"   ⚠️ Lỗi đồng bộ index gia tăng cho ID {doc_id}: {e}")
 
