@@ -20,6 +20,7 @@ def get_db_connection():
             detail="Database file not found. Please run download_all_to_sqlite.py first.",
         )
     conn = sqlite3.connect(DB_NAME, timeout=30.0)
+    conn.create_function("lower", 1, lambda s: s.lower() if s is not None else None)
     conn.row_factory = sqlite3.Row
     # ── PRAGMA tối ưu RAM ──
     conn.execute("PRAGMA cache_size = -32000")   # 32 MB cache (thay vì mặc định hàng GB)

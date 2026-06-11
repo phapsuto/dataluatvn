@@ -196,6 +196,26 @@ def get_ward_search_terms(ward_code: str, conn) -> list:
     return list(terms)
 
 
+def extract_type_and_title(q: str):
+    q_clean = q.strip().lower()
+    types = {
+        'hiến pháp': 'Hiến pháp',
+        'bộ luật': 'Bộ luật',
+        'luật': 'Luật',
+        'pháp lệnh': 'Pháp lệnh',
+        'nghị định': 'Nghị định',
+        'nghị quyết': 'Nghị quyết',
+        'quyết định': 'Quyết định',
+        'thông tư': 'Thông tư',
+        'chỉ thị': 'Chỉ thị',
+        'lệnh': 'Lệnh'
+    }
+    for t_key, t_val in types.items():
+        if q_clean.startswith(t_key + ' '):
+            return t_val, q_clean[len(t_key) + 1:].strip()
+    return None, None
+
+
 @router.get("/search", response_model=PaginatedSearchResponse, summary="Tìm kiếm văn bản")
 def search_laws(
     q: Optional[str] = Query(None, description="Từ khóa tìm kiếm"),
@@ -235,24 +255,38 @@ def search_laws(
     )
     params.append(today_str)
 
-
     if require_content:
         where_clauses.append("d.has_content = 1")
 
+    subquery_params = []
+    q_has_fts = False
     if q:
         fts_query = parse_fts_query(q)
         if fts_query:
-            # Ưu tiên content_fts (index title + nội dung toàn văn) nếu có
-            # Fallback về documents_fts (chỉ title) nếu chưa build content_fts
+            q_has_fts = True
             try:
                 cursor.execute("SELECT 1 FROM content_fts LIMIT 1")
-                where_clauses.append("content_fts MATCH ?")
-                params.append(fts_query)
-                from_clause = "documents d JOIN content_fts f ON d.id = f.rowid"
+                fts_table = "content_fts"
             except Exception:
-                where_clauses.append("documents_fts MATCH ?")
-                params.append(fts_query)
-                from_clause = "documents d JOIN documents_fts f ON d.id = f.rowid"
+                fts_table = "documents_fts"
+            
+            t_val, title_part = extract_type_and_title(q)
+            if t_val and title_part:
+                subquery_sql = f"""
+                  SELECT rowid as id, rank as f_rank FROM {fts_table} WHERE {fts_table} MATCH ?
+                  UNION ALL
+                  SELECT id, 0 as f_rank FROM documents WHERE so_ky_hieu = ? OR (loai_van_ban = ? AND LOWER(title) LIKE ?)
+                """
+                subquery_params = [fts_query, q.strip(), t_val, f"%{title_part}%"]
+            else:
+                subquery_sql = f"""
+                  SELECT rowid as id, rank as f_rank FROM {fts_table} WHERE {fts_table} MATCH ?
+                  UNION ALL
+                  SELECT id, 0 as f_rank FROM documents WHERE so_ky_hieu = ?
+                """
+                subquery_params = [fts_query, q.strip()]
+            
+            from_clause = f"({subquery_sql}) u JOIN documents d ON u.id = d.id"
 
     if province_code:
         terms = get_province_search_terms(province_code, conn)
@@ -290,17 +324,15 @@ def search_laws(
 
     where_sql = " AND ".join(where_clauses)
 
-    cursor.execute(f"SELECT count(*) FROM {from_clause} WHERE {where_sql}", params)
+    if q_has_fts:
+        cursor.execute(f"SELECT count(distinct d.id) FROM {from_clause} WHERE {where_sql}", subquery_params + params)
+    else:
+        cursor.execute(f"SELECT count(*) FROM {from_clause} WHERE {where_sql}", params)
     total = cursor.fetchone()[0]
 
     order_params = []
-    if q:
-        # ORDERING cho search: Smart Sorting kết hợp Proximity & Relevance
-        # 1. Khớp chính xác Số ký hiệu
-        # 2. Khớp chính xác hoặc gần đúng Tiêu đề (Title Boost)
-        # 3. Đối với các văn bản khớp Tiêu đề, ưu tiên tình trạng hiệu lực và năm ban hành mới nhất
-        # 4. FTS rank (BM25 relevance)
-        # 5. Các tiêu chí phụ cho kết quả FTS
+    if q_has_fts:
+        # Hướng 1: Ưu tiên Thứ bậc Hiệu lực + Trạng thái hoạt động, sau đó mới dùng FTS rank
         order_clause = (
             "CASE WHEN d.so_ky_hieu = ? THEN 2 WHEN d.so_ky_hieu LIKE ? THEN 1 ELSE 0 END DESC, "
             "CASE "
@@ -310,31 +342,10 @@ def search_laws(
             "  ELSE 0 "
             "END DESC, "
             "CASE "
-            "  WHEN (replace(replace(LOWER(d.title), char(13), ''), char(10), ' ') = ? "
-            "        OR replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') = ? "
-            "        OR replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') LIKE ?) THEN "
-            "    CASE "
-            "      WHEN d.tinh_trang_hieu_luc LIKE '%Còn hiệu lực%' THEN 3 "
-            "      WHEN d.tinh_trang_hieu_luc LIKE '%Hết hiệu lực một phần%' THEN 2 "
-            "      WHEN d.tinh_trang_hieu_luc IS NULL OR d.tinh_trang_hieu_luc = '' THEN 1 "
-            "      ELSE 0 "
-            "    END "
-            "  ELSE 0 "
-            "END DESC, "
-            "CASE "
-            "  WHEN (replace(replace(LOWER(d.title), char(13), ''), char(10), ' ') = ? "
-            "        OR replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') = ? "
-            "        OR replace(replace(LOWER(d.loai_van_ban || ' ' || d.title), char(13), ''), char(10), ' ') LIKE ?) THEN "
-            "    CAST(substr(d.ngay_ban_hanh, 7, 4) AS INTEGER) "
-            "  ELSE 0 "
-            "END DESC, "
-            "f.rank, "
-            "CASE "
             "  WHEN d.tinh_trang_hieu_luc LIKE '%Còn hiệu lực%' THEN 3 "
             "  WHEN d.tinh_trang_hieu_luc LIKE '%Hết hiệu lực một phần%' THEN 2 "
             "  WHEN d.tinh_trang_hieu_luc IS NULL OR d.tinh_trang_hieu_luc = '' THEN 1 "
-            "  WHEN d.tinh_trang_hieu_luc LIKE '%Hết hiệu lực%' THEN 0 "
-            "  ELSE 1 "
+            "  ELSE 0 "
             "END DESC, "
             "CASE LOWER(d.loai_van_ban) "
             "  WHEN 'hiến pháp' THEN 10 "
@@ -347,14 +358,14 @@ def search_laws(
             "  WHEN 'thông tư' THEN 4 "
             "  ELSE 1 "
             "END DESC, "
-            "substr(d.ngay_ban_hanh, 7, 4) DESC, substr(d.ngay_ban_hanh, 4, 2) DESC, substr(d.ngay_ban_hanh, 1, 2) DESC, d.id DESC"
+            "CAST(substr(d.ngay_ban_hanh, 7, 4) AS INTEGER) DESC, "
+            "u.f_rank, "
+            "substr(d.ngay_ban_hanh, 4, 2) DESC, substr(d.ngay_ban_hanh, 1, 2) DESC, d.id DESC"
         )
         q_strip = q.strip()
         q_lower = q_strip.lower()
         order_params = [
             q_strip, f"%{q_strip}%", 
-            q_lower, q_lower, f"%{q_lower}%",
-            q_lower, q_lower, f"%{q_lower}%",
             q_lower, q_lower, f"%{q_lower}%"
         ]
     else:
@@ -374,11 +385,20 @@ def search_laws(
             "substr(d.ngay_ban_hanh, 7, 4) DESC, substr(d.ngay_ban_hanh, 4, 2) DESC, substr(d.ngay_ban_hanh, 1, 2) DESC, d.id DESC"
         )
 
-    cursor.execute(
-        f"SELECT d.id, d.title, d.so_ky_hieu, d.ngay_ban_hanh, d.loai_van_ban, d.co_quan_ban_hanh, d.tinh_trang_hieu_luc "
-        f"FROM {from_clause} WHERE {where_sql} ORDER BY {order_clause} LIMIT ? OFFSET ?",
-        params + order_params + [limit, offset],
-    )
+    if q_has_fts:
+        query_sql = (
+            f"SELECT d.id, d.title, d.so_ky_hieu, d.ngay_ban_hanh, d.loai_van_ban, d.co_quan_ban_hanh, d.tinh_trang_hieu_luc, MIN(u.f_rank) as f_rank "
+            f"FROM {from_clause} WHERE {where_sql} GROUP BY d.id ORDER BY {order_clause} LIMIT ? OFFSET ?"
+        )
+        query_params = subquery_params + params + order_params + [limit, offset]
+    else:
+        query_sql = (
+            f"SELECT d.id, d.title, d.so_ky_hieu, d.ngay_ban_hanh, d.loai_van_ban, d.co_quan_ban_hanh, d.tinh_trang_hieu_luc "
+            f"FROM {from_clause} WHERE {where_sql} ORDER BY {order_clause} LIMIT ? OFFSET ?"
+        )
+        query_params = params + [limit, offset]
+
+    cursor.execute(query_sql, query_params)
     rows = cursor.fetchall()
     conn.close()
 
