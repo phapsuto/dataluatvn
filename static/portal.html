@@ -741,10 +741,13 @@
       font-family: var(--font-ui);
       font-size: 0.96rem;
       resize: none;
-      height: 26px;
+      padding: 4px 0;
+      margin: 0;
+      height: 24px;
       max-height: 150px;
-      line-height: 26px;
+      line-height: 1.4;
       color: var(--text-main);
+      overflow-y: auto;
     }
 
     .chat-icon-btn {
@@ -1108,73 +1111,189 @@
       padding-bottom: 3rem;
     }
 
-    .doc-layout-national {
-      text-align: center;
-      margin-bottom: 2rem;
-      font-family: var(--font-ui);
-      font-size: 0.98rem;
-      line-height: 1.5;
-    }
-
-    .doc-national-title {
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .doc-national-sub {
-      font-weight: 600;
-      border-bottom: 1px solid #2d3748;
-      width: 150px;
-      margin: 4px auto 12px auto;
-      padding-bottom: 4px;
-    }
-
-    .doc-header-row {
+    /* Decree 30 / NĐ-CP Standard Layout */
+    .doc-official-header {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 2rem;
-      font-family: var(--font-ui);
-      font-size: 0.92rem;
+      align-items: flex-start;
+      margin-bottom: 2.5rem;
+      font-family: 'Times New Roman', Times, serif;
+      color: #000000;
+      width: 100%;
     }
 
     .doc-header-left {
+      width: 45%;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .doc-header-right {
+      width: 55%;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .doc-organ-name {
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      line-height: 1.35;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-organ-line {
+      width: 60px;
+      height: 1px;
+      background-color: #000000;
+      margin: 6px auto;
+    }
+
+    .doc-no-symbol {
+      font-size: 13px;
+      font-weight: normal;
+      line-height: 1.3;
+      margin-top: 2px;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-national-title {
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      line-height: 1.35;
+      letter-spacing: normal;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-national-motto {
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 1.3;
+      margin-top: 2px;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-motto-line {
+      width: 160px;
+      height: 1px;
+      background-color: #000000;
+      margin: 6px auto;
+    }
+
+    .doc-place-date {
+      font-size: 14px;
+      font-style: italic;
+      font-weight: normal;
+      line-height: 1.3;
+      margin-top: 4px;
+      text-align: center;
+      width: 100%;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-chapter-heading {
+      text-align: center;
+      font-size: 14pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin: 2rem 0 1rem 0;
+      color: #000000;
+      width: 100%;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-section-heading {
+      text-align: center;
+      font-size: 13pt;
+      font-weight: bold;
+      margin: 1.5rem 0 0.85rem 0;
+      color: #000000;
+      width: 100%;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-article-heading {
+      font-size: 13pt;
+      font-weight: bold;
+      margin: 1.5rem 0 0.5rem 0;
+      color: #000000;
+      text-align: left;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-preamble {
+      font-size: 13pt;
+      font-style: italic;
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+      text-align: justify;
+      color: #000000;
+      text-indent: 0 !important;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .doc-fulltext-wrapper {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 13pt;
+      line-height: 1.5;
+      color: #000000;
+      max-width: 850px;
+      margin: 0 auto;
+      padding-bottom: 3rem;
     }
 
     .doc-fulltext-wrapper h1 {
       text-align: center;
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin: 2rem 0 1.5rem 0;
+      font-size: 14pt;
+      font-weight: bold;
+      margin: 2.5rem 0 1.5rem 0;
       text-transform: uppercase;
-      color: var(--primary-dark);
-      line-height: 1.4;
+      color: #000000;
+      line-height: 1.45;
+      font-family: 'Times New Roman', Times, serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .doc-fulltext-wrapper h1::after {
+      content: "";
+      display: block;
+      width: 100px;
+      height: 1px;
+      background-color: #000000;
+      margin-top: 10px;
     }
 
     .doc-fulltext-wrapper h2 {
-      font-size: 1.2rem;
-      font-weight: 700;
+      font-size: 13pt;
+      font-weight: bold;
       margin: 1.75rem 0 0.85rem 0;
-      color: var(--primary);
-      border-bottom: 1px dashed #cbd5e1;
-      padding-bottom: 0.3rem;
+      color: #000000;
+      font-family: 'Times New Roman', Times, serif;
+      border-bottom: none;
+      padding-bottom: 0;
     }
 
     .doc-fulltext-wrapper h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
+      font-size: 13pt;
+      font-weight: bold;
       margin: 1.5rem 0 0.75rem 0;
-      color: var(--text-main);
+      color: #000000;
+      font-family: 'Times New Roman', Times, serif;
     }
 
     .doc-fulltext-wrapper p {
-      margin-bottom: 1.1rem;
+      margin-bottom: 0.75rem;
       text-align: justify;
+      text-indent: 1.27cm;
+      line-height: 1.5;
+      font-family: 'Times New Roman', Times, serif;
+      color: #000000;
     }
 
     .doc-fulltext-wrapper ul, .doc-fulltext-wrapper ol {
@@ -1184,6 +1303,9 @@
 
     .doc-fulltext-wrapper li {
       margin-bottom: 0.4rem;
+      text-indent: 0;
+      font-family: 'Times New Roman', Times, serif;
+      color: #000000;
     }
 
     .doc-fulltext-wrapper table {
@@ -1625,6 +1747,8 @@
                 </div>
               </div>
             </div>
+            <!-- Div to hold actual chat messages list -->
+            <div id="chat-messages-list" style="display: flex; flex-direction: column; gap: 1.75rem; width: 100%;"></div>
           </div>
 
           <!-- Bottom input bar -->
@@ -2177,6 +2301,19 @@
       lucide.createIcons();
     }
 
+    function getPlaceName(coQuan) {
+      if (!coQuan) return 'Hà Nội';
+      const cqLower = coQuan.toLowerCase();
+      if (cqLower.includes('quốc hội') || cqLower.includes('chính phủ') || cqLower.includes('chủ tịch nước') || cqLower.includes('bộ ') || cqLower.includes('tổng cục')) {
+        return 'Hà Nội';
+      }
+      const provinceMatch = coQuan.match(/(tỉnh|thành phố|thị xã|huyện|quận)\s+([A-ZÀ-Ỹa-zà-ỹ\s]+)/i);
+      if (provinceMatch) {
+        return provinceMatch[2].trim();
+      }
+      return 'Hà Nội';
+    }
+
     // View Document Details (Parallel API Calls & Renders)
     async function viewDocument(id) {
       currentDocId = id;
@@ -2276,18 +2413,39 @@
       document.getElementById('ov-docx-link-text').innerText = `${docName} DOCX (Bản soạn thảo)`;
 
       // Update Full Text (Nội dung)
+      let day = '...';
+      let month = '...';
+      let year = '...';
+      if (d.ngay_ban_hanh) {
+        let dateParts = [];
+        if (d.ngay_ban_hanh.includes('/')) {
+          dateParts = d.ngay_ban_hanh.split('/');
+        } else if (d.ngay_ban_hanh.includes('-')) {
+          const temp = d.ngay_ban_hanh.split('-');
+          if (temp[0].length === 4) {
+            dateParts = [temp[2], temp[1], temp[0]];
+          } else {
+            dateParts = temp;
+          }
+        }
+        day = dateParts[0] ? dateParts[0].toString().padStart(2, '0') : '...';
+        month = dateParts[1] ? dateParts[1].toString().padStart(2, '0') : '...';
+        year = dateParts[2] || '...';
+      }
+
+      const placeName = getPlaceName(d.co_quan_ban_hanh || '');
       const printHeader = `
-        <div class="doc-layout-national">
-          <div class="doc-national-title">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-          <div class="doc-national-sub">Độc lập - Tự do - Hạnh phúc</div>
-        </div>
-        <div class="doc-header-row">
+        <div class="doc-official-header">
           <div class="doc-header-left">
-            <strong>${d.co_quan_ban_hanh || 'CƠ QUAN BAN HÀNH'}</strong><br>
-            Số: ${d.so_ky_hieu || '.../...'}<br>
+            <div class="doc-organ-name">${d.co_quan_ban_hanh || 'CƠ QUAN BAN HÀNH'}</div>
+            <div class="doc-organ-line"></div>
+            <div class="doc-no-symbol">Số: ${d.so_ky_hieu || '.../...'}</div>
           </div>
           <div class="doc-header-right">
-            <em>Hà Nội, ngày ${d.ngay_ban_hanh ? d.ngay_ban_hanh.split('/')[0] : '...'} tháng ${d.ngay_ban_hanh ? d.ngay_ban_hanh.split('/')[1] : '...'} năm ${d.ngay_ban_hanh ? d.ngay_ban_hanh.split('/')[2] : '...'}</em>
+            <div class="doc-national-title">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div class="doc-national-motto">Độc lập - Tự do - Hạnh phúc</div>
+            <div class="doc-motto-line"></div>
+            <div class="doc-place-date">${placeName}, ngày ${day} tháng ${month} năm ${year}</div>
           </div>
         </div>
       `;
@@ -2664,17 +2822,39 @@
       html = html.replace(/\| (.*?) \|/g, '<td>$1</td>');
       
       return html.split('\n\n').map(p => {
-        if (p.trim().startsWith('<h') || p.trim().startsWith('<ul') || p.trim().startsWith('<li') || p.trim().startsWith('<table')) {
-          return p;
+        const trimmed = p.trim();
+        if (trimmed.startsWith('<h') || trimmed.startsWith('<ul') || trimmed.startsWith('<li') || trimmed.startsWith('<table')) {
+          return trimmed;
         }
-        return `<p>${p.trim()}</p>`;
+        
+        // Match "Chương I" or "Chương I."
+        if (/^Chương\s+[IVXLCDM]+/i.test(trimmed)) {
+          return `<div class="doc-chapter-heading">${trimmed}</div>`;
+        }
+        
+        // Match "Mục 1"
+        if (/^Mục\s+\d+/i.test(trimmed)) {
+          return `<div class="doc-section-heading">${trimmed}</div>`;
+        }
+
+        // Match "Điều 1."
+        if (/^Điều\s+\d+/i.test(trimmed)) {
+          return `<div class="doc-article-heading">${trimmed}</div>`;
+        }
+        
+        // Match "Căn cứ..."
+        if (trimmed.toLowerCase().startsWith('căn cứ')) {
+          return `<p class="doc-preamble">${trimmed}</p>`;
+        }
+        
+        return `<p>${trimmed}</p>`;
       }).join('\n');
     }
 
     // ─── CHATBOT LOGIC (GEMINI STYLE) ───
     function adjustTextareaHeight(el) {
-      el.style.height = '26px';
-      el.style.height = (el.scrollHeight - 10) + 'px';
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
     }
 
     function startNewChat() {
@@ -2717,17 +2897,19 @@
 
     function renderMessages() {
       const container = document.getElementById('chat-messages-container');
+      const msgList = document.getElementById('chat-messages-list');
       const activeSession = chatHistory.find(s => s.id === currentSessionId);
       
       if (!activeSession || activeSession.messages.length === 0) {
         document.getElementById('chat-empty-view').style.display = 'flex';
-        container.innerHTML = '';
-        container.appendChild(document.getElementById('chat-empty-view'));
+        msgList.style.display = 'none';
+        msgList.innerHTML = '';
         return;
       }
 
       document.getElementById('chat-empty-view').style.display = 'none';
-      container.innerHTML = activeSession.messages.map(msg => {
+      msgList.style.display = 'flex';
+      msgList.innerHTML = activeSession.messages.map(msg => {
         const isUser = msg.role === 'user';
         const avatarClass = isUser ? 'avatar-user' : 'avatar-assistant';
         const label = isUser ? 'U' : 'AI';
@@ -2769,7 +2951,13 @@
       return html;
     }
 
+    let _isComposing = false;
+    document.getElementById('chat-input').addEventListener('compositionstart', () => { _isComposing = true; });
+    document.getElementById('chat-input').addEventListener('compositionend', () => { _isComposing = false; });
+
     function handleChatKeyDown(e) {
+      // Ignore Enter while Vietnamese IME is composing (Telex/VNI)
+      if (e.isComposing || _isComposing) return;
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
@@ -2800,13 +2988,17 @@
       }
       
       input.value = '';
-      input.style.height = '26px';
+      adjustTextareaHeight(input);
       saveChatHistory();
       renderHistoryList();
       renderMessages();
 
       // Show typing loader
       const container = document.getElementById('chat-messages-container');
+      const msgList = document.getElementById('chat-messages-list');
+      document.getElementById('chat-empty-view').style.display = 'none';
+      msgList.style.display = 'flex';
+
       const loaderRow = document.createElement('div');
       loaderRow.className = 'message-row';
       loaderRow.innerHTML = `
@@ -2819,7 +3011,7 @@
           </div>
         </div>
       `;
-      container.appendChild(loaderRow);
+      msgList.appendChild(loaderRow);
       container.scrollTop = container.scrollHeight;
 
       try {
@@ -2838,7 +3030,7 @@
         if (!res.ok) throw new Error('Không thể kết nối đến Trợ lý AI.');
         const data = await res.json();
         
-        container.removeChild(loaderRow);
+        msgList.removeChild(loaderRow);
 
         const assistantMsg = {
           role: 'assistant',
@@ -2850,7 +3042,7 @@
         renderMessages();
 
       } catch (err) {
-        container.removeChild(loaderRow);
+        msgList.removeChild(loaderRow);
         const assistantMsg = {
           role: 'assistant',
           content: `❌ Lỗi kết nối hệ thống AI: ${err.message}`
