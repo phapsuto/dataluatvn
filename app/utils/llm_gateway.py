@@ -31,37 +31,16 @@ class LLMGateway:
         "fpt": {
             "model": "custom_openai/gemma-4-31B-it",
             "api_base": "https://mkp-api.fptcloud.com/v1",
-            "api_key": os.environ.get("FPT_CLOUD_API_KEY") or "sk-o38ypse9lSfaKaDOQ9O7STlEbfZZ0PBLmJ1v_dwlSmM=",
-        },
-        "gemini": {
-            "model": "gemini/gemini-2.0-flash",
-            "api_key": os.environ.get("GEMINI_API_KEY"),
-        },
-        "gemini_pro": {
-            "model": "gemini/gemini-2.0-pro",
-            "api_key": os.environ.get("GEMINI_API_KEY"),
-        },
-        "openai": {
-            "model": "openai/gpt-4o-mini",
-            "api_key": os.environ.get("OPENAI_API_KEY"),
-        },
-        "claude": {
-            "model": "anthropic/claude-3-5-haiku-20241022",
-            "api_key": os.environ.get("ANTHROPIC_API_KEY"),
+            "api_key": os.environ.get("FPT_CLOUD_API_KEY") or "",
         },
         "ollama": {
             "model": "ollama/llama3.2",
             "api_base": os.environ.get("OLLAMA_API_BASE") or "http://localhost:11434",
         },
-        "custom": {
-            "model": os.environ.get("CUSTOM_MODEL", "custom-model"),
-            "api_base": os.environ.get("CUSTOM_BASE_URL"),
-            "api_key": os.environ.get("CUSTOM_API_KEY"),
-        }
     }
     
     # Default fallback path
-    FALLBACK_CHAIN = ["fpt", "gemini", "ollama"]
+    FALLBACK_CHAIN = ["fpt", "ollama"]
 
     @classmethod
     def get_status(cls) -> Dict[str, Any]:
@@ -97,7 +76,8 @@ class LLMGateway:
         cls, 
         messages: List[Dict[str, str]], 
         system_prompt: str, 
-        temperature: float = 0.1
+        temperature: float = 0.1,
+        custom_model: str = None
     ) -> AsyncGenerator[str, None]:
         """
         Asynchronously streams completion tokens from the active LLM provider,
@@ -120,7 +100,7 @@ class LLMGateway:
             if provider != "ollama" and not config.get("api_key"):
                 continue
                 
-            model = config["model"]
+            model = custom_model if (custom_model and provider == "fpt") else config["model"]
             api_key = config.get("api_key")
             api_base = config.get("api_base")
             

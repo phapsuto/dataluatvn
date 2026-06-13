@@ -1,6 +1,9 @@
 import os
 import hashlib
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                     CONFIGURATION                           ║
@@ -10,11 +13,20 @@ DB_NAME = os.environ.get("DB_PATH", "vietnamese_legal_documents.db")
 CONTENT_DB = os.environ.get("CONTENT_DB_PATH", "content_store.db")
 ADMIN_DB = os.environ.get("ADMIN_DB_PATH", "admin.db")
 MEMORY_DB = os.environ.get("MEMORY_DB_PATH", "user_session_memory.db")
-FPT_CLOUD_API_KEY = os.environ.get("FPT_CLOUD_API_KEY", "sk-o38ypse9lSfaKaDOQ9O7STlEbfZZ0PBLmJ1v_dwlSmM=")
+FPT_CLOUD_API_KEY = os.environ.get("FPT_CLOUD_API_KEY", "")
 API_PORT = int(os.environ.get("API_PORT", 2004))
-JWT_SECRET = os.environ.get("JWT_SECRET", "dlvn-jwt-secret-2024-phapsuto-internal")
+JWT_SECRET = os.environ.get("JWT_SECRET", "")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_HOURS = 24 * 7  # 7 days
+
+# Runtime safety check for public deployment
+if not JWT_SECRET:
+    import warnings
+    warnings.warn("⚠️  JWT_SECRET not set in .env — using insecure default. Set JWT_SECRET for production!", stacklevel=2)
+    JWT_SECRET = "dlvn-dev-only-insecure-default"
+if not FPT_CLOUD_API_KEY:
+    import warnings
+    warnings.warn("⚠️  FPT_CLOUD_API_KEY not set in .env — LLM features will be disabled.", stacklevel=2)
 
 # --- SOTA RAG Config ---
 VECTOR_DB_SOTA = os.environ.get("VECTOR_DB_SOTA_PATH", "vector_store.db")
@@ -24,9 +36,16 @@ RERANKER_MODEL_SOTA = os.environ.get("RERANKER_MODEL_SOTA", "AITeamVN/Vietnamese
 
 
 # --- Fixed Accounts (Internal Use Only) ---
+# Passwords loaded from environment variables. Set ADMIN_PASSWORD in .env.
+_admin_password = os.environ.get("ADMIN_PASSWORD", "")
+if not _admin_password:
+    import warnings
+    warnings.warn("⚠️  ADMIN_PASSWORD not set in .env — using insecure default. Set ADMIN_PASSWORD for production!", stacklevel=2)
+    _admin_password = "changeme-insecure-default"
+
 ACCOUNTS = {
-    "phamkhoa3092003@gmail.com": hashlib.sha256("Apple0202".encode()).hexdigest(),
-    "phapsuto@gmail.com": hashlib.sha256("Apple0202".encode()).hexdigest(),
+    "phamkhoa3092003@gmail.com": hashlib.sha256(_admin_password.encode()).hexdigest(),
+    "phapsuto@gmail.com": hashlib.sha256(_admin_password.encode()).hexdigest(),
 }
 
 

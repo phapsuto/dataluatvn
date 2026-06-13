@@ -94,12 +94,16 @@ app = FastAPI(
     swagger_ui_parameters={"persistAuthorization": True},
 )
 
+# CORS: configurable origins for public deployment
+_cors_origins_str = os.environ.get("CORS_ORIGINS", "http://localhost:2004,http://127.0.0.1:2004")
+_cors_origins = [o.strip() for o in _cors_origins_str.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
 

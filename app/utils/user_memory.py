@@ -10,7 +10,7 @@ logger = logging.getLogger("user_memory")
 try:
     from app.config import FPT_CLOUD_API_KEY
 except ImportError:
-    FPT_CLOUD_API_KEY = os.environ.get("FPT_CLOUD_API_KEY") or "sk-o38ypse9lSfaKaDOQ9O7STlEbfZZ0PBLmJ1v_dwlSmM="
+    FPT_CLOUD_API_KEY = os.environ.get("FPT_CLOUD_API_KEY", "")
 
 # Config for Mem0 with local FAISS, SQLite, and local HF embedding model
 MEM0_CONFIG = {

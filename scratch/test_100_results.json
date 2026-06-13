@@ -1,0 +1,2617 @@
+{
+  "timestamp": "2026-06-13T12:53:37.884100",
+  "total_questions": 100,
+  "avg_latency": 1.51,
+  "grade_counts": {
+    "EXACT_MATCH": 23,
+    "PARTIAL_MATCH": 59,
+    "WRONG_DOC": 11,
+    "MISS": 7,
+    "NO_RESULT": 0,
+    "ERROR": 0
+  },
+  "accuracy_pct": 82.0,
+  "exact_match_pct": 23.0,
+  "results": [
+    {
+      "index": 1,
+      "question": "Điều 2 của Ban hành Quy định mức hỗ trợ khuyến khích phát triển hợp tác, \nliên kết sản xuất quy định gì?",
+      "source": {
+        "doc_id": 95956,
+        "so_ky_hieu": "20/2015/QĐ-UBND",
+        "doc_title": "Ban hành Quy định mức hỗ trợ khuyến khích phát triển hợp tác, \nliên kết sản xuất gắn với tiêu thụ nô",
+        "article_num": "2",
+        "article_header": "Điều 2",
+        "text_preview": "Điều 2.\nQuyết định này có hiệu lực thi hành sau 10 ngày kể từ ngày ký.\nGiao Sở Nông nghiệp và Phát triển nông thôn chủ trì phối hợp với Sở Tài chính hướng dẫn thực hiện Quyết định này."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 22.375
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.875,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 88%)"
+      }
+    },
+    {
+      "index": 2,
+      "question": "Cho tôi biết Điều 1 Về việc điều chỉnh và quy định bổ sung giá các loại đất trên địa bàn Thị xã Bảo  nói về vấn đề gì?",
+      "source": {
+        "doc_id": 4529,
+        "so_ky_hieu": "1535/QĐ-UB",
+        "doc_title": "Về việc điều chỉnh và quy định bổ sung giá các loại đất trên địa bàn Thị xã Bảo Lộc",
+        "article_num": "1",
+        "article_header": "Điều 1",
+        "text_preview": "Điều 1:\nNay ban hành kèm theo quyết định này bảng điều chỉnh và quy định loại đường phố, vị trí giá các loại đất trên địa bàn Thị xã Bảo Lộc, để làm cơ sở tính thuế chuyển quyền sử dụng đất, thu tiền "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 10.4
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 3,
+      "question": "Nội dung Điều 1 trong văn bản 52/2017/NQ-HĐND là gì?",
+      "source": {
+        "doc_id": 123385,
+        "so_ky_hieu": "52/2017/NQ-HĐND",
+        "doc_title": "Quy định mức thu, chế độ thu, nộp và quản lý lệ phí cấp giấy phép xây dựng trên địa bàn tỉnh Nam Địn",
+        "article_num": "1",
+        "article_header": "Điều 1: Quy định mức thu, chế độ thu, nộp và quản lý lệ phí cấp giấy phép xây dựng trên địa bàn tỉnh",
+        "text_preview": "Điều 1. Quy định mức thu, chế độ thu, nộp và quản lý lệ phí cấp giấy phép xây dựng trên địa bàn tỉnh, như sau:\n1. Đối tượng thu, nộp lệ phí\na) Đối tượng thu lệ phí: Cơ quan cấp giấy phép xây dựng theo"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.035
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.619,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 62%)"
+      }
+    },
+    {
+      "index": 4,
+      "question": "Nội dung Điều 1 trong văn bản 57/2018/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 132013,
+        "so_ky_hieu": "57/2018/QĐ-UBND",
+        "doc_title": "Quyết định ban hành quy định về cưỡng chế thi hành quyết định giải quyết tranh chấp đất đai, quyết đ",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này “Quy định về cưỡng chế thi hành quyết định giải quyết tranh",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này “Quy định về cưỡng chế thi hành quyết định giải quyết tranh chấp đất đai, quyết định công nhận hoà giải thành tranh chấp đất đai trên địa bàn tỉnh Thừa Thiên H"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.521
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.444,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 44%)"
+      }
+    },
+    {
+      "index": 5,
+      "question": "Nội dung Điều 2 trong văn bản 18/2010/NQ-HĐND là gì?",
+      "source": {
+        "doc_id": 51417,
+        "so_ky_hieu": "18/2010/NQ-HĐND",
+        "doc_title": "Về kế hoạch vốn đầu tư xây dựng cơ bản thuộc ngân sách Nhà nước tỉnh năm 2011",
+        "article_num": "2",
+        "article_header": "Điều 2: Giải pháp thực hiện",
+        "text_preview": "Điều 2. Giải pháp thực hiện\n1. Ưu tiên phân bổ một phần vốn ngân sách để thanh toán nợ tồn đọng trong đầu tư xây dựng cơ bản theo chỉ đạo của Trung ương và hoàn trả ngân sách Nhà nước đã ứng trước phả"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.48
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.344,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 34%)"
+      }
+    },
+    {
+      "index": 6,
+      "question": "Điều 2 của Quy định chế độ quản lý tài chính, tài sản đối với các Cơ quan Việt Nam ở nước n quy định gì?",
+      "source": {
+        "doc_id": 26236,
+        "so_ky_hieu": "222/2010/TT-BTC",
+        "doc_title": "Quy định chế độ quản lý tài chính, tài sản đối với các Cơ quan Việt Nam ở nước ngoài",
+        "article_num": "2",
+        "article_header": "Điều 2: Tổ chức thu, nộp ngân sách Nhà nước: (Phần 1)",
+        "text_preview": "Điều 2. Tổ chức thu, nộp ngân sách Nhà nước: 1. Thu phí và lệ phí lãnh sự: Cơ quan Việt Nam ở nước ngoài quản lý việc thu, nộp và sử dụng các nguồn thu theo quy định tại Thông tư 236/2009/TT-BTC ngày "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.867
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.256,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 26%)"
+      }
+    },
+    {
+      "index": 7,
+      "question": "Quy định về Ban hành mức thu phí vệ sinh của Ban Quản lý Chợ Khu sáu và Ban Quản lý Chợ Đầm Đống Đa thuộc thành trong Điều 1 Về việc quy định mức thu phí vệ sinh của Ban Quản lý \nChợ Khu sáu và Ban Quản lý như thế nào?",
+      "source": {
+        "doc_id": 96151,
+        "so_ky_hieu": "43/2014/QĐ-UBND",
+        "doc_title": "Về việc quy định mức thu phí vệ sinh của Ban Quản lý \nChợ Khu sáu và Ban Quản lý Chợ Đầm Đống Đa",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành mức thu phí vệ sinh của Ban Quản lý Chợ Khu sáu và Ban Quản lý Chợ Đầm Đống Đa thuộ",
+        "text_preview": "Điều 1. Ban hành mức thu phí vệ sinh của Ban Quản lý Chợ Khu sáu và Ban Quản lý Chợ Đầm Đống Đa thuộc thành phố Quy Nhơn, cụ thể như sau:\n1. Hộ bán hàng có nhiều chất thải : 40.000 đồng/hộ/tháng;\n2. H"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.93
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.417,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 42%)"
+      }
+    },
+    {
+      "index": 8,
+      "question": "Điều 2 của Về quy hoạch chi tiết xây dựng đô thị tỷ lệ 1/2000 tại các phường Tân Định, Đaka quy định gì?",
+      "source": {
+        "doc_id": 112425,
+        "so_ky_hieu": "08/2006/NQ-HĐND",
+        "doc_title": "Về quy hoạch chi tiết xây dựng đô thị tỷ lệ 1/2000 tại các phường Tân Định, Đakao, Phạm Ngũ Lão, Ngu",
+        "article_num": "2",
+        "article_header": "Điều 2: Giao Uỷ ban nhân dân quận 1 phối hợp với các đơn vị có liên quan thực hiện các thủ tục theo ",
+        "text_preview": "Điều 2. Giao Uỷ ban nhân dân quận 1 phối hợp với các đơn vị có liên quan thực hiện các thủ tục theo quy định trước khi phê duyệt đồ án quy hoạch chi tiết 1/2000 tại 7 phường. Có kế hoạch tổ chức triển"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dat_dai",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.505
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.75,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 75%)"
+      }
+    },
+    {
+      "index": 9,
+      "question": "Quy định về Đối tượng áp dụng: trong Điều 1 Quy định về tiêu chuẩn, định mức trang bị phương tiện \nlàm việc cho Công an xã t như thế nào?",
+      "source": {
+        "doc_id": 96012,
+        "so_ky_hieu": "35/2015/QĐ-UBND",
+        "doc_title": "Quy định về tiêu chuẩn, định mức trang bị phương tiện \nlàm việc cho Công an xã trên địa bàn tỉnh",
+        "article_num": "1",
+        "article_header": "Điều 1: Đối tượng áp dụng:",
+        "text_preview": "Điều 1. Đối tượng áp dụng:\n1. Công an xã, Công an thị trấn nơi chưa bố trí tổ chức Công an chính quy (sau đây gọi chung là Công an xã).\n2. Công an các đơn vị, địa phương và các tổ chức, cá nhân khác c"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.503
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 10,
+      "question": "Trích dẫn Điều 2 của văn bản số 1231/QĐ-UB",
+      "source": {
+        "doc_id": 43587,
+        "so_ky_hieu": "1231/QĐ-UB",
+        "doc_title": "V/v phê duyệt đề án cải cách thủ tục hành chính theo cơ chế “một cửa” của Thanh tra tỉnh",
+        "article_num": "2",
+        "article_header": "Điều 2: Chánh Thanh tra tỉnh chịu trách nhiệm tổ chức thực hiện đề án đã được phê duyệt. Hàng quý, 6",
+        "text_preview": "Điều 2. Chánh Thanh tra tỉnh chịu trách nhiệm tổ chức thực hiện đề án đã được phê duyệt. Hàng quý, 6 tháng, năm Chánh Thanh tra tỉnh báo cáo tình hình thực hiện về Uỷ ban nhân dân tỉnh (qua Sở Nội vụ)"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.477
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.222,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 22%)"
+      }
+    },
+    {
+      "index": 11,
+      "question": "Điều 2 của Ban hành Quy chế phối hợp giữa các cơ quan chức năng trên địa bàn thành phố Huế  quy định gì?",
+      "source": {
+        "doc_id": 174692,
+        "so_ky_hieu": "04/2025/QĐ-UBND",
+        "doc_title": "Ban hành Quy chế phối hợp giữa các cơ quan chức năng trên địa bàn thành phố Huế trong quản lý nhà nư",
+        "article_num": "2",
+        "article_header": "Điều 2: Hiệu lực thi hành",
+        "text_preview": "Điều 2. Hiệu lực thi hành\nQuyết định này có hiệu lực thi hành ngày 10 tháng 02 năm 2025.\nQuyết định này thay thế Quyết định số 93/2016/QĐ-UBND ngày 30 tháng 12 năm 2016 của Uỷ ban nhân dân tỉnh Thừa T"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.056
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.462,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 46%)"
+      }
+    },
+    {
+      "index": 12,
+      "question": "Điều 1 của Về việc sửa đổi, bổ sung một số điều của Quy chế phối hợp phòng, chống tội phạm  quy định gì?",
+      "source": {
+        "doc_id": 151790,
+        "so_ky_hieu": "36/2021/QĐ-UBND",
+        "doc_title": "Về việc sửa đổi, bổ sung một số điều của Quy chế phối hợp phòng, chống tội phạm trong lĩnh vực bưu c",
+        "article_num": "1",
+        "article_header": "Điều 1: Sửa đổi, bổ sung một số điều của Quy chế phối hợp phòng, chống tội phạm trong lĩnh vực bưu c",
+        "text_preview": "Điều 1. Sửa đổi, bổ sung một số điều của Quy chế phối hợp phòng, chống tội phạm trong lĩnh vực bưu chính, viễn thông và công nghệ thông tin ban hành kèm theo Quyết định số 39/2010/QĐ-UBND ngày 31/12"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.597
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.25,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 25%)"
+      }
+    },
+    {
+      "index": 13,
+      "question": "Điều 1 của Công bố vùng nước các cảng biển thuộc địa phận tỉnh Bình Định, tỉnh Phú Yên và k quy định gì?",
+      "source": {
+        "doc_id": 143534,
+        "so_ky_hieu": "55/2018/tt-bgtvt",
+        "doc_title": "Công bố vùng nước các cảng biển thuộc địa phận tỉnh Bình Định, tỉnh Phú Yên và khu vực quản lý của C",
+        "article_num": "1",
+        "article_header": "Điều 1: Công bố vùng nước các cảng biển thuộc địa phận tỉnh Bình Định, tỉnh Phú Yên",
+        "text_preview": "Điều 1. Công bố vùng nước các cảng biển thuộc địa phận tỉnh Bình Định, tỉnh Phú Yên\n1. Vùng nước cảng biển Quy Nhơn thuộc địa phận tỉnh Bình Định là vùng nước cảng biển tại khu vực vịnh Quy Nhơn và tạ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dat_dai",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.89
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.6,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 60%)"
+      }
+    },
+    {
+      "index": 14,
+      "question": "Nội dung Điều 2 trong văn bản 39/2005/NQ-HĐND là gì?",
+      "source": {
+        "doc_id": 35684,
+        "so_ky_hieu": "39/2005/NQ-HĐND",
+        "doc_title": "Về việc chia tách các xã Nà Hỳ, Chà Cang, Mường Toong thuộc huyện Mường Nhé",
+        "article_num": "2",
+        "article_header": "Điều 2: Giao UBND tỉnh hoàn tất các thủ tục theo quy định của pháp luật trình Chính phủ xem xét, quy",
+        "text_preview": "Điều 2. Giao UBND tỉnh hoàn tất các thủ tục theo quy định của pháp luật trình Chính phủ xem xét, quyết định.."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.445
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 100%)"
+      }
+    },
+    {
+      "index": 15,
+      "question": "Nội dung Điều 2 trong văn bản Không số là gì?",
+      "source": {
+        "doc_id": 3640,
+        "so_ky_hieu": "Không số",
+        "doc_title": "Thuế Nông nghiệp",
+        "article_num": "2",
+        "article_header": "Điều 2",
+        "text_preview": "Điều 2\nCăn cứ để tính thuế nông nghiệp là :\na) Diện tích và hạng đất, đối với đất trồng cây hàng năm.\nb) Diện tích và sản lượng hàng năm, hoặc giá trị sản lượng hàng năm, đối với đất vườn và đất trồng"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.839
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.176,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 18%)"
+      }
+    },
+    {
+      "index": 16,
+      "question": "Quy định về Hội đồng nhân dân quận thống nhất với những nội dung Tờ trình số 2090/TTr-UBND ngày 25 tháng 12 năm trong Điều 1 Nghị quyết số 59/2007/NQ-HĐND về việc đồ án điều chỉnh quy hoạch chung xây dựng  như thế nào?",
+      "source": {
+        "doc_id": 88867,
+        "so_ky_hieu": "59/2007/NQ-HĐND",
+        "doc_title": "Nghị quyết số 59/2007/NQ-HĐND về việc đồ án điều chỉnh quy hoạch chung xây dựng (tỷ lệ 1/10.000) quậ",
+        "article_num": "1",
+        "article_header": "Điều 1: Hội đồng nhân dân quận thống nhất với những nội dung Tờ trình số 2090/TTr-UBND ngày 25 tháng",
+        "text_preview": "Điều 1. Hội đồng nhân dân quận thống nhất với những nội dung Tờ trình số 2090/TTr-UBND ngày 25 tháng 12 năm 2007 của Uỷ ban nhân quận về Đồ án điều chỉnh quy hoạch chung xây dựng (tỷ lệ 1/10.000) quận"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dat_dai",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.615
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 17,
+      "question": "Quy định về Hội đồng nhân dân tỉnh thống nhất mức thu phí, lệ phí và tỷ lệ (%) trích để lại từ nguồn thu phí, lệ trong Điều 1 Về mức thu phí, lệ phí và tỷ lệ (%) trích để lại từ nguồn thu phí, lệ phí trên đ như thế nào?",
+      "source": {
+        "doc_id": 76439,
+        "so_ky_hieu": "169/2014/NQ-HĐND",
+        "doc_title": "Về mức thu phí, lệ phí và tỷ lệ (%) trích để lại từ nguồn thu phí, lệ phí trên địa bàn tỉnh Long An",
+        "article_num": "1",
+        "article_header": "Điều 1: Hội đồng nhân dân tỉnh thống nhất mức thu phí, lệ phí và tỷ lệ (%) trích để lại từ nguồn thu",
+        "text_preview": "Điều 1. Hội đồng nhân dân tỉnh thống nhất mức thu phí, lệ phí và tỷ lệ (%) trích để lại từ nguồn thu phí, lệ phí trên địa bàn tỉnh Long An (có danh mục kèm theo).\nTrường hợp đối với các khoản phí, lệ "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dat_dai",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.586
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 18,
+      "question": "Điều 2 của Ban hành Chương trình khung trình độ trung cấp nghề, chương trình khung trình độ quy định gì?",
+      "source": {
+        "doc_id": 123092,
+        "so_ky_hieu": "36/2008/QĐ-BLĐTBXH",
+        "doc_title": "Ban hành Chương trình khung trình độ trung cấp nghề, chương trình khung trình độ cao đẳng nghề cho n",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định này có hiệu lực thi hành sau 15 ngày, kể từ ngày đăng Công báo.",
+        "text_preview": "Điều 2. Quyết định này có hiệu lực thi hành sau 15 ngày, kể từ ngày đăng Công báo."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "lao_dong",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.647
+      },
+      "scoring": {
+        "grade": "MISS",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.0,
+        "details": "❌ Hoàn toàn sai — overlap chỉ 0%"
+      }
+    },
+    {
+      "index": 19,
+      "question": "Quy định về Quy định mức thu, đối tượng và chế độ thu, nộp, quản lý, sử dụng phí sử dụng tạm thời lòng đường để  (Phần 1) trong Điều 1 Quy định mức thu, đối tượng và chế độ thu, nộp, quản lý, sử dụng phí sử dụng tạm như thế nào?",
+      "source": {
+        "doc_id": 145326,
+        "so_ky_hieu": "331/2020/NQ-HĐND",
+        "doc_title": "Quy định mức thu, đối tượng và chế độ thu, nộp, quản lý, sử dụng phí sử dụng tạm thời lòng đường để ",
+        "article_num": "1",
+        "article_header": "Điều 1: Quy định mức thu, đối tượng và chế độ thu, nộp, quản lý, sử dụng phí sử dụng tạm thời lòng đ",
+        "text_preview": "Điều 1. Quy định mức thu, đối tượng và chế độ thu, nộp, quản lý, sử dụng phí sử dụng tạm thời lòng đường để đỗ xe ô tô trên địa bàn thành phố Đà Nẵng, cụ thể như sau: 1. Phạm vi áp dụng: Hai tuyến đườ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.509
+      },
+      "scoring": {
+        "grade": "MISS",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.122,
+        "details": "❌ Hoàn toàn sai — overlap chỉ 12%"
+      }
+    },
+    {
+      "index": 20,
+      "question": "Nội dung Điều 1 trong văn bản 35/2007/PL-UBTVQH11 là gì?",
+      "source": {
+        "doc_id": 13914,
+        "so_ky_hieu": "35/2007/PL-UBTVQH11",
+        "doc_title": "Sửa đổi, bổ sung một số điều của Pháp lệnh ưu đãi người có công với cách mạng",
+        "article_num": "1",
+        "article_header": "Điều 1: Sửa đổi, bổ sung Điều 9 và Điều 10 của Pháp lệnh ưu đãi người có công với cách mạng: (Phần 1",
+        "text_preview": "Điều 1. Sửa đổi, bổ sung Điều 9 và Điều 10 của Pháp lệnh ưu đãi người có công với cách mạng: 1. Điều 9 được sửa đổi, bổ sung như sau: \"Điều 9. 1. Người hoạt động cách mạng trước ngày 01 tháng 01 năm 1"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.482
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.244,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 24%)"
+      }
+    },
+    {
+      "index": 21,
+      "question": "Quy định về Thành lập Trung tâm Xúc tiến đầu tư tỉnh Tuyên Quang trên cơ sở tổ chức lại 03 đơn vị: Trung tâm Xúc trong Điều 1 Về việc thành lập trung tâm xúc tiến đầu tư tỉnh Tuyên Quang như thế nào?",
+      "source": {
+        "doc_id": 86852,
+        "so_ky_hieu": "119/QĐ-TTg",
+        "doc_title": "Về việc thành lập trung tâm xúc tiến đầu tư tỉnh Tuyên Quang",
+        "article_num": "1",
+        "article_header": "Điều 1: Thành lập Trung tâm Xúc tiến đầu tư tỉnh Tuyên Quang trên cơ sở tổ chức lại 03 đơn vị: Trung",
+        "text_preview": "Điều 1. Thành lập Trung tâm Xúc tiến đầu tư tỉnh Tuyên Quang trên cơ sở tổ chức lại 03 đơn vị: Trung tâm Xúc tiến đầu tư trực thuộc Sở Kế hoạch và Đầu tư, Trung tâm Xúc tiến du lịch trực thuộc Sở Văn "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.47
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 22,
+      "question": "Trích dẫn Điều 1 của văn bản số 38/2023/QĐ-UBND",
+      "source": {
+        "doc_id": 162034,
+        "so_ky_hieu": "38/2023/QĐ-UBND",
+        "doc_title": "Về việc Quy định mức chi hỗ trợ cho người được phân công trực tiếp giúp đỡ người được giáo dục tại x",
+        "article_num": "1",
+        "article_header": "Điều 1: Mức chi hỗ trợ cho người được phân công trực tiếp giúp đỡ người được giáo dục tại xã, phường",
+        "text_preview": "Điều 1. Mức chi hỗ trợ cho người được phân công trực tiếp giúp đỡ người được giáo dục tại xã, phường, thị trấn trên địa bàn tỉnh Long An; đối tượng áp dụng và nguồn kinh phí thực hiện: Thực hiện theo "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.418
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.588,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 59%)"
+      }
+    },
+    {
+      "index": 23,
+      "question": "Nội dung Điều 2 trong văn bản 46/2013/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 69201,
+        "so_ky_hieu": "46/2013/QĐ-UBND",
+        "doc_title": "V/v ban hành bảng giá các loại đất trên địa bàn huyện Đak Pơ, tỉnh Gia Lai năm 2014",
+        "article_num": "2",
+        "article_header": "Điều 2: Khi giá đất có biến động do đầu tư cơ sở hạ tầng mới, hoặc có biến động (tăng, giảm) về giá ",
+        "text_preview": "Điều 2. Khi giá đất có biến động do đầu tư cơ sở hạ tầng mới, hoặc có biến động (tăng, giảm) về giá đất thị trường thì Uỷ ban nhân dân huyện Đak Pơ có trách nhiệm xây dựng phương án giá đất, đề xuất v"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.473
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.261,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 26%)"
+      }
+    },
+    {
+      "index": 24,
+      "question": "Trích dẫn Điều 1 của văn bản số 08/2006/QĐ-BTM",
+      "source": {
+        "doc_id": 16583,
+        "so_ky_hieu": "08/2006/QĐ-BTM",
+        "doc_title": "Về việc ban hành Quy chế chợ biên giới, chợ cửa khẩu, chợ trong Khu kinh tế cửa khẩu trên đất liền g",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy chế chợ biên giới, chợ cửa khẩu, chợ trong Khu kinh tế ",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy chế chợ biên giới, chợ cửa khẩu, chợ trong Khu kinh tế cửa khẩu trên đất liền giữa Việt Nam với các nước có chung biên giới."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.694
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.714,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 71%)"
+      }
+    },
+    {
+      "index": 25,
+      "question": "Quy định về Sửa đổi, bổ sung một số điều của Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Sở La (Phần 1) trong Điều 1 Sửa đổi, bổ sung một số điều của Quy định chức năng, nhiệm vụ, quyền hạn và cơ c như thế nào?",
+      "source": {
+        "doc_id": 147180,
+        "so_ky_hieu": "10/2021/QĐ-UBND",
+        "doc_title": "Sửa đổi, bổ sung một số điều của Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Sở La",
+        "article_num": "1",
+        "article_header": "Điều 1: Sửa đổi, bổ sung một số điều của Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức c",
+        "text_preview": "Điều 1. Sửa đổi, bổ sung một số điều của Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Sở Lao động - Thương binh và Xã hội tỉnh Nam Định, ban hành kèm theo Quyết định số 12/2016/QĐ-UBN"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.172
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.19,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 19%)"
+      }
+    },
+    {
+      "index": 26,
+      "question": "Cho tôi biết Điều 2 Ban hành Quy định về chế độ trợ cấp đi học và công tác quản lý đối với người đượ nói về vấn đề gì?",
+      "source": {
+        "doc_id": 50702,
+        "so_ky_hieu": "36/2013/QĐ-UBND",
+        "doc_title": "Ban hành Quy định về chế độ trợ cấp đi học và công tác quản lý đối với người được cử đi đào tạo thạc",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định này có hiệu lực sau 10 ngày kể từ ngày ký ban hành và thay thế Quyết định số 42/2",
+        "text_preview": "Điều 2. Quyết định này có hiệu lực sau 10 ngày kể từ ngày ký ban hành và thay thế Quyết định số 42/2008/QĐ-UBND ngày 27 tháng 10 năm 2008 của Uỷ ban nhân dân tỉnh ban hành Quy định về cơ chế, chính sá"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.937
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 27,
+      "question": "Điều 1 của Quy định về nội dung, trình tự phê duyệt quy hoạch kho số viễn thông, quy hoạch  quy định gì?",
+      "source": {
+        "doc_id": 183307,
+        "so_ky_hieu": "21/2025/TT-BKHCN",
+        "doc_title": "Quy định về nội dung, trình tự phê duyệt quy hoạch kho số viễn thông, quy hoạch tài nguyên Internet ",
+        "article_num": "1",
+        "article_header": "Điều 1: Phạm vi điều chỉnh",
+        "text_preview": "Điều 1. Phạm vi điều chỉnh\nThông tư này quy định chi tiết khoản 2 Điều 49 Luật Viễn thông về nội dung, trình tự phê duyệt quy hoạch kho số viễn thông, quy hoạch tài nguyên Internet và thực hiện phê du"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dat_dai",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.714
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 28,
+      "question": "Nội dung Điều 1 trong văn bản 27/2009/TT-BTNMT là gì?",
+      "source": {
+        "doc_id": 24865,
+        "so_ky_hieu": "27/2009/TT-BTNMT",
+        "doc_title": "Quy định về Định mức kinh tế - kỹ thuật quản lý và cung cấp thông tin dữ liệu đo đạc và bản đồ",
+        "article_num": "1",
+        "article_header": "Điều 1: Định mức kinh tế - kỹ thuật quản lý và cung cấp thông tin dữ liệu đo đạc và bản đồ được ban ",
+        "text_preview": "Điều 1. Định mức kinh tế - kỹ thuật quản lý và cung cấp thông tin dữ liệu đo đạc và bản đồ được ban hành kèm theo Thông tư này."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.487
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.2,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 20%)"
+      }
+    },
+    {
+      "index": 29,
+      "question": "Trích dẫn Điều 2 của văn bản số 24/2010/QĐ-UBND",
+      "source": {
+        "doc_id": 106512,
+        "so_ky_hieu": "24/2010/QĐ-UBND",
+        "doc_title": "Về việc chuyển giao việc chứng thực các hợp đồng, giao dịch \ncho các tổ chức hành nghề công chứng và",
+        "article_num": "2",
+        "article_header": "Điều 2: Đối với các huyện, thị xã Cam Ranh thì thẩm quyền công chứng, chứng thực hợp đồng, giao dịch",
+        "text_preview": "Điều 2. Đối với các huyện, thị xã Cam Ranh thì thẩm quyền công chứng, chứng thực hợp đồng, giao dịch được quy định như sau:\n1. Đối với hợp đồng, giao dịch về quyền sử dụng đất và tài sản gắn liền với "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.559
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.238,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 24%)"
+      }
+    },
+    {
+      "index": 30,
+      "question": "Cho tôi biết Điều 2 Quyết định 57/2006/QĐ-UBND ban hành cơ chế, chính sách cụ thể thực hiện Nghị quy nói về vấn đề gì?",
+      "source": {
+        "doc_id": 46626,
+        "so_ky_hieu": "57/2006/QĐ-UBND",
+        "doc_title": "Quyết định 57/2006/QĐ-UBND ban hành cơ chế, chính sách cụ thể thực hiện Nghị quyết 16/NQ-TU và Kế ho",
+        "article_num": "2",
+        "article_header": "Điều 2: Phạm vi, đối tượng điều chỉnh:",
+        "text_preview": "Điều 2. Phạm vi, đối tượng điều chỉnh:\nCơ chế chính sách cụ thể trong Quyết định này áp dụng cho các tổ chức, cá nhân liên quan và thực hiện trên địa bàn huyện Sóc Sơn trong giai đoạn từ nay đến năm 2"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.746
+      },
+      "scoring": {
+        "grade": "MISS",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.143,
+        "details": "❌ Hoàn toàn sai — overlap chỉ 14%"
+      }
+    },
+    {
+      "index": 31,
+      "question": "Cho tôi biết Điều 2 Ban hành Quy định về xét cấp giấy chứng nhận quyền sở hữư nhà ở và quyền sử dụng nói về vấn đề gì?",
+      "source": {
+        "doc_id": 58315,
+        "so_ky_hieu": "160/2002/QĐ-UB",
+        "doc_title": "Ban hành Quy định về xét cấp giấy chứng nhận quyền sở hữư nhà ở và quyền sử dụng đất ở theo Nghị địn",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định này có hiệu lực từ ngày 01 tháng 01 năm 2003 và thay thế Quyết định số 80/2001/QĐ",
+        "text_preview": "Điều 2: Quyết định này có hiệu lực từ ngày 01 tháng 01 năm 2003 và thay thế Quyết định số 80/2001/QĐ-UB ngày 15 tháng 6 năm 2001, Quyết định số 102/2002/QĐ-UB ngày 24 tháng 9 năm 2002 của UBND thành p"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.579
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.182,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 18%)"
+      }
+    },
+    {
+      "index": 32,
+      "question": "Nội dung Điều 2 trong văn bản 08/2012/TT-BCA là gì?",
+      "source": {
+        "doc_id": 27360,
+        "so_ky_hieu": "08/2012/TT-BCA",
+        "doc_title": "Quy định về giấy bảo vệ đặc biệt",
+        "article_num": "2",
+        "article_header": "Điều 2: Đối tượng áp dụng",
+        "text_preview": "Điều 2. Đối tượng áp dụng\nThông tư này áp dụng đối với sỹ quan Cảnh vệ và người có thẩm quyền ký, cấp, thu hồi, quản lý, bảo quản Giấy bảo vệ đặc biệt trong Công an nhân dân; cơ quan, tổ chức, cá nhân"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.477
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.333,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 33%)"
+      }
+    },
+    {
+      "index": 33,
+      "question": "Nội dung Điều 1 trong văn bản 48/2025/NQ-HĐND là gì?",
+      "source": {
+        "doc_id": 187467,
+        "so_ky_hieu": "48/2025/NQ-HĐND",
+        "doc_title": "Về việc sửa đổi, bổ sung và bãi bỏ một số điều của Nghị quyết số 177/2021/NQ-HĐND ngày 10 tháng 12 n",
+        "article_num": "1",
+        "article_header": "Điều 1: Sửa đổi, bổ sung và bãi bỏ một số điều của Nghị quyết số 177/2021/NQ-HĐND ngày 10 tháng 12 n",
+        "text_preview": "Điều 1. Sửa đổi, bổ sung và bãi bỏ một số điều của Nghị quyết số 177/2021/NQ-HĐND ngày 10 tháng 12 năm 2021 của Hội đồng nhân dân tỉnh về nguyên tắc, tiêu chí và định mức phân bổ dự toán chi thường xu"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.476
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 0.233,
+        "details": "🟡 Đúng VB + đúng Điều nhưng content overlap thấp (23%)"
+      }
+    },
+    {
+      "index": 34,
+      "question": "Cho tôi biết Điều 1 Ban hành Quy định số lượng, quy trình xét chọn, đơn vị quản lý và chi trả phụ cấ nói về vấn đề gì?",
+      "source": {
+        "doc_id": 51500,
+        "so_ky_hieu": "20/2014/QĐ-UBND",
+        "doc_title": "Ban hành Quy định số lượng, quy trình xét chọn, đơn vị quản lý và chi trả phụ cấp đối với nhân viên ",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy định số lượng, quy trình xét chọn, đơn vị quản lý và ch",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy định số lượng, quy trình xét chọn, đơn vị quản lý và chi trả phụ cấp đối với nhân viên y tế thôn; tiêu chí thôn còn có khó khăn về công tác chăm sóc sức kh"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.365
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 35,
+      "question": "Điều 2 của Hướng dẫn nhập, xuất, mua, bán hàng dự trữ quốc gia quy định gì?",
+      "source": {
+        "doc_id": 76717,
+        "so_ky_hieu": "89/2015/TT-BTC",
+        "doc_title": "Hướng dẫn nhập, xuất, mua, bán hàng dự trữ quốc gia",
+        "article_num": "2",
+        "article_header": "Điều 2: Đối tượng áp dụng",
+        "text_preview": "Điều 2. Đối tượng áp dụng\n1. Các bộ, ngành quản lý hàng dự trữ quốc gia.\n2. Các đơn vị dự trữ quốc gia, các tổ chức, doanh nghiệp nhận hợp đồng thuê bảo quản hàng dự trữ quốc gia.\n3. Các tổ chức, cá n"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.739
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.615,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 62%)"
+      }
+    },
+    {
+      "index": 36,
+      "question": "Điều 1 của Quy định Chính sách khuyến công và phát triển sản xuất sản phẩm lưu niệm phục vụ quy định gì?",
+      "source": {
+        "doc_id": 145365,
+        "so_ky_hieu": "324/2020/NQ-HĐND",
+        "doc_title": "Quy định Chính sách khuyến công và phát triển sản xuất sản phẩm lưu niệm phục vụ du lịch trên địa bà",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Nghị quyết này Quy định chính sách khuyến công và phát triển sản xuất sản ",
+        "text_preview": "Điều 1. Ban hành kèm theo Nghị quyết này Quy định chính sách khuyến công và phát triển sản xuất sản phẩm lưu niệm phục vụ du lịch trên địa bàn thành phố Đà Nẵng."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.575
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.5,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 50%)"
+      }
+    },
+    {
+      "index": 37,
+      "question": "Trích dẫn Điều 1 của văn bản số 23/2018/QĐ-UBND",
+      "source": {
+        "doc_id": 132142,
+        "so_ky_hieu": "23/2018/QĐ-UBND",
+        "doc_title": "Về việc bãi bỏ một số nội dung Quy định chế độ áp dụng biện pháp xử lý hành chính đưa vào cơ sở cai ",
+        "article_num": "1",
+        "article_header": "Điều 1: Bãi bỏ các quy định về quản lý và sử dụng kinh phí thực hiện chế độ áp dụng biện pháp xử lý ",
+        "text_preview": "Điều 1.Bãi bỏ các quy định về quản lý và sử dụng kinh phí thực hiện chế độ áp dụng biện pháp xử lý hành chính đưa vào cơ sở cai nghiện bắt buộc quy định tại Phần I, Phần II, Phần III Quy định chế độ á"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.441
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.476,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 48%)"
+      }
+    },
+    {
+      "index": 38,
+      "question": "Điều 1 của Về Ban hành chính sách khuyến khích đầu tư vào sản xuất công nghiệp, dịch vụ và  quy định gì?",
+      "source": {
+        "doc_id": 104429,
+        "so_ky_hieu": "14/2015/NQ-HĐND",
+        "doc_title": "Về Ban hành chính sách khuyến khích đầu tư vào sản xuất công nghiệp, dịch vụ và nông nghiệp, nông th",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành Chính sách khuyến khích đầu tư vào sản xuất công nghiệp, dịch vụ và nông nghiệp, nô",
+        "text_preview": "Điều 1. Ban hành Chính sách khuyến khích đầu tư vào sản xuất công nghiệp, dịch vụ và nông nghiệp, nông thôn trên địa bàn tỉnh Yên Bái giai đoạn 2016 - 2020, với nội dung như sau: 1. Quy định chung a) "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.496
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.263,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 26%)"
+      }
+    },
+    {
+      "index": 39,
+      "question": "Cho tôi biết Điều 1 Hướng dẫn thực hiện một số quy định của Bộ luật Tố tụng hình sự \nnăm 2003 về bảo nói về vấn đề gì?",
+      "source": {
+        "doc_id": 44410,
+        "so_ky_hieu": "13/2013/TTLT-BCA-BQP-VKSNDTC-TANDTC",
+        "doc_title": "Hướng dẫn thực hiện một số quy định của Bộ luật Tố tụng hình sự \nnăm 2003 về bảo vệ tính mạng, sức k",
+        "article_num": "1",
+        "article_header": "Điều 1: Phạm vi điều chỉnh và đối tượng áp dụng",
+        "text_preview": "Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng\n1. Thông tư này hướng dẫn thi hành một số quy định của Bộ luật tố tụng hình sự năm 2003 về bảo vệ tính mạng, sức khoẽ, tài sản của người tố giác tội phạ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.549
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": false,
+        "content_overlap": 0.571,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 57%)"
+      }
+    },
+    {
+      "index": 40,
+      "question": "Cho tôi biết Điều 1 Ban hành Quy định tiêu chí đặc thù và quy trình xét duyệt hồ sơ đề nghị cấp văn  nói về vấn đề gì?",
+      "source": {
+        "doc_id": 144306,
+        "so_ky_hieu": "18/2020/QĐ-UBND",
+        "doc_title": "Ban hành Quy định tiêu chí đặc thù và quy trình xét duyệt hồ sơ đề nghị cấp văn bản chấp thuận đóng ",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy định tiêu chí đặc thù và quy trình xét duyệt hồ sơ đề n",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy định tiêu chí đặc thù và quy trình xét duyệt hồ sơ đề nghị cấp văn bản chấp thuận đóng mới, cải hoán, thuê, mua tàu cá hoạt động trên biển thuộc địa bàn tỉ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.487
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.571,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 57%)"
+      }
+    },
+    {
+      "index": 41,
+      "question": "Quy định về a/ Ban chỉ đạo sắp xếp lại các doanh nghiệp Nhà nước tỉnh Bình Phước có nhiệm vụ giúp Uỷ ban Nhân dâ trong Điều 2 V/v thành lập Ban chỉ đạo sắp xếp lại các Doanh nghiệp Nhà Nước tỉnh Bình Phước như thế nào?",
+      "source": {
+        "doc_id": 71000,
+        "so_ky_hieu": "60/1998/QĐ-UB",
+        "doc_title": "V/v thành lập Ban chỉ đạo sắp xếp lại các Doanh nghiệp Nhà Nước tỉnh Bình Phước",
+        "article_num": "2",
+        "article_header": "Điều 2: a/ Ban chỉ đạo sắp xếp lại các doanh nghiệp Nhà nước tỉnh Bình Phước có nhiệm vụ giúp Uỷ ban",
+        "text_preview": "Điều 2: a/ Ban chỉ đạo sắp xếp lại các doanh nghiệp Nhà nước tỉnh Bình Phước có nhiệm vụ giúp Uỷ ban Nhân dân tỉnh tiến hành đánh giá, phân loại và lập phương án sắp xếp lại các doanh nghiệp Nhà nước "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.674
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 42,
+      "question": "Cho tôi biết Điều 2 Ban hành một số định mức kinh tế - kỹ thuật phục vụ việc xây dựng kế hoạch chạy  nói về vấn đề gì?",
+      "source": {
+        "doc_id": 157730,
+        "so_ky_hieu": "32/2022/TT-BGTVT",
+        "doc_title": "Ban hành một số định mức kinh tế - kỹ thuật phục vụ việc xây dựng kế hoạch chạy tàu an sinh xã hội",
+        "article_num": "2",
+        "article_header": "Điều 2: Phạm vi điều chỉnh",
+        "text_preview": "Điều 2. Phạm vi điều chỉnh\nThông tư này áp dụng cho việc xây dựng, thẩm định kế hoạch chạy tàu an sinh xã hội trên tuyến đường sắt Gia Lâm - Quán Triều và Gia Lâm - Đồng Đăng."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.439
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": false,
+        "content_overlap": 0.643,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 64%)"
+      }
+    },
+    {
+      "index": 43,
+      "question": "Điều 2 của Ban hành Quy chế chợ biên giới, chợ cửa khẩu, chợ trong khu kinh tế cửa khẩu quy định gì?",
+      "source": {
+        "doc_id": 24041,
+        "so_ky_hieu": "22/2008/QĐ-BCT",
+        "doc_title": "Ban hành Quy chế chợ biên giới, chợ cửa khẩu, chợ trong khu kinh tế cửa khẩu",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định này có hiệu lực thi hành sau 15 ngày, kể từ ngày đăng Công báo và thay thế Quyết ",
+        "text_preview": "Điều 2. Quyết định này có hiệu lực thi hành sau 15 ngày, kể từ ngày đăng Công báo và thay thế Quyết định số 08/2006/QĐ-BTM ngày 26 tháng 01 năm 2006 của Bộ trưởng Bộ Thương mại về việc ban hành Quy ch"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.579
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.923,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 92%)"
+      }
+    },
+    {
+      "index": 44,
+      "question": "Trích dẫn Điều 1 của văn bản số 20/2021/QĐ-UBND",
+      "source": {
+        "doc_id": 149620,
+        "so_ky_hieu": "20/2021/QĐ-UBND",
+        "doc_title": "Ban hành Quy định Định mức kinh tế kỹ thuật trong công tác quản lý, khai thác công trình thủy lợi củ",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy định định mức kinh tế kỹ thuật trong quản lý, khai thác",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy định định mức kinh tế kỹ thuật trong quản lý, khai thác công trình thuỷ lợi của Công ty TNHH một thành viên Khai thác thuỷ lợi Quảng Nam quản lý."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.417
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": false,
+        "content_overlap": 0.7,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 70%)"
+      }
+    },
+    {
+      "index": 45,
+      "question": "Quy định về Thành lập Công ty Bột mỳ Bình An trên cơ sở tổ chức lại Phân xưởng Xay xát bột mỳ Vinabomi; trong Điều 1 Về việc thành lập Công ty Bột mỳ Bình An. như thế nào?",
+      "source": {
+        "doc_id": 6232,
+        "so_ky_hieu": "46/2000/QĐ-BNNPTNT/TCCB",
+        "doc_title": "Về việc thành lập Công ty Bột mỳ Bình An.",
+        "article_num": "1",
+        "article_header": "Điều 1: Thành lập Công ty Bột mỳ Bình An trên cơ sở tổ chức lại Phân xưởng Xay xát bột mỳ Vinabomi;",
+        "text_preview": "Điều 1. Thành lập Công ty Bột mỳ Bình An trên cơ sở tổ chức lại Phân xưởng Xay xát bột mỳ Vinabomi;\nTên giao dịch quốc tế của Công ty : VINABOMI.\nCông ty Bột mỳ Bình An là đơn vị thành viên hạch toán "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.447
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 46,
+      "question": "Điều 1 của Ban hành Quy chế về trách nhiệm và quan hệ phối hợp hoạt động giữa \ncác cơ quan  quy định gì?",
+      "source": {
+        "doc_id": 81319,
+        "so_ky_hieu": "19 /2013/QĐ-UBND",
+        "doc_title": "Ban hành Quy chế về trách nhiệm và quan hệ phối hợp hoạt động giữa \ncác cơ quan quản lý nhà nước tro",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy chế về trách nhiệm và quan hệ phối hợp hoạt động giữa c",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy chế về trách nhiệm và quan hệ phối hợp hoạt động giữa các cơ quan quản lý nhà nước trong công tác đấu tranh phòng, chống buôn lậu, hàng giả và gian lận thư"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.162
+      },
+      "scoring": {
+        "grade": "MISS",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.091,
+        "details": "❌ Hoàn toàn sai — overlap chỉ 9%"
+      }
+    },
+    {
+      "index": 47,
+      "question": "Trích dẫn Điều 1 của văn bản số 14/2007/NQ-HĐND",
+      "source": {
+        "doc_id": 57636,
+        "so_ky_hieu": "14/2007/NQ-HĐND",
+        "doc_title": "Hỗ trợ kinh phí từ nguồn ngân sách tỉnh để đầu tư bổ sung một số hạng mục công trình bên trong hàng ",
+        "article_num": "1",
+        "article_header": "Điều 1: Tán thành thông qua Đề án hỗ trợ kinh phí từ nguồn Ngân sách tỉnh để đầu tư bổ sung một số h",
+        "text_preview": "Điều 1. Tán thành thông qua Đề án hỗ trợ kinh phí từ nguồn Ngân sách tỉnh để đầu tư bổ sung một số hạng mục công trình bên trong hàng rào cụm công nghiệp trên dịa bàn tỉnh, với nội dung cụ thể sau:\n1."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.432
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.367,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 37%)"
+      }
+    },
+    {
+      "index": 48,
+      "question": "Điều 2 của Quyết định 178/QĐ-UBND thu hồi Quyết định 5351/QĐ-UB và Quyết định 2211/QĐ-UB về quy định gì?",
+      "source": {
+        "doc_id": 88808,
+        "so_ky_hieu": "178/QĐ-UBND",
+        "doc_title": "Quyết định 178/QĐ-UBND thu hồi Quyết định 5351/QĐ-UB và Quyết định 2211/QĐ-UB về thu hồi đất tại quậ",
+        "article_num": "2",
+        "article_header": "Điều 2: Uỷ ban nhân dân quận 4 có trách nhiệm thông báo cho các đối tượng sử dụng đất trong phạm vi ",
+        "text_preview": "Điều 2. Uỷ ban nhân dân quận 4 có trách nhiệm thông báo cho các đối tượng sử dụng đất trong phạm vi 02 dự án trên biết về nội dung tại Điều 1 của Quyết định này."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 2.221
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.167,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 17%)"
+      }
+    },
+    {
+      "index": 49,
+      "question": "Quy định về Ban hành kèm theo Quyết định này Quy định giải quyết các thủ tục hành chính theo cơ chế một cửa tại trong Điều 1 Ban hành Quy định giải quyết các thủ tục hành chính \ntheo cơ chế một cửa tại Chi như thế nào?",
+      "source": {
+        "doc_id": 59388,
+        "so_ky_hieu": "91/2014/QĐ-UBND",
+        "doc_title": "Ban hành Quy định giải quyết các thủ tục hành chính \ntheo cơ chế một cửa tại Chi cục Thuế các huyện,",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy định giải quyết các thủ tục hành chính theo cơ chế một ",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy định giải quyết các thủ tục hành chính theo cơ chế một cửa tại Chi cục Thuế các huyện, thành phố trên địa bàn tỉnh Ninh Thuận.\n(Kèm theo phụ lục danh mục n"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.517
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.2,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 20%)"
+      }
+    },
+    {
+      "index": 50,
+      "question": "Cho tôi biết Điều 2 Về việc ban hành Quy định thành phần và quy chế hoạt động\n của Hội đồng kỷ luật  nói về vấn đề gì?",
+      "source": {
+        "doc_id": 77245,
+        "so_ky_hieu": "07/2013/QĐ-UBND",
+        "doc_title": "Về việc ban hành Quy định thành phần và quy chế hoạt động\n của Hội đồng kỷ luật đối với cán bộ xã, p",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định này có hiệu lực thi hành sau 10 ngày, kể từ ngày ký và bãi bỏ các nội dung quy đị",
+        "text_preview": "Điều 2. Quyết định này có hiệu lực thi hành sau 10 ngày, kể từ ngày ký và bãi bỏ các nội dung quy định về xử lý kỷ luật đối với cán bộ, công chức cấp xã tại Quyết định số 13/2010/QĐ-UBND ngày 10 tháng"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.571
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.462,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 46%)"
+      }
+    },
+    {
+      "index": 51,
+      "question": "Quy định về Quyết định này có hiệu lực thi hành kể từ ngày ký. trong Điều 2 Về việc công bố Danh mục văn bản quy phạm pháp luật của HĐND và UBND tỉnh Đắk Nô như thế nào?",
+      "source": {
+        "doc_id": 149919,
+        "so_ky_hieu": "162/QĐ-UBND",
+        "doc_title": "Về việc công bố Danh mục văn bản quy phạm pháp luật của HĐND và UBND tỉnh Đắk Nông hết hiệu lực, ngư",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định này có hiệu lực thi hành kể từ ngày ký.",
+        "text_preview": "Điều 2. Quyết định này có hiệu lực thi hành kể từ ngày ký.\nChánh Văn phòng UBND tỉnh; Thủ trưởng các Sở, Ban, ngành; Chủ tịch UBND các huyện, thành phố và Thủ trưởng các đơn vị có liên quan chịu trách"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 2.324
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.208,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 21%)"
+      }
+    },
+    {
+      "index": 52,
+      "question": "Cho tôi biết Điều 2 Ban hành quy định về chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Chi cụ nói về vấn đề gì?",
+      "source": {
+        "doc_id": 150363,
+        "so_ky_hieu": "43/2021/QĐ-UBND",
+        "doc_title": "Ban hành quy định về chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Chi cục Tiêu chuẩn Đo lườn",
+        "article_num": "2",
+        "article_header": "Điều 2: Điều khoản thi hành",
+        "text_preview": "Điều 2. Điều khoản thi hành\nQuyết định này có hiệu lực thi hành kể từ ngày 01 tháng 8 năm 2021 và thay thế Quyết định số 87/2017/QĐ-UBND ngày 04 tháng 10 năm 2017 của Uỷ ban nhân dân tỉnh về việc quy "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "lao_dong",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.727
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.5,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 50%)"
+      }
+    },
+    {
+      "index": 53,
+      "question": "Quy định về Ban hành kèm theo quyết định này Quy chế đấu giá quyền sử dụng đất để giao đất có thu tiền sử dụng đ trong Điều 1 Ban hành Quy chế đấu giá quyền sử dụng đất để giao đất có thu tiền sử dụng đất h như thế nào?",
+      "source": {
+        "doc_id": 50754,
+        "so_ky_hieu": "37/2012/QĐ-UBND",
+        "doc_title": "Ban hành Quy chế đấu giá quyền sử dụng đất để giao đất có thu tiền sử dụng đất hoặc cho thuê đất trê",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo quyết định này Quy chế đấu giá quyền sử dụng đất để giao đất có thu tiền s",
+        "text_preview": "Điều 1. Ban hành kèm theo quyết định này Quy chế đấu giá quyền sử dụng đất để giao đất có thu tiền sử dụng đất hoặc cho thuê đất trên địa bàn tỉnh Quảng Nam."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dat_dai",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.386
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.167,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 17%)"
+      }
+    },
+    {
+      "index": 54,
+      "question": "Nội dung Điều 2 trong văn bản 27/2010/TT-BGTVT là gì?",
+      "source": {
+        "doc_id": 47984,
+        "so_ky_hieu": "27/2010/TT-BGTVT",
+        "doc_title": "Ban hành quy chuẩn kỹ thuật quốc gia về máy lái thủy lực trên phương tiện thủy - yêu cầu kỹ thuật và",
+        "article_num": "2",
+        "article_header": "Điều 2: Thông tư này có hiệu lực thi hành sau 6 tháng kể từ ngày ký ban hành; Bãi bỏ Quyết định số 0",
+        "text_preview": "Điều 2. Thông tư này có hiệu lực thi hành sau 6 tháng kể từ ngày ký ban hành; Bãi bỏ Quyết định số 07/2006/QĐ-BGTVT ngày 18 tháng 1 năm 2006 ban hành Tiêu chuẩn ngành 22 TCN 343-06 “Máy lái thuỷ lực t"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.456
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.667,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 67%)"
+      }
+    },
+    {
+      "index": 55,
+      "question": "Điều 2 của Sửa đổi, bổ sung Thông tư số 53/2007/TT-BTC ngày 21/5/2007 của Bộ Tài chính hướn quy định gì?",
+      "source": {
+        "doc_id": 25350,
+        "so_ky_hieu": "60/2010/TT-BTC",
+        "doc_title": "Sửa đổi, bổ sung Thông tư số 53/2007/TT-BTC ngày 21/5/2007 của Bộ Tài chính hướng dẫn mức thu, chế đ",
+        "article_num": "2",
+        "article_header": "Điều 2: Điều khoản thi hành",
+        "text_preview": "Điều 2. Điều khoản thi hành\n1. Thông tư này có hiệu lực sau 45 ngày, kể từ ngày ký.\n2. Các nội dung khác vẫn tiếp tục thực hiện theo quy định tại Thông tư số 53/2007/TT-BTC ngày 21/5/2007 Bộ Tài chính"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.947
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.765,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 76%)"
+      }
+    },
+    {
+      "index": 56,
+      "question": "Điều 2 của Quy định điều kiện hoạt động của cơ sở thể thao \ntổ chức hoạt động karatedo quy định gì?",
+      "source": {
+        "doc_id": 45970,
+        "so_ky_hieu": "09/2013/TT-BVHTTDL",
+        "doc_title": "Quy định điều kiện hoạt động của cơ sở thể thao \ntổ chức hoạt động karatedo",
+        "article_num": "2",
+        "article_header": "Điều 2: Đối tượng áp dụng",
+        "text_preview": "Điều 2. Đối tượng áp dụng\nThông tư này áp dụng đối với tổ chức, cá nhân tổ chức hoạt động Karatedo tại Việt Nam."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.453
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 57,
+      "question": "Nội dung Điều 2 trong văn bản 111/2009/NĐ-CP là gì?",
+      "source": {
+        "doc_id": 23847,
+        "so_ky_hieu": "111/2009/NĐ-CP",
+        "doc_title": "Quy định về xử phạt vi phạm hành chính trong lĩnh vực năng lượng nguyên tử",
+        "article_num": "2",
+        "article_header": "Điều 2: Đối tượng áp dụng",
+        "text_preview": "Điều 2. Đối tượng áp dụng\nCá nhân, tổ chức Việt Nam, cá nhân, tổ chức nước ngoài có hành vi vi phạm hành chính trong lĩnh vực năng lượng nguyên tử trên lãnh thổ Việt Nam thì bị xử phạt vi phạm hành ch"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.457
+      },
+      "scoring": {
+        "grade": "MISS",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.111,
+        "details": "❌ Hoàn toàn sai — overlap chỉ 11%"
+      }
+    },
+    {
+      "index": 58,
+      "question": "Cho tôi biết Điều 2 Quy định chế độ đền bù và trợ cấp đối với cá nhân, gia đình, cơ quan, tổ chức th nói về vấn đề gì?",
+      "source": {
+        "doc_id": 21838,
+        "so_ky_hieu": "103/2002/NĐ-CP",
+        "doc_title": "Quy định chế độ đền bù và trợ cấp đối với cá nhân, gia đình, cơ quan, tổ chức tham gia phòng, chống ",
+        "article_num": "2",
+        "article_header": "Điều 2",
+        "text_preview": "Điều 2.\n1. Chế độ trợ cấp thiệt hại được Nhà nước thực hiện theo quy định của Nghị định này là chế độ trợ cấp thiệt hại về tính mạng, sức khoẻ của người bị thiệt hại do tham gia phòng, chống ma tuý.\n2"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 3.911
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": true,
+        "article_match": false,
+        "content_overlap": 0.846,
+        "details": "🟡 Đúng VB nhưng sai/thiếu Điều (overlap 85%)"
+      }
+    },
+    {
+      "index": 59,
+      "question": "Điều 1 của Ban hành Quy chế phối hợp hoạt động giữa các  cơ quan quản lý Nhà nước chuyên ng quy định gì?",
+      "source": {
+        "doc_id": 51143,
+        "so_ky_hieu": "52/2014/QĐ-UB",
+        "doc_title": "Ban hành Quy chế phối hợp hoạt động giữa các  cơ quan quản lý Nhà nước chuyên ngành và các đơn vị li",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này \"Quy chế phối hợp hoạt động giữa các cơ quan quản lý Nhà nư",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này \"Quy chế phối hợp hoạt động giữa các cơ quan quản lý Nhà nước chuyên ngành và các đơn vị liên quan tại các cảng biển tỉnh Nghệ An\""
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.086
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 60,
+      "question": "Nội dung Điều 1 trong văn bản 08/2007/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 41762,
+        "so_ky_hieu": "08/2007/QĐ-UBND",
+        "doc_title": "Ban hành Quy định phân công, phân cấp quản lý, bảo vệ tài nguyên khoáng sản và quản lý hoạt động kho",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này bản “Quy định phân công, phân cấp quản lý, bảo vệ tài nguyê",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này bản “Quy định phân công, phân cấp quản lý, bảo vệ tài nguyên khoáng sản và quản lý hoạt động khoáng sản trên địa bàn tỉnh Bình Thuận”."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.537
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.25,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 25%)"
+      }
+    },
+    {
+      "index": 61,
+      "question": "Điều 1 của Sửa đổi, bổ sung một số điều của Quy định nội dung hỗ trợ, mẫu hồ sơ, trình tự,  quy định gì?",
+      "source": {
+        "doc_id": 169076,
+        "so_ky_hieu": "08/2024/NQ-HĐND",
+        "doc_title": "Sửa đổi, bổ sung một số điều của Quy định nội dung hỗ trợ, mẫu hồ sơ, trình tự, thủ tục lựa chọn dự ",
+        "article_num": "1",
+        "article_header": "Điều 1: Sửa đổi, bổ sung một số điều của Quy định nội dung hỗ trợ, mẫu hồ sơ, trình tự, thủ tục lựa ",
+        "text_preview": "Điều 1. Sửa đổi, bổ sung một số điều của Quy định nội dung hỗ trợ, mẫu hồ sơ, trình tự, thủ tục lựa chọn dự án, kế hoạch, phương án sản xuất, lựa chọn đơn vị đặt hàng trong thực hiện các hoạt động hỗ "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.833
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.364,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 36%)"
+      }
+    },
+    {
+      "index": 62,
+      "question": "Trích dẫn Điều 1 của văn bản số 299/2008/QĐ-UBND",
+      "source": {
+        "doc_id": 56268,
+        "so_ky_hieu": "299/2008/QĐ-UBND",
+        "doc_title": "Về việc Phê duyệt Đề án áp dụng cơ chế một cửa liên thông trong giải quyết một số công việc liên qua",
+        "article_num": "1",
+        "article_header": "Điều 1: Phê duyệt Đề án áp dụng cơ chế một cửa liên thông trong giải quyết một số công việc liên qua",
+        "text_preview": "Điều 1. Phê duyệt Đề án áp dụng cơ chế một cửa liên thông trong giải quyết một số công việc liên quan trực tiếp tới công dân giữa Sở Tư pháp với Văn phòng UBND tỉnh và Công an tỉnh, gồm các nội dung c"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.634
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 0.491,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 49%"
+      }
+    },
+    {
+      "index": 63,
+      "question": "Cho tôi biết Điều 1 Về việc quy định mức thu thủy lợi phí, tiền nước (phí sử dụng nguồn nước) trên đ nói về vấn đề gì?",
+      "source": {
+        "doc_id": 83624,
+        "so_ky_hieu": "17/2014/QĐ-UBND",
+        "doc_title": "Về việc quy định mức thu thủy lợi phí, tiền nước (phí sử dụng nguồn nước) trên địa bàn tỉnh Bạc Liêu",
+        "article_num": "1",
+        "article_header": "Điều 1: Quy định mức thu thuỷ lợi phí, tiền nước (phí sử dụng nguồn nước) trên địa bàn tỉnh Bạc Liêu",
+        "text_preview": "Điều 1. Quy định mức thu thuỷ lợi phí, tiền nước (phí sử dụng nguồn nước) trên địa bàn tỉnh Bạc Liêu, như sau: 1. Mức thu thuỷ lợi phí Quy định đối với tưới, tiêu bằng trọng lực (trường hợp chỉ tạo ng"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 3.809
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 64,
+      "question": "Trích dẫn Điều 1 của văn bản số 34/2021/QĐ-UBND",
+      "source": {
+        "doc_id": 148303,
+        "so_ky_hieu": "34/2021/QĐ-UBND",
+        "doc_title": "V/v sửa đổi một số nội dung tại Điều 3 của Quy định vị trí, chức năng, nhiệm vụ, quyền hạn và cơ cấu",
+        "article_num": "1",
+        "article_header": "Điều 1: Sửa đổi một số nội dung tại Điều 3 của Quy định vị trí, chức năng, nhiệm vụ, quyền hạn và cơ",
+        "text_preview": "Điều 1. Sửa đổi một số nội dung tại Điều 3 của Quy định vị trí, chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Chi cục Chăn nuôi và Thú y tỉnh Lào Cai ban hành kèm theo Quyết định số 07/2019/QĐ-"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.441
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": false,
+        "content_overlap": 0.667,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 67%)"
+      }
+    },
+    {
+      "index": 65,
+      "question": "Cho tôi biết Điều 1 Về việc ủy quyền cấp, thu hồi giấy phép xuất bản bản tin nói về vấn đề gì?",
+      "source": {
+        "doc_id": 47688,
+        "so_ky_hieu": "3865/QĐ-BVHTT",
+        "doc_title": "Về việc ủy quyền cấp, thu hồi giấy phép xuất bản bản tin",
+        "article_num": "1",
+        "article_header": "Điều 1: Uỷ quyền cho Sở Văn hoá – Thông tin các tỉnh, thành phố trực thuộc Trung ương thực hiện việc",
+        "text_preview": "Điều 1. Uỷ quyền cho Sở Văn hoá – Thông tin các tỉnh, thành phố trực thuộc Trung ương thực hiện việc cấp, thu hồi giấy phép xuất bản bản tin cho các cơ quan, tổ chức, pháp nhân Việt Nam thuộc địa bàn "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.472
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.364,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 36%)"
+      }
+    },
+    {
+      "index": 66,
+      "question": "Nội dung Điều 1 trong văn bản 33/2025/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 177647,
+        "so_ky_hieu": "33/2025/QĐ-UBND",
+        "doc_title": "QUYẾT ĐỊNH\nQuy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Sở Khoa học và Công nghệ tỉ",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy định chức năng, nhiệm vụ, quyền hạn của Sở Khoa học và ",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy định chức năng, nhiệm vụ, quyền hạn của Sở Khoa học và Công nghệ tỉnh Bắc Ninh."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.486
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.5,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 50%)"
+      }
+    },
+    {
+      "index": 67,
+      "question": "Cho tôi biết Điều 1 Về việc ban hành mã ngân hàng trong hệ thống thanh toán điện tử liên ngân hàng nói về vấn đề gì?",
+      "source": {
+        "doc_id": 18334,
+        "so_ky_hieu": "412/2002/QĐ-NHNN",
+        "doc_title": "Về việc ban hành mã ngân hàng trong hệ thống thanh toán điện tử liên ngân hàng",
+        "article_num": "1",
+        "article_header": "Điều 1: Cho phép sử dụng bộ Mã ngân hàng được xây dựng theo Quyết định số 59/2000/QĐ-NHNN2 ngày 22/0",
+        "text_preview": "Điều 1. Cho phép sử dụng bộ Mã ngân hàng được xây dựng theo Quyết định số 59/2000/QĐ-NHNN2 ngày 22/02/2000 của Thống đốc NHNN cho hệ thống thanh toán điện tử liên ngân hàng."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 2.965
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 68,
+      "question": "Cho tôi biết Điều 2 Ban hành Quy định giáo dục hoà nhập cho trẻ em có hoàn cảnh khó khăn nói về vấn đề gì?",
+      "source": {
+        "doc_id": 24980,
+        "so_ky_hieu": "39/2009/TT-BGDĐT",
+        "doc_title": "Ban hành Quy định giáo dục hoà nhập cho trẻ em có hoàn cảnh khó khăn",
+        "article_num": "2",
+        "article_header": "Điều 2: Thông tư này có hiệu lực thi hành kể từ ngày 15 tháng 02 năm 2010. Các quy định trước đây tr",
+        "text_preview": "Điều 2. Thông tư này có hiệu lực thi hành kể từ ngày 15 tháng 02 năm 2010. Các quy định trước đây trái với quy định tại Thông tư này đều bị bãi bỏ."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.313
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 0.4,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 40%"
+      }
+    },
+    {
+      "index": 69,
+      "question": "Nội dung Điều 1 trong văn bản 46/2011/NQ-HĐND là gì?",
+      "source": {
+        "doc_id": 99993,
+        "so_ky_hieu": "46/2011/NQ-HĐND",
+        "doc_title": "Về việc phê duyệt “nội dung và mức hỗ trợ đối với giáo viên, học sinh Trường Trung học Phổ thông chu",
+        "article_num": "1",
+        "article_header": "Điều 1: Phê duyệt “Nội dung và mức hỗ trợ đối với giáo viên, học sinh Trường Trung học Phổ thông chu",
+        "text_preview": "Điều 1. Phê duyệt “Nội dung và mức hỗ trợ đối với giáo viên, học sinh Trường Trung học Phổ thông chuyên Lê Quý Đôn” theo nội dung Tờ trình số 161/TTr-UBND ngày 29 tháng 11 năm 2011 của Uỷ ban nhân dân"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.757
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.667,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 67%)"
+      }
+    },
+    {
+      "index": 70,
+      "question": "Cho tôi biết Điều 1 Về việc bỏ phụ thu tiền điện nói về vấn đề gì?",
+      "source": {
+        "doc_id": 4252,
+        "so_ky_hieu": "175/1999/QĐ-UB",
+        "doc_title": "Về việc bỏ phụ thu tiền điện",
+        "article_num": "1",
+        "article_header": "Điều 1: Bỏ phụ thu tiền điện trên địabàn tỉnh Lâm Đồng (theo Quyết định số 215/ QĐ-UB ngày 02/3/1996",
+        "text_preview": "Điều 1: Bỏ phụ thu tiền điện trên địabàn tỉnh Lâm Đồng (theo Quyết định số 215/ QĐ-UB ngày 02/3/1996 của UBND tỉnh)kể từ kỳ thu của tháng 01 năm 2000."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 3.79
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 71,
+      "question": "Điều 2 của Sửa đổi Quyết định số 72/2008/QĐ-BTC ngày 3/9/2008 của Bộ Tài chính về việc ban  quy định gì?",
+      "source": {
+        "doc_id": 26067,
+        "so_ky_hieu": "217/2010/TT-BTC",
+        "doc_title": "Sửa đổi Quyết định số 72/2008/QĐ-BTC ngày 3/9/2008 của Bộ Tài chính về việc ban hành Quy chuẩn kỹ th",
+        "article_num": "2",
+        "article_header": "Điều 2: Các nội dung khác tại QCVN 3: 2008/BTC Quy chuẩn kỹ thuật quốc gia về dự trữ quốc gia đối vớ",
+        "text_preview": "Điều 2. Các nội dung khác tại QCVN 3: 2008/BTC Quy chuẩn kỹ thuật quốc gia về dự trữ quốc gia đối với nhà bạt cứu sinh loại nhẹ được ban hành kèm theo Quyết định số 72/2008/QĐ-BTC ngày 3/9/2008 của Bộ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.315
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.5,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 50%)"
+      }
+    },
+    {
+      "index": 72,
+      "question": "Quy định về Ban hành kèm theo Quyết định này Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Sở Tư trong Điều 1 Ban hành quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Sở Tư phá như thế nào?",
+      "source": {
+        "doc_id": 178922,
+        "so_ky_hieu": "02/2025/QĐ-UBND",
+        "doc_title": "Ban hành quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Sở Tư pháp tỉnh Đồng Nai",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức c",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Sở Tư pháp tỉnh Đồng Nai."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.0
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 100%)"
+      }
+    },
+    {
+      "index": 73,
+      "question": "Nội dung Điều 1 trong văn bản 72/2009/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 54719,
+        "so_ky_hieu": "72/2009/QĐ-UBND",
+        "doc_title": "Về việc ban hành quy chế tổ chức và hoạt động của trường Đại học Thủ Dầu Một",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy chế tổ chức và hoạt động của Trường Đại học Thủ Dầu Một",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy chế tổ chức và hoạt động của Trường Đại học Thủ Dầu Một."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.479
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 100%)"
+      }
+    },
+    {
+      "index": 74,
+      "question": "Quy định về Hội đồng nhân dân tỉnh khoá XIV kỳ họp thứ 10 nhất trí ban hành Quy định về một số chính sách về dân (Phần 1) trong Điều 1 Ban hành Quy định về một số chính sách Dân số, Kế hoạch hóa gia đình tỉnh Cao Bằ như thế nào?",
+      "source": {
+        "doc_id": 72414,
+        "so_ky_hieu": "41/2006/NQ-HĐND",
+        "doc_title": "Ban hành Quy định về một số chính sách Dân số, Kế hoạch hóa gia đình tỉnh Cao Bằng",
+        "article_num": "1",
+        "article_header": "Điều 1: Hội đồng nhân dân tỉnh khoá XIV kỳ họp thứ 10 nhất trí ban hành Quy định về một số chính sác",
+        "text_preview": "Điều 1. Hội đồng nhân dân tỉnh khoá XIV kỳ họp thứ 10 nhất trí ban hành Quy định về một số chính sách về dân số, kế hoạch hoá gia đình tỉnh Cao Bằng như sau: 1. Phạm vi, đối tượng áp dụng Quy định này"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.845
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.429,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 43%)"
+      }
+    },
+    {
+      "index": 75,
+      "question": "Nội dung Điều 2 trong văn bản 91/2011/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 49784,
+        "so_ky_hieu": "91/2011/QĐ-UBND",
+        "doc_title": "Ban hành quy định về mức thưởng đối với các tập thể, cá nhân đạt thành tích cao trong các kỳ thi Quố",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định này có hiệu lực sau 10 ngày kể từ ngày ký.",
+        "text_preview": "Điều 2. Quyết định này có hiệu lực sau 10 ngày kể từ ngày ký.\nQuyết định này thay thế: Quyết định số 03/2006/QĐ-UBND ngày 09/01/2006 của UBND tỉnh về chế độ khen thưởng đối với học sinh, sinh viên giỏ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.456
+      },
+      "scoring": {
+        "grade": "MISS",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.136,
+        "details": "❌ Hoàn toàn sai — overlap chỉ 14%"
+      }
+    },
+    {
+      "index": 76,
+      "question": "Nội dung Điều 2 trong văn bản 72/2018/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 132633,
+        "so_ky_hieu": "72/2018/QĐ-UBND",
+        "doc_title": "Quy định chính sách hưởng lợi khi khai thác chính và tận dụng, tận thu gỗ rừng trồng thuộc nguồn vốn",
+        "article_num": "2",
+        "article_header": "Điều 2: Đối tượng áp dụng chính sách hưởng lợi",
+        "text_preview": "Điều 2. Đối tượng áp dụng chính sách hưởng lợi\nQuyết định này áp dụng đối với các đối tượng đã và đang được Nhà nước giao đất, giao quản lý rừng, nhận khoán rừng trồng để quản lý, bảo vệ và sử dụng, g"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.445
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.333,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 33%)"
+      }
+    },
+    {
+      "index": 77,
+      "question": "Trích dẫn Điều 2 của văn bản số 41-CP",
+      "source": {
+        "doc_id": 10692,
+        "so_ky_hieu": "41-CP",
+        "doc_title": "Về chức năng, nhiệm vụ, quyền hạn và tổ chưc bộ máy của Uỷ ban Thanh niên Việt Nam",
+        "article_num": "2",
+        "article_header": "Điều 2: - Uỷ ban Thanh niên Việt Nam có nhiệm vụ và quyền hạn:",
+        "text_preview": "Điều 2.- Uỷ ban Thanh niên Việt Nam có nhiệm vụ và quyền hạn:\n1. Chủ trì phối hợp với các Bộ cơ quan ngang Bộ, cơ quan thuộc Chính phủ, đoàn thể nhân dân trong việc soạn thảo trình Chính phủ chiến lượ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.498
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.241,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 24%)"
+      }
+    },
+    {
+      "index": 78,
+      "question": "Trích dẫn Điều 1 của văn bản số 03/2002/QĐ-NHNN",
+      "source": {
+        "doc_id": 22849,
+        "so_ky_hieu": "03/2002/QĐ-NHNN",
+        "doc_title": "Quy định lãi suất tiền gửi Đôla Mỹ không kỳ hạn của các Tổ chức tín dụng, Kho bạc Nhà nước tại Ngân ",
+        "article_num": "1",
+        "article_header": "Điều 1: Nay công bố mức lãi suất tiền gửi Đôla Mỹ không kỳ hạn của các Tổ chức tín dụng, Kho bạc Nhà",
+        "text_preview": "Điều 1: Nay công bố mức lãi suất tiền gửi Đôla Mỹ không kỳ hạn của các Tổ chức tín dụng, Kho bạc Nhà nước tại Ngân hàng Nhà nước là 1,2%/năm."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.775
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 79,
+      "question": "Cho tôi biết Điều 1 Về việc ban hành Quy định về quản lý, sử dụng tài sản công thuộc phạm vi quản lý nói về vấn đề gì?",
+      "source": {
+        "doc_id": 142699,
+        "so_ky_hieu": "19/2020/QĐ-UBND",
+        "doc_title": "Về việc ban hành Quy định về quản lý, sử dụng tài sản công thuộc phạm vi quản lý của tỉnh Bạc Liêu",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy định về quản lý, sử dụng tài sản công thuộc phạm vi quả",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy định về quản lý, sử dụng tài sản công thuộc phạm vi quản lý của tỉnh Bạc Liêu (kèm theo quy định)."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.835
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.667,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 67%)"
+      }
+    },
+    {
+      "index": 80,
+      "question": "Quy định về Tán thành các giải pháp thực hiện dự toán ngân sách nhà nước năm 2009 đã được bổ sung do Chính phủ t (Phần 1) trong Điều 2 Về dự toán ngân sách nhà nước năm 2009 như thế nào?",
+      "source": {
+        "doc_id": 25504,
+        "so_ky_hieu": "21/2008/QH12",
+        "doc_title": "Về dự toán ngân sách nhà nước năm 2009",
+        "article_num": "2",
+        "article_header": "Điều 2: Tán thành các giải pháp thực hiện dự toán ngân sách nhà nước năm 2009 đã được bổ sung do Chí",
+        "text_preview": "Điều 2. Tán thành các giải pháp thực hiện dự toán ngân sách nhà nước năm 2009 đã được bổ sung do Chính phủ trình và kiến nghị của Uỷ ban Tài chính – Ngân sách trong Báo cáo thẩm tra, đồng thời nhấn mạ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.054
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.272,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 27%)"
+      }
+    },
+    {
+      "index": 81,
+      "question": "Nội dung Điều 2 trong văn bản 98/1999/NĐ-CP là gì?",
+      "source": {
+        "doc_id": 6886,
+        "so_ky_hieu": "98/1999/NĐ-CP",
+        "doc_title": "Về việc phê chuẩn số đại biểu HĐND tỉnh; danh sách các đơn vị bầu cử và số đại biểu được bầu ở mỗi đ",
+        "article_num": "2",
+        "article_header": "Điều 2: Chủ tịch Uỷ ban nhân dân tỉnh Yên Bái; Bộ trưởng, Trưởng ban Ban Tổ chức - Cánbộ Chính phủ v",
+        "text_preview": "Điều 2.Chủ tịch Uỷ ban nhân dân tỉnh Yên Bái; Bộ trưởng, Trưởng ban Ban Tổ chức - Cánbộ Chính phủ và Bộ trưởng, Chủ nhiệm Văn phòng Chính phủ chịu trách nhiệm thihành Nghị định này./.\nDANH SÁCH ĐƠN VỊ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.945
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.522,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 52%)"
+      }
+    },
+    {
+      "index": 82,
+      "question": "Cho tôi biết Điều 2 Điều chỉnh, sửa đổi nội dung quy định về chính sách hỗ trợ, khuyến khích phát tr nói về vấn đề gì?",
+      "source": {
+        "doc_id": 98326,
+        "so_ky_hieu": "31/2015/QĐ-UBND",
+        "doc_title": "Điều chỉnh, sửa đổi nội dung quy định về chính sách hỗ trợ, khuyến khích phát triển hợp tác, liên kế",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định có hiệu lực sau 10 ngày kể từ ngày ký ban hành. Các nội dung khác của Quyết định ",
+        "text_preview": "Điều 2. Quyết định có hiệu lực sau 10 ngày kể từ ngày ký ban hành. Các nội dung khác của Quyết định số 58/2014/QĐ-UBND ngày 24/11/2014 của UBND tỉnh về quy định về chính sách hỗ trợ, khuyến khích phát"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.037
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.722,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 72%)"
+      }
+    },
+    {
+      "index": 83,
+      "question": "Điều 2 của Quy định về khu công nghiệp, khu chế xuất và khu kinh tế quy định gì?",
+      "source": {
+        "doc_id": 11611,
+        "so_ky_hieu": "29/2008/NĐ-CP",
+        "doc_title": "Quy định về khu công nghiệp, khu chế xuất và khu kinh tế",
+        "article_num": "2",
+        "article_header": "Điều 2: Giải thích từ ngữ (Phần 1)",
+        "text_preview": "Điều 2. Giải thích từ ngữ Trong Nghị định này, các từ ngữ dưới đây được hiểu như sau: 1. Khu công nghiệp là khu chuyên sản xuất hàng công nghiệp và thực hiện các dịch vụ cho sản xuất công nghiệp, có r"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.217
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.513,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 51%)"
+      }
+    },
+    {
+      "index": 84,
+      "question": "Nội dung Điều 1 trong văn bản 79/2025/TT-BCA là gì?",
+      "source": {
+        "doc_id": 187105,
+        "so_ky_hieu": "79/2025/TT-BCA",
+        "doc_title": "Quy định quản lý, sử dụng nhà nghỉ dưỡng trong Công an nhân dân",
+        "article_num": "1",
+        "article_header": "Điều 1: Phạm vi điều chỉnh",
+        "text_preview": "Điều 1. Phạm vi điều chỉnh\n1. Thông tư này quy định về đối tượng, nguyên tắc quản lý, sử dụng; điều kiện, trình tự, thủ tục bố trí nghỉ tại nhà nghỉ dưỡng; phương án bố trí quỹ phòng nghỉ của nhà nghỉ"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.51
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.5,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 50%)"
+      }
+    },
+    {
+      "index": 85,
+      "question": "Điều 1 của Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Tổng cục Đại chất  quy định gì?",
+      "source": {
+        "doc_id": 127582,
+        "so_ky_hieu": "48/2017/QĐ-TTg",
+        "doc_title": "Quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Tổng cục Đại chất và Khoáng sản Việt N",
+        "article_num": "1",
+        "article_header": "Điều 1: Vị trí và chức năng",
+        "text_preview": "Điều 1. Vị trí và chức năng\n1. Tổng cục Địa chất và Khoáng sản Việt Nam là tổ chức trực thuộc Bộ Tài nguyên và Môi trường, thực hiện chức năng tham mưu, giúp Bộ trưởng Bộ Tài nguyên và Môi trường quản"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 1.081
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.312,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 31%)"
+      }
+    },
+    {
+      "index": 86,
+      "question": "Cho tôi biết Điều 2 Quyết định về việc ban hành quy chế về hải quan đối với hàng  gia công xuất nhập nói về vấn đề gì?",
+      "source": {
+        "doc_id": 9458,
+        "so_ky_hieu": "126/TCHQ-QĐ",
+        "doc_title": "Quyết định về việc ban hành quy chế về hải quan đối với hàng  gia công xuất nhập khẩu và nguyên liệu",
+        "article_num": "2",
+        "article_header": "Điều 2: Quyết định này thay thế Quyết định số 90 /TCHQ-QĐ ngày 2-8-1994 của Tổng cục Hải quan.",
+        "text_preview": "Điều 2. Quyết định này thay thế Quyết định số 90 /TCHQ-QĐ ngày 2-8-1994 của Tổng cục Hải quan."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.568
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.667,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 67%)"
+      }
+    },
+    {
+      "index": 87,
+      "question": "Trích dẫn Điều 1 của văn bản số 39/2016/NQ-HĐND",
+      "source": {
+        "doc_id": 117453,
+        "so_ky_hieu": "39/2016/NQ-HĐND",
+        "doc_title": "Về Danh mục công trình, dự án sử dụng dưới 10 ha đất trồng lúa; \ndưới 20 ha đất rừng phòng hộ, đất r",
+        "article_num": "1",
+        "article_header": "Điều 1: Nhất trí thông qua Danh mục công trình, dự án sử dụng dưới 10 ha đất trồng lúa; dưới 20 ha đ",
+        "text_preview": "Điều 1. Nhất trí thông qua Danh mục công trình, dự án sử dụng dưới 10 ha đất trồng lúa; dưới 20 ha đất rừng phòng hộ, đất rừng đặc dụng và Danh mục công trình, dự án Nhà nước thu hồi đất để phát triển"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.453
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.6,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 60%)"
+      }
+    },
+    {
+      "index": 88,
+      "question": "Cho tôi biết Điều 1 về việc áp dụng thực hiện cơ chế “một cửa” tại Sở Thương mại-Du lịch tỉnh Bắc Ni nói về vấn đề gì?",
+      "source": {
+        "doc_id": 13300,
+        "so_ky_hieu": "92/2006/QĐ-UBND",
+        "doc_title": "về việc áp dụng thực hiện cơ chế “một cửa” tại Sở Thương mại-Du lịch tỉnh Bắc Ninh",
+        "article_num": "1",
+        "article_header": "Điều 1: Áp dụng thực hiện theo cơ chế \"một cửa\" tại Sở Thương mại-Du lịch tỉnh Bắc Ninh, bao gồm các",
+        "text_preview": "Điều 1: Áp dụng thực hiện theo cơ chế \"một cửa\" tại Sở Thương mại-Du lịch tỉnh Bắc Ninh, bao gồm các lĩnh vực công việc sau:\n1. Cấp Giấy chứng nhận đủ điều kiện kinh doanh xăng dầu;\n2. Cấp giấy chứng "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.505
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.321,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 32%)"
+      }
+    },
+    {
+      "index": 89,
+      "question": "Điều 1 của Về việc sửa đổi, bổ sung Khoản 2 Điều 5 Quyết định số 02/2015/QĐ-UBND ngày 29 th quy định gì?",
+      "source": {
+        "doc_id": 96782,
+        "so_ky_hieu": "11/2015/QĐ-UBND",
+        "doc_title": "Về việc sửa đổi, bổ sung Khoản 2 Điều 5 Quyết định số 02/2015/QĐ-UBND ngày 29 tháng 01 năm 2015 của ",
+        "article_num": "1",
+        "article_header": "Điều 1: Sửa đổi, bổ sung Khoản 2 Điều 5 Quyết định số 02/2015/QĐ-UBND ngày 29 tháng 01 năm 2015 của ",
+        "text_preview": "Điều 1. Sửa đổi, bổ sung Khoản 2 Điều 5 Quyết định số 02/2015/QĐ-UBND ngày 29 tháng 01 năm 2015 của Uỷ ban nhân dân tỉnh về việc quy định tỷ lệ phần trăm (%) tính đơn giá thuê đất trên địa bàn tỉnh Bế"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.827
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.607,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 61%)"
+      }
+    },
+    {
+      "index": 90,
+      "question": "Nội dung Điều 1 trong văn bản 579/2014/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 61646,
+        "so_ky_hieu": "579/2014/QĐ-UBND",
+        "doc_title": "Về việc quy định một số nội dung phân cấp thẩm quyền xác lập và phê duyệt phương  án xử lý tài sản đ",
+        "article_num": "1",
+        "article_header": "Điều 1: Quy định một số nội dung phân cấp, thẩm quyền xác lập quyền sở hữu của Nhà nước về tài sản đ",
+        "text_preview": "Điều 1. Quy định một số nội dung phân cấp, thẩm quyền xác lập quyền sở hữu của Nhà nước về tài sản đối với tài sản do tổ chức, cá nhân tự nguyện chuyển giao sở hữu cho Nhà nước, như sau:\n1. Chủ tịch U"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dat_dai",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.496
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.217,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 22%)"
+      }
+    },
+    {
+      "index": 91,
+      "question": "Quy định về Nay quy định giá lắp đặt máy điện thoại, fax, telex cho các đối tượng sử dụng trong địa bàn Thành ph trong Điều 1 Quy định giá lắp đặt máy điện thoại, fax, telex như thế nào?",
+      "source": {
+        "doc_id": 34268,
+        "so_ky_hieu": "693/QĐ-UB",
+        "doc_title": "Quy định giá lắp đặt máy điện thoại, fax, telex",
+        "article_num": "1",
+        "article_header": "Điều 1: Nay quy định giá lắp đặt máy điện thoại, fax, telex cho các đối tượng sử dụng trong địa bàn ",
+        "text_preview": "Điều 1. Nay quy định giá lắp đặt máy điện thoại, fax, telex cho các đối tượng sử dụng trong địa bàn Thành phố (có phụ lục kèm theo)\n- Sở Tài chính và Bưu điện Thành phố hướng dẫn thi hành quyết định n"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dat_dai",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.452
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 92,
+      "question": "Cho tôi biết Điều 1 Điều chỉnh các mức bằng tiền về thuế môn bài nói về vấn đề gì?",
+      "source": {
+        "doc_id": 11116,
+        "so_ky_hieu": "326-HĐBT",
+        "doc_title": "Điều chỉnh các mức bằng tiền về thuế môn bài",
+        "article_num": "1",
+        "article_header": "Điều 1: Từ năm 1993 thuế môn bài áp dụng cho các tổ chức và cá nhân kinh doanh nộp theo 6 mức: 450.0",
+        "text_preview": "Điều 1. Từ năm 1993 thuế môn bài áp dụng cho các tổ chức và cá nhân kinh doanh nộp theo 6 mức: 450.000đ, 270.000đ, 150.000đ, 75.000đ, 30. 000đ, 15.000đ.\nBộ Tài chính hướng dẫn cụ thể căn cứ tính thuế "
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.069
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 0.571,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 57%"
+      }
+    },
+    {
+      "index": 93,
+      "question": "Nội dung Điều 2 trong văn bản 83/2017/NĐ-CP là gì?",
+      "source": {
+        "doc_id": 135768,
+        "so_ky_hieu": "83/2017/NĐ-CP",
+        "doc_title": "Quy định về công tác cứu nạn, cứu hộ của lực lượng phòng cháy và chữa cháy",
+        "article_num": "2",
+        "article_header": "Điều 2: Đối tượng áp dụng",
+        "text_preview": "Điều 2. Đối tượng áp dụng\nNghị định này áp dụng đối với cơ quan, tổ chức, hộ gia đình, cá nhân hoạt động, cư trú trên lãnh thổ Việt Nam; trường hợp điều ước quốc tế mà Cộng hoà xã hội chủ nghĩa Việt N"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 4.794
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 0.583,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 58%"
+      }
+    },
+    {
+      "index": 94,
+      "question": "Trích dẫn Điều 1 của văn bản số 38/2000/QĐ-BGD",
+      "source": {
+        "doc_id": 5103,
+        "so_ky_hieu": "38/2000/QĐ-BGD",
+        "doc_title": "Về việc bãi bỏ 11 Thông tư liên Bộ hết hiệu lực thi hành",
+        "article_num": "1",
+        "article_header": "Điều 1: Bãibỏ Thông tư liên Bộ hết hiệu lực thi hành (Danh mục đính kèm theo Quyếtđịnh này).",
+        "text_preview": "Điều 1. Bãibỏ Thông tư liên Bộ hết hiệu lực thi hành (Danh mục đính kèm theo Quyếtđịnh này)."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hinh_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.471
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.5,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 50%)"
+      }
+    },
+    {
+      "index": 95,
+      "question": "Trích dẫn Điều 2 của văn bản số 04/2017/NQ-HĐND",
+      "source": {
+        "doc_id": 124041,
+        "so_ky_hieu": "04/2017/NQ-HĐND",
+        "doc_title": "Về việc ban hành quy định mức trích (tỷ lệ phần trăm) từ các \nkhoản thu hồi phát hiện qua công tác t",
+        "article_num": "2",
+        "article_header": "Điều 2: Uỷ ban nhân dân tỉnh tổ chức triển khai thực hiện nghị quyết theo quy định của pháp luật.",
+        "text_preview": "Điều 2. Uỷ ban nhân dân tỉnh tổ chức triển khai thực hiện nghị quyết theo quy định của pháp luật."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.411
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 1.0,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 100%"
+      }
+    },
+    {
+      "index": 96,
+      "question": "Trích dẫn Điều 1 của văn bản số 124/1999/QĐ-TTg",
+      "source": {
+        "doc_id": 6650,
+        "so_ky_hieu": "124/1999/QĐ-TTg",
+        "doc_title": "Phê duyệt Quy hoạch chung đo thị mới Điện Nam - Điện Ngọc tỉnh Quảng Nam",
+        "article_num": "1",
+        "article_header": "Điều 1: Phê duyệt Quy hoạch chung đô thị mới Điện Nam - Điện Ngọc đến năm 2020 với những nội dung ch",
+        "text_preview": "Điều 1. Phê duyệt Quy hoạch chung đô thị mới Điện Nam - Điện Ngọc đến năm 2020 với những nội dung chủ yếu sau: 1. Về mục tiêu: Quy hoạch chung đô thị mới Điện Nam - Điện Ngọc nhằm cụ thể hoá định hướn"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.437
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": false,
+        "content_overlap": 0.18,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 18%)"
+      }
+    },
+    {
+      "index": 97,
+      "question": "Nội dung Điều 1 trong văn bản 34/2011/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 47196,
+        "so_ky_hieu": "34/2011/QĐ-UBND",
+        "doc_title": "Về việc ban hành Bảng giá cho thuê nhà ở thuộc sở hữu nhà nước chưa được cải tạo, xây dựng lại trên ",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này bảng giá (điều chỉnh) cho thuê nhà ở thuộc sở hữu Nhà nước ",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này bảng giá (điều chỉnh) cho thuê nhà ở thuộc sở hữu Nhà nước chưa được cải tạo, xây dựng lại trên địa bàn tỉnh Kon Tum."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "dan_su",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.489
+      },
+      "scoring": {
+        "grade": "WRONG_DOC",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.167,
+        "details": "🟠 Sai VB nhưng có nội dung tương tự (overlap 17%)"
+      }
+    },
+    {
+      "index": 98,
+      "question": "Cho tôi biết Điều 2 V/v cho thôi làm nhiệm vụ đại biểu HĐND tỉnh đối với bà Cao Thị Kim Cúc nói về vấn đề gì?",
+      "source": {
+        "doc_id": 79313,
+        "so_ky_hieu": "30/2004/NQ-HĐND",
+        "doc_title": "V/v cho thôi làm nhiệm vụ đại biểu HĐND tỉnh đối với bà Cao Thị Kim Cúc",
+        "article_num": "2",
+        "article_header": "Điều 2: HĐND tỉnh giao cho Thường trực HĐND tỉnh thực hiện nghị quyết này.",
+        "text_preview": "Điều 2. HĐND tỉnh giao cho Thường trực HĐND tỉnh thực hiện nghị quyết này.\nNghị quyết này đã được HĐND tỉnh khoá XIV thông qua tại kỳ họp thứ 3 HĐND tỉnh ngày 29/12/2004."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "chitchat",
+        "routing_level": 1,
+        "num_citations": 5,
+        "latency": 3.456
+      },
+      "scoring": {
+        "grade": "EXACT_MATCH",
+        "doc_match": true,
+        "article_match": true,
+        "content_overlap": 0.778,
+        "details": "✅ Đúng văn bản + đúng Điều + overlap 78%"
+      }
+    },
+    {
+      "index": 99,
+      "question": "Nội dung Điều 2 trong văn bản 56/HĐBT là gì?",
+      "source": {
+        "doc_id": 2231,
+        "so_ky_hieu": "56/HĐBT",
+        "doc_title": "Quy định chi tiết thi hành Pháp lệnh Nghĩa vụ lao động công ích",
+        "article_num": "2",
+        "article_header": "Điều 2: - Người được huy động làm nghĩa vụ lao động công ích hàng năm phải trực tiếp làm là chính. N",
+        "text_preview": "Điều 2. - Người được huy động làm nghĩa vụ lao động công ích hàng năm phải trực tiếp làm là chính. Nếu vì hoàn cảnh nào đó không thể trực tiếp làm lao động công ích được thì thuê người làm thay. Khi t"
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "doanh_nghiep",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.693
+      },
+      "scoring": {
+        "grade": "PARTIAL_MATCH",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.619,
+        "details": "🟡 Đúng Điều + có nội dung liên quan (overlap 62%)"
+      }
+    },
+    {
+      "index": 100,
+      "question": "Nội dung Điều 1 trong văn bản 42/2015/QĐ-UBND là gì?",
+      "source": {
+        "doc_id": 92737,
+        "so_ky_hieu": "42/2015/QĐ-UBND",
+        "doc_title": "Ban hành quy chế công tác thi đua, khen thưởng đối với \nlực lượng Công an xã, Bảo vệ dân phố và phon",
+        "article_num": "1",
+        "article_header": "Điều 1: Ban hành kèm theo Quyết định này Quy chế về công tác thi đua, khen thưởng đối với lực lượng ",
+        "text_preview": "Điều 1. Ban hành kèm theo Quyết định này Quy chế về công tác thi đua, khen thưởng đối với lực lượng Công an xã, Bảo vệ dân phố và phong trào toàn dân bảo vệ an ninh Tổ quốc trên địa bàn tỉnh Phú Yên."
+      },
+      "retrieval": {
+        "status": "success",
+        "domain": "hanh_chinh",
+        "routing_level": 2,
+        "num_citations": 5,
+        "latency": 0.507
+      },
+      "scoring": {
+        "grade": "MISS",
+        "doc_match": false,
+        "article_match": true,
+        "content_overlap": 0.111,
+        "details": "❌ Hoàn toàn sai — overlap chỉ 11%"
+      }
+    }
+  ]
+}

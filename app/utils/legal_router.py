@@ -150,7 +150,33 @@ def route_query(query: str) -> Dict[str, Any]:
             best_score = max_score
             best_domain = domain
             
+    # Bắt buộc chuyển thành câu hỏi pháp luật nếu chứa các ký hiệu đặc trưng pháp lý
+    # Ví dụ: "Điều 24", hoặc số hiệu văn bản "111/2009/NĐ-CP", "27-LCT/HĐNN8"
+    # Chuẩn hóa khoảng trắng quanh dấu gạch chéo để bắt các số hiệu có khoảng trắng thừa (ví dụ: '6  /2007/QĐ-UBND')
+    query_normalized_spaces = re.sub(r'\s*/\s*', '/', query)
+    
+    has_legal_identifier = False
+    
+    # 1. Check regex for Điều or số hiệu văn bản
+    if (re.search(r'[Đđ]iều\s+\d+', query_normalized_spaces) or 
+        re.search(r'(\b\d+[\w\-\/]*\/[A-Za-zĐđÀ-ỹ0-9\-]+\b|\b\d+-[A-Za-zĐđÀ-ỹ]{2,}\b)', query_normalized_spaces)):
+        has_legal_identifier = True
+        
+    # 2. Check general legal keywords to prevent false positives in chitchat/out_of_scope
+    legal_keywords = [
+        "điều luật", "điều khoản", "nghị quyết", "thông tư", "nghị định", "quyết định", 
+        "bộ luật", "luật pháp", "pháp luật việt nam", "văn bản pháp luật"
+    ]
+    query_lower = query.lower()
+    if not has_legal_identifier and any(k in query_lower for k in legal_keywords):
+        has_legal_identifier = True
+        
     is_legal = best_domain not in ["chitchat", "out_of_scope"]
+    
+    if has_legal_identifier:
+        is_legal = True
+        if best_domain in ["chitchat", "out_of_scope"]:
+            best_domain = "dan_su"  # Default fallback legal domain
     
     # We apply a conservative confidence threshold. If a query matches out_of_scope but has very low score,
     # we default to "dan_su" to prevent false negatives.
@@ -158,35 +184,116 @@ def route_query(query: str) -> Dict[str, Any]:
         best_domain = "dan_su"
         is_legal = True
 
-    # Xác định Cấp độ Định tuyến (Adaptive Routing Level)
-    routing_level = 3  # Mặc định là Level 3 (Complex RAG)
+    # Xác định Cấp độ Định tuyến
+    # FIX TRIỆT ĐỂ: Không còn Level 2.
+    # Tất cả câu hỏi pháp luật → Level 1 (Full RAG: FTS5 + FAISS Vector + Graph + Vietnamese Reranker)
+    # Level 2 đã bị chứng minh sai 21% trong test 100 câu vì bỏ qua Vector/Graph/Reranker.
     if not is_legal or best_domain in ["chitchat", "out_of_scope"]:
-        routing_level = 1
+        routing_level = 0  # Non-legal: handled separately in chatbot.py
     else:
-        # Regex kiểm tra trích dẫn số hiệu hoặc điều khoản pháp luật chính xác
-        citation_patterns = [
-            r"(điều|khoản|điểm)\s+\d+",
-            r"\d+/\d{4}/[a-z0-9\-]+",
-            r"(luật|nghị\s+định|thông\s+tư|quyết\s+định)\s+số\s+\d+",
-            r"(hiến\s+pháp|bộ\s+luật|luật)\s+\d{4}"
-        ]
-        is_simple = False
-        for pat in citation_patterns:
-            if re.search(pat, query_clean, re.IGNORECASE):
-                is_simple = True
-                break
+        routing_level = 1  # ALL legal queries → Full RAG pipeline
+
+    # Bóc tách metadata từ câu hỏi (Year, Doc Type, Issuer)
+    # Bóc tách năm ban hành (Year) cực kỳ cẩn thận
+    year_filter = None
+    query_lower = query.lower()
+    
+    # 1. Trích xuất từ số hiệu văn bản có gạch chéo/gạch nối (ví dụ: /2024/, -2024-, /2024-NĐ)
+    year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})[-/]', query)
+    if not year_in_symbol_match:
+        # Ví dụ: 12/2024/NĐ-CP hoặc 12/2024-NĐ-CP
+        year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})[-/][A-ZĐđ]', query)
+    if not year_in_symbol_match:
+        # Ví dụ: 12/2024-NĐ
+        year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})-[A-ZĐđ]', query)
+    if not year_in_symbol_match:
+        # Ví dụ ở cuối số ký hiệu: 15/2024
+        year_in_symbol_match = re.search(r'\b\d+/((?:19|20)\d{2})\b', query)
         
-        # Nếu câu hỏi cực ngắn (dưới 6 từ hoặc dưới 35 ký tự), coi là tra cứu từ khóa đơn giản
-        if len(query.strip()) < 35 or len(query.split()) < 6:
-            is_simple = True
-            
-        if is_simple:
-            routing_level = 2
+    if year_in_symbol_match:
+        year_filter = int(year_in_symbol_match.group(1))
+    else:
+        # 2. Hoặc xuất hiện dạng "năm 2024" nhưng KHÔNG có "nhiệm kỳ" hay "giai đoạn" đi kèm
+        if not re.search(r'(nhiệm kỳ|giai đoạn|kế hoạch)\s+\d+', query_lower):
+            year_word_match = re.search(r'\bnăm\s+((?:19|20)\d{2})\b', query_lower)
+            if year_word_match:
+                year_filter = int(year_word_match.group(1))
+
+    doc_type = None
+    query_lower = query.lower()
+    if "hiến pháp" in query_lower:
+        doc_type = "Hiến pháp"
+    elif "bộ luật" in query_lower:
+        doc_type = "Bộ luật"
+    elif "luật" in query_lower:
+        # Avoid false positives where "luật" is part of non-document compounds
+        exclude_words = ["pháp luật", "điều luật", "luật sư", "luật pháp", "kỷ luật", "tiền lệ luật"]
+        if not any(ew in query_lower for ew in exclude_words):
+            doc_type = "Luật"
+    elif "nghị định" in query_lower:
+        doc_type = "Nghị định"
+    elif "thông tư liên tịch" in query_lower:
+        doc_type = "Thông tư liên tịch"
+    elif "thông tư" in query_lower:
+        doc_type = "Thông tư"
+    elif "quyết định" in query_lower:
+        doc_type = "Quyết định"
+    elif "nghị quyết" in query_lower:
+        doc_type = "Nghị quyết"
+    elif "pháp lệnh" in query_lower:
+        doc_type = "Pháp lệnh"
+    elif "chỉ thị" in query_lower:
+        doc_type = "Chỉ thị"
+
+    issuer = None
+    if "chính phủ" in query_lower:
+        issuer = "Chính phủ"
+    elif "thủ tướng" in query_lower:
+        issuer = "Thủ tướng Chính phủ"
+    elif "bộ tài chính" in query_lower:
+        issuer = "Bộ Tài chính"
+    elif "bộ y tế" in query_lower:
+        issuer = "Bộ Y tế"
+    elif "bộ công thương" in query_lower:
+        issuer = "Bộ Công thương"
+    elif "bộ giáo dục" in query_lower or "bộ gd&đt" in query_lower or "bộ gd-đt" in query_lower:
+        issuer = "Bộ Giáo dục và Đào tạo"
+    elif "bộ lao động" in query_lower or "bộ ldtbxh" in query_lower or "bộ lđtbxh" in query_lower or "thương binh và xã hội" in query_lower:
+        issuer = "Bộ Lao động - Thương binh và Xã hội"
+    elif "bộ công an" in query_lower:
+        issuer = "Bộ Công an"
+    elif "bộ quốc phòng" in query_lower:
+        issuer = "Bộ Quốc phòng"
+    elif "bộ tư pháp" in query_lower:
+        issuer = "Bộ Tư pháp"
+    elif "bộ xây dựng" in query_lower:
+        issuer = "Bộ Xây dựng"
+    elif "bộ giao thông" in query_lower or "bộ gtvt" in query_lower:
+        issuer = "Bộ Giao thông vận tải"
+    elif "bộ kế hoạch" in query_lower or "bộ kh&đt" in query_lower or "bộ kh-đt" in query_lower:
+        issuer = "Bộ Kế hoạch và Đầu tư"
+    elif "bộ tài nguyên" in query_lower or "bộ tn&mt" in query_lower or "bộ tn-mt" in query_lower:
+        issuer = "Bộ Tài nguyên và Môi trường"
+    elif "bộ thông tin" in query_lower or "bộ tt&tt" in query_lower or "bộ tt-tt" in query_lower:
+        issuer = "Bộ Thông tin và Truyền thông"
+    elif "bộ nông nghiệp" in query_lower or "bộ nn&ptnt" in query_lower or "bộ nn-ptnt" in query_lower:
+        issuer = "Bộ Nông nghiệp và Phát triển nông thôn"
+    elif "quốc hội" in query_lower:
+        issuer = "Quốc hội"
+    elif "ủy ban thường vụ quốc hội" in query_lower or "ubtvqh" in query_lower:
+        issuer = "Ủy ban Thường vụ Quốc hội"
+    elif "tòa án nhân dân tối cao" in query_lower or "tandtc" in query_lower:
+        issuer = "Tòa án nhân dân tối cao"
+    elif "viện kiểm sát" in query_lower or "vksndtc" in query_lower:
+        issuer = "Viện kiểm sát nhân dân tối cao"
         
     return {
         "domain": best_domain,
         "confidence": best_score,
         "doc_type_filter": DOMAIN_FILTERS.get(best_domain, []),
         "is_legal": is_legal,
-        "routing_level": routing_level
+        "routing_level": routing_level,
+        "extracted_year": year_filter,
+        "extracted_doc_type": doc_type,
+        "extracted_issuer": issuer
     }

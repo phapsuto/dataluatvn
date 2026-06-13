@@ -191,22 +191,27 @@ class LightGraphManager:
             if not queue:
                 break
                 
-            placeholders = ",".join(["?"] * len(queue))
-            # Lấy các kết nối hướng đi (source -> target) và hướng về (target -> source)
-            query = f"""
-                SELECT target FROM graph_edges WHERE source IN ({placeholders}) AND target LIKE 'LAW_ID_%'
-                UNION
-                SELECT source FROM graph_edges WHERE target IN ({placeholders}) AND source LIKE 'LAW_ID_%'
-            """
-            try:
-                cursor.execute(query, queue + queue)
-                neighbors = [row[0] for row in cursor.fetchall()]
-                for n in neighbors:
-                    if n not in visited:
-                        visited.add(n)
-                        next_queue.append(n)
-            except Exception:
-                pass
+            # Batch query to avoid "too many SQL variables" (limit of 999 parameters in SQLite)
+            neighbors = []
+            queue_list = list(queue)
+            batch_size = 250
+            for i in range(0, len(queue_list), batch_size):
+                chunk = queue_list[i : i + batch_size]
+                placeholders = ",".join(["?"] * len(chunk))
+                query = f"""
+                    SELECT target FROM graph_edges WHERE source IN ({placeholders}) AND target LIKE 'LAW_ID_%'
+                    UNION
+                    SELECT source FROM graph_edges WHERE target IN ({placeholders}) AND source LIKE 'LAW_ID_%'
+                """
+                try:
+                    cursor.execute(query, chunk + chunk)
+                    neighbors.extend([row[0] for row in cursor.fetchall()])
+                except Exception:
+                    pass
+            for n in neighbors:
+                if n not in visited:
+                    visited.add(n)
+                    next_queue.append(n)
             queue = next_queue
             
         conn.close()

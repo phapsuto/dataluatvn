@@ -27,11 +27,11 @@ QUY TẮC TUYỆT ĐỐI (Citation & Groundedness):
 4. Nếu vẫn thiếu thông tin, hãy tuyên bố rõ không tìm thấy quy định trong dữ liệu và khuyến nghị liên hệ luật sư. Không bịa đặt thông tin.
 """
 
-async def collect_full_llm_response(messages: List[Dict[str, str]], system_prompt: str) -> str:
+async def collect_full_llm_response(messages: List[Dict[str, str]], system_prompt: str, custom_model: str = None) -> str:
     """Helper to collect all stream tokens from LLMGateway into a single string."""
     tokens = []
     try:
-        async for token in LLMGateway.call_stream(messages, system_prompt, temperature=0.1):
+        async for token in LLMGateway.call_stream(messages, system_prompt, temperature=0.1, custom_model=custom_model):
             tokens.append(token)
     except Exception as e:
         print(f"⚠️ Error collecting LLM response: {e}")
@@ -42,7 +42,8 @@ async def flare_generate_stream(
     query: str, 
     initial_context: str, 
     citation_map: Dict[str, Dict[str, Any]],
-    domain_filter: List[str] = None
+    domain_filter: List[str] = None,
+    custom_model: str = None
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Asynchronously yields streaming tokens and metadata for the FLARE process:
@@ -59,7 +60,8 @@ async def flare_generate_stream(
         print("⚡ [FLARE] Query is simple. Skipping active draft phase.")
         async for token in LLMGateway.call_stream(
             messages=[{"role": "user", "content": query}],
-            system_prompt=f"{FLARE_FINAL_SYSTEM_PROMPT}\n\n--- NGỮ CẢNH PHÁP LÝ ---\n{initial_context}"
+            system_prompt=f"{FLARE_FINAL_SYSTEM_PROMPT}\n\n--- NGỮ CẢNH PHÁP LÝ ---\n{initial_context}",
+            custom_model=custom_model
         ):
             yield {"type": "token", "content": token}
         yield {"type": "status", "flare_activated": False, "search_count": 0, "citation_map": citation_map}
@@ -73,13 +75,14 @@ async def flare_generate_stream(
     ]
     
     try:
-        draft_text = await collect_full_llm_response(draft_messages, FLARE_DRAFT_SYSTEM_PROMPT)
+        draft_text = await collect_full_llm_response(draft_messages, FLARE_DRAFT_SYSTEM_PROMPT, custom_model=custom_model)
     except Exception as e:
         # Fallback to single-pass stream if FPT cloud or primary model fails
         print(f"⚠️ Draft generation failed: {e}. Fallback to direct stream.")
         async for token in LLMGateway.call_stream(
             messages=[{"role": "user", "content": query}],
-            system_prompt=f"{FLARE_FINAL_SYSTEM_PROMPT}\n\n--- NGỮ CẢNH PHÁP LÝ ---\n{initial_context}"
+            system_prompt=f"{FLARE_FINAL_SYSTEM_PROMPT}\n\n--- NGỮ CẢNH PHÁP LÝ ---\n{initial_context}",
+            custom_model=custom_model
         ):
             yield {"type": "token", "content": token}
         yield {"type": "status", "flare_activated": False, "search_count": 0, "citation_map": citation_map}
@@ -143,7 +146,7 @@ async def flare_generate_stream(
         {"role": "user", "content": query}
     ]
     
-    async for token in LLMGateway.call_stream(final_messages, FLARE_FINAL_SYSTEM_PROMPT, temperature=0.1):
+    async for token in LLMGateway.call_stream(final_messages, FLARE_FINAL_SYSTEM_PROMPT, temperature=0.1, custom_model=custom_model):
         yield {"type": "token", "content": token}
         
     yield {

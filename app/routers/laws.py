@@ -7,7 +7,9 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["DISABLE_LLM_EXPANSION"] = "1"
+os.environ["DISABLE_LLM_EXPANSION"] = "1"  # Tắt Query Expansion (để giảm latency)
+# LƯU Ý: Spell correction (preprocess_and_correct_query) dùng biến riêng DISABLE_SPELL_CORRECTION
+# KHÔNG tắt spell correction mặc định để user có lỗi chính tả vẫn được sửa
 
 import sqlite3
 import io
@@ -84,8 +86,8 @@ VIETNAMESE_STOPWORDS = {
     "có", "là", "thì", "cũng", "lại", "rồi", "mới", "cứ", "đều",
     # Từ nghi vấn phổ biến
     "thế", "như", "thế nào", "như thế nào", "bao nhiêu", "vậy",
-    # Từ chức năng khác
-    "việc", "cái", "con", "người", "điều", "khoản",
+    # Từ chức năng khác (LƯU Ý: "điều" và "khoản" KHÔNG phải stopwords vì là identifier pháp lý cốt lõi)
+    "việc", "cái", "con", "người",
 }
 
 def generate_spelling_variants(word: str) -> List[str]:
@@ -108,21 +110,51 @@ def parse_fts_query(q: str) -> str:
     """
     Phân tích query FTS5 thông minh cho cả keyword search lẫn câu hỏi tự nhiên,
     kết hợp tự động sinh các biến thể dấu tiếng Việt cũ/mới để tối đa hóa Recall.
+    Đồng thời tự động trích xuất các cụm từ trong ngoặc kép để tạo điều kiện khớp cụm từ chính xác (exact phrase matching).
     """
+    # 1. Trích xuất cụm từ trong ngoặc kép
+    quoted_phrases = re.findall(r'["\']([^"\']{3,})["\']', q)
+    phrase_clauses = []
+    q_remaining = q
+    for phrase in quoted_phrases:
+        q_remaining = q_remaining.replace(f'"{phrase}"', '').replace(f"'{phrase}'", '')
+        phrase_clean = re.sub(r'[^\w\s]', ' ', phrase).strip()
+        phrase_clean = re.sub(r'\s+', ' ', phrase_clean)
+        if phrase_clean:
+            phrase_clauses.append(f'"{phrase_clean}"')
+
+    # Tách chữ và số dính liền (ví dụ: "dieu24" -> "dieu 24", "nd15" -> "nd 15")
+    q_split = re.sub(r'([a-zA-ZÀ-ỹĐđ]+)(\d+)', r'\1 \2', q_remaining)
+    q_split = re.sub(r'(\d+)([a-zA-ZÀ-ỹĐđ]+)', r'\1 \2', q_split)
+    
     # Bước 1: Loại bỏ ký tự đặc biệt FTS
-    q_clean = re.sub(r'[^\w\s]', ' ', q).strip()
+    q_clean = re.sub(r'[^\w\s]', ' ', q_split).strip()
     all_words = [w for w in q_clean.split() if w]
-    if not all_words:
+    if not all_words and not phrase_clauses:
         return ""
     
-    # Bước 2: Loại bỏ stopwords và từ quá ngắn (≤1 ký tự)
-    keywords = [w for w in all_words if w.lower() not in VIETNAMESE_STOPWORDS and len(w) > 1]
+    # Bước 1.5: Lọc bỏ token không hợp lệ (không chứa ký tự tiếng Việt hoặc số)
+    vietnamese_char_pattern = re.compile(r'^[a-zA-ZÀ-ỹĐđ0-9]+$')
+    valid_words = [w for w in all_words if vietnamese_char_pattern.match(w)]
+    if not valid_words and all_words:
+        valid_words = all_words  # Fallback nếu lọc quá aggressive
     
-    # Nếu sau khi lọc không còn từ nào, dùng lại all_words
-    if not keywords:
-        keywords = [w for w in all_words if len(w) > 1]
-    if not keywords:
-        keywords = all_words
+    # Bước 2: Loại bỏ stopwords và từ quá ngắn (≤1 ký tự)
+    keywords = [w for w in valid_words if w.lower() not in VIETNAMESE_STOPWORDS and len(w) > 1]
+    
+    # Nếu sau khi lọc không còn từ nào, dùng lại valid_words
+    if not keywords and valid_words:
+        keywords = [w for w in valid_words if len(w) > 1]
+    if not keywords and valid_words:
+        keywords = valid_words
+    
+    # Bước 2.5: Ưu tiên phát hiện pattern "Điều + số" để đặt lên đầu query
+    article_match = re.search(r'(điều|khoản|mục)\s+(\d+)', q_clean, re.IGNORECASE)
+    article_priority_clause = None
+    if article_match:
+        article_keyword = article_match.group(1).lower()
+        article_number = article_match.group(2)
+        article_priority_clause = f'"{article_keyword} {article_number}"'
         
     def format_keyword(w: str, append_star: bool = False) -> str:
         vars = generate_spelling_variants(w)
@@ -131,37 +163,52 @@ def parse_fts_query(q: str) -> str:
             return "(" + " OR ".join([f"{v}{star}" for v in vars]) + ")"
         return f"{w}{star}"
     
-    # Bước 3: Áp dụng chiến lược theo độ dài
-    if len(keywords) == 1:
-        return format_keyword(keywords[0], append_star=True)
-    
-    if len(keywords) <= 3:
-        # Query ngắn → AND prefix giữa các từ
-        and_query = " AND ".join([format_keyword(w, append_star=True) for w in keywords])
-        return and_query
-    
-    if len(keywords) <= 6:
-        # Query vừa → AND tất cả
-        and_query = " AND ".join([format_keyword(w, append_star=False) for w in keywords])
-        
-        # Fallback: AND chỉ top 3 từ dài nhất
-        top_words = sorted(keywords, key=len, reverse=True)[:3]
-        and_fallback = " AND ".join([format_keyword(w, append_star=False) for w in top_words])
-        return f"({and_query}) OR ({and_fallback})"
-    
-    # Query dài (câu hỏi tự nhiên)
-    top_keywords = sorted(keywords, key=len, reverse=True)[:7]
-    top_formatted_7 = []
-    for w in top_keywords:
-        vars = generate_spelling_variants(w)
-        if len(vars) > 1:
-            top_formatted_7.append("(" + " OR ".join(vars) + ")")
+    base_query = ""
+    # Bước 3: Áp dụng chiến lược theo độ dài cho phần keywords còn lại
+    if keywords:
+        if len(keywords) == 1:
+            base_query = format_keyword(keywords[0], append_star=True)
+        elif len(keywords) <= 3:
+            base_query = " AND ".join([format_keyword(w, append_star=True) for w in keywords])
+        elif len(keywords) <= 6:
+            and_query = " AND ".join([format_keyword(w, append_star=False) for w in keywords])
+            top_words = sorted(keywords, key=len, reverse=True)[:3]
+            and_fallback = " AND ".join([format_keyword(w, append_star=False) for w in top_words])
+            base_query = f"({and_query}) OR ({and_fallback})"
         else:
-            top_formatted_7.append(w)
-            
-    and_top5 = " AND ".join(top_formatted_7[:5])
-    and_top3 = " AND ".join(top_formatted_7[:3])
-    return f"({and_top5}) OR ({and_top3})"
+            top_keywords = sorted(keywords, key=len, reverse=True)[:7]
+            top_formatted_7 = []
+            for w in top_keywords:
+                vars = generate_spelling_variants(w)
+                if len(vars) > 1:
+                    top_formatted_7.append("(" + " OR ".join(vars) + ")")
+                else:
+                    top_formatted_7.append(w)
+            and_top5 = " AND ".join(top_formatted_7[:5])
+            and_top3 = " AND ".join(top_formatted_7[:3])
+            base_query = f"({and_top5}) OR ({and_top3})"
+
+    # Gom các clauses
+    clauses = []
+    if phrase_clauses:
+        phrases_str = " OR ".join(phrase_clauses)
+        clauses.append(f"({phrases_str})")
+    if article_priority_clause:
+        clauses.append(article_priority_clause)
+    if base_query:
+        clauses.append(base_query)
+
+    if not clauses:
+        return ""
+
+    if phrase_clauses:
+        other_clauses = clauses[1:]
+        if other_clauses:
+            other_query = " OR ".join(other_clauses)
+            return f"({clauses[0]}) OR ({other_query})"
+        return clauses[0]
+    else:
+        return " OR ".join(clauses)
 
 def get_province_search_terms(province_code: str, conn) -> list:
     cursor = conn.cursor()
@@ -691,59 +738,63 @@ def preprocess_and_correct_query(q: str) -> str:
     if len(words) <= 2:
         return clean_q
 
-    from app.config import FPT_CLOUD_API_KEY
-    if not FPT_CLOUD_API_KEY or os.environ.get("DISABLE_LLM_EXPANSION") == "1":
-        return clean_q
+    # Spell correction via FPT Cloud
+    processed = None
+    if not processed:
+        from app.config import FPT_CLOUD_API_KEY
+        if not FPT_CLOUD_API_KEY or os.environ.get("DISABLE_SPELL_CORRECTION") == "1":
+            return clean_q
 
-    FPT_URL = "https://mkp-api.fptcloud.com/v1/chat/completions"
-    FPT_MODEL = "gemma-4-31B-it"
-    headers = {
-        "Authorization": f"Bearer {FPT_CLOUD_API_KEY}",
-        "Content-Type": "application/json"
-    }
+        FPT_URL = "https://mkp-api.fptcloud.com/v1/chat/completions"
+        FPT_MODEL = "gemma-4-31B-it"
+        headers = {
+            "Authorization": f"Bearer {FPT_CLOUD_API_KEY}",
+            "Content-Type": "application/json"
+        }
 
-    system_prompt = (
-        "Bạn là chuyên gia ngôn ngữ tiếng Việt pháp luật.\n"
-        "Nhiệm vụ của bạn là đọc câu hỏi của người dùng, khôi phục dấu tiếng Việt đầy đủ nếu câu hỏi viết không dấu, và sửa lỗi chính tả nếu có.\n"
-        "Quy tắc tuyệt đối:\n"
-        "- Trả về duy nhất câu đã được khôi phục dấu và sửa lỗi.\n"
-        "- Giữ nguyên các thuật ngữ pháp lý.\n"
-        "- KHÔNG viết thêm bất kỳ lời giải thích, mở đầu hoặc kết luận nào."
-    )
+        system_prompt = (
+            "Bạn là chuyên gia ngôn ngữ tiếng Việt pháp luật.\n"
+            "Nhiệm vụ của bạn là đọc câu hỏi của người dùng, khôi phục dấu tiếng Việt đầy đủ nếu câu hỏi viết không dấu, và sửa lỗi chính tả nếu có.\n"
+            "Quy tắc tuyệt đối:\n"
+            "- Trả về duy nhất câu đã được khôi phục dấu và sửa lỗi.\n"
+            "- Giữ nguyên các thuật ngữ pháp lý.\n"
+            "- KHÔNG viết thêm bất kỳ lời giải thích, mở đầu hoặc kết luận nào."
+        )
 
-    payload = {
-        "model": FPT_MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": "thu tuc ly hon va chia dat"},
-            {"role": "assistant", "content": "thủ tục ly hôn và chia đất"},
-            {"role": "user", "content": "mức phạt vi phạp giao thông"},
-            {"role": "assistant", "content": "mức phạt vi phạm giao thông"},
-            {"role": "user", "content": clean_q}
-        ],
-        "temperature": 0.1,
-        "max_tokens": 100
-    }
+        payload = {
+            "model": FPT_MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": "thu tuc ly hon va chia dat"},
+                {"role": "assistant", "content": "thủ tục ly hôn và chia đất"},
+                {"role": "user", "content": "mức phạt vi phạp giao thông"},
+                {"role": "assistant", "content": "mức phạt vi phạm giao thông"},
+                {"role": "user", "content": clean_q}
+            ],
+            "temperature": 0.1,
+            "max_tokens": 100
+        }
 
-    try:
-        response = requests.post(FPT_URL, json=payload, headers=headers, timeout=1.5)
-        if response.status_code == 200:
-            data = response.json()
-            processed = data["choices"][0]["message"]["content"].strip()
-            processed = processed.strip('"').strip("'")
-            if processed:
-                # Ghi vào cache
-                try:
-                    conn = sqlite3.connect(MEMORY_DB)
-                    cursor = conn.cursor()
-                    cursor.execute("INSERT OR REPLACE INTO query_preprocess_cache (query_text, processed_text) VALUES (?, ?)", (clean_q.lower(), processed))
-                    conn.commit()
-                    conn.close()
-                except Exception:
-                    pass
-                return processed
-    except Exception as e:
-        print(f"⚠️ Lỗi gọi API preprocess: {e}")
+        try:
+            response = requests.post(FPT_URL, json=payload, headers=headers, timeout=1.5)
+            if response.status_code == 200:
+                data = response.json()
+                processed = data["choices"][0]["message"]["content"].strip()
+                processed = processed.strip('"').strip("'")
+        except Exception as e:
+            print(f"⚠️ Lỗi gọi API preprocess: {e}")
+
+    if processed:
+        # Ghi vào cache
+        try:
+            conn = sqlite3.connect(MEMORY_DB)
+            cursor = conn.cursor()
+            cursor.execute("INSERT OR REPLACE INTO query_preprocess_cache (query_text, processed_text) VALUES (?, ?)", (clean_q.lower(), processed))
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+        return processed
 
     return clean_q
 
@@ -757,6 +808,8 @@ def smart_search_laws(
     linh_vuc: Optional[str] = Query(None, description="Lọc theo lĩnh vực"),
     limit: int = Query(10, ge=1, le=50),
     offset: int = Query(0, ge=0),
+    nam_ban_hanh: Optional[int] = Query(None, description="Lọc theo năm ban hành"),
+    use_soft_boosting: bool = True,
     _key=Depends(require_api_key),
 ):
     """
@@ -776,6 +829,8 @@ def smart_search_laws(
     if is_fastapi_param(linh_vuc): linh_vuc = None
     if is_fastapi_param(limit): limit = 10
     if is_fastapi_param(offset): offset = 0
+    if is_fastapi_param(nam_ban_hanh): nam_ban_hanh = None
+    if is_fastapi_param(use_soft_boosting): use_soft_boosting = True
 
     if not q.strip():
         return {
@@ -803,10 +858,10 @@ def smart_search_laws(
     where_clauses = []
     sql_params = []
     
-    if loai_van_ban:
+    if loai_van_ban and not use_soft_boosting:
         where_clauses.append("d.loai_van_ban = ?")
         sql_params.append(loai_van_ban)
-    if co_quan_ban_hanh:
+    if co_quan_ban_hanh and not use_soft_boosting:
         where_clauses.append("d.co_quan_ban_hanh LIKE ?")
         sql_params.append(f"%{co_quan_ban_hanh}%")
     if status:
@@ -815,6 +870,9 @@ def smart_search_laws(
     if linh_vuc:
         where_clauses.append("(d.linh_vuc LIKE ? OR d.nganh LIKE ?)")
         sql_params.extend([f"%{linh_vuc}%", f"%{linh_vuc}%"])
+    if nam_ban_hanh and not use_soft_boosting:
+        where_clauses.append("CAST(substr(d.ngay_ban_hanh, 7, 4) AS INTEGER) = ?")
+        sql_params.append(nam_ban_hanh)
 
     # 1. Trích xuất số ký hiệu linh hoạt và phân tích ý định câu hỏi
     # A. Trích xuất số ký hiệu đầy đủ có gạch chéo (ví dụ: 15/2020/NĐ-CP)
@@ -859,13 +917,32 @@ def smart_search_laws(
     words_in_q = [w for w in q_clean.split() if w]
     keywords_in_q = [w for w in words_in_q if w.lower() not in VIETNAMESE_STOPWORDS and len(w) > 1]
     
+    # Detect text fragment queries (copy-paste reverse lookup): long queries with >15 keywords
+    is_text_fragment = len(keywords_in_q) > 15
+    
     run_fts = False
-    if len(extracted_symbols) > 0 or len(keywords_in_q) <= 3:
+    if len(extracted_symbols) > 0 or len(keywords_in_q) <= 3 or is_text_fragment:
         run_fts = True
 
     fts_results = []
     if run_fts:
         fts_query = parse_fts_query(q_processed)
+        
+        # For text fragment queries, add phrase-based FTS to catch exact matches
+        if is_text_fragment and keywords_in_q:
+            # Build phrase search: use consecutive 5-word windows as quoted phrases
+            phrase_clauses = []
+            window_size = 5
+            for i in range(0, len(keywords_in_q) - window_size + 1, window_size // 2):
+                phrase = " ".join(keywords_in_q[i:i+window_size])
+                phrase_clauses.append(f'"{phrase}"')
+            if phrase_clauses:
+                phrase_fts = " OR ".join(phrase_clauses)
+                if fts_query:
+                    fts_query = f"({phrase_fts}) OR ({fts_query})"
+                else:
+                    fts_query = phrase_fts
+        
         if fts_query:
             if expanded_terms:
                 expanded_clauses = [f'"{term}"' for term in expanded_terms if term.strip()]
@@ -975,7 +1052,26 @@ def smart_search_laws(
     else:
         vec_norm = {}
 
-    # C. Linear Fusion (0.3 * Sparse + 0.7 * Dense)
+    # C. Linear Fusion with Dynamic Query Classification Weights
+    # Phân loại truy vấn động để chia trọng số FTS5/Vector (Sparse/Dense)
+    has_exact_identifiers = len(extracted_symbols) > 0 or len(numbers_in_q) > 0 or re.search(r'\b(điều|khoản|điểm|số)\s+\d+', q_lower)
+    
+    if has_exact_identifiers:
+        # Ưu tiên tìm kiếm từ khóa chính xác tuyệt đối
+        sparse_w = 0.9
+        dense_w = 0.1
+        print(f"🎯 Dynamic RRF Weights (Exact Symbol/Number detected): Sparse={sparse_w}, Dense={dense_w}")
+    elif is_general_query or not any(char.isdigit() for char in q_processed):
+        # Ưu tiên tìm kiếm ngữ nghĩa theo chủ đề tự nhiên
+        sparse_w = 0.2
+        dense_w = 0.8
+        print(f"🎯 Dynamic RRF Weights (Natural Topic query): Sparse={sparse_w}, Dense={dense_w}")
+    else:
+        # Mặc định kết hợp cân bằng hơn
+        sparse_w = 0.4
+        dense_w = 0.6
+        print(f"🎯 Dynamic RRF Weights (Balanced): Sparse={sparse_w}, Dense={dense_w}")
+
     fused_scores = {}
     
     for item in fts_results:
@@ -984,7 +1080,7 @@ def smart_search_laws(
         fused_scores[cid] = {
             "id": cid,
             "doc_id": doc_id,
-            "score": 0.3 * fts_norm[cid]
+            "score": sparse_w * fts_norm[cid]
         }
         
     for cid in vector_matched:
@@ -995,7 +1091,7 @@ def smart_search_laws(
                 "doc_id": doc_id,
                 "score": 0.0
             }
-        fused_scores[cid]["score"] += 0.7 * vec_norm[cid]
+        fused_scores[cid]["score"] += dense_w * vec_norm[cid]
 
     # Sắp xếp các ứng viên theo điểm fused score
     sorted_candidates = sorted(fused_scores.values(), key=lambda x: x["score"], reverse=True)
@@ -1011,7 +1107,7 @@ def smart_search_laws(
         placeholders = ",".join(["?"] * len(candidate_ids))
         
         try:
-            cursor.execute(f"SELECT id, chunk_text FROM document_chunks WHERE id IN ({placeholders})", candidate_ids)
+            cursor.execute(f"SELECT id, chunk_with_meta FROM document_chunks WHERE id IN ({placeholders})", candidate_ids)
             chunk_texts_map = {row[0]: row[1] for row in cursor.fetchall()}
             
             rerank_model, rerank_tokenizer = get_vietnamese_reranker()
@@ -1066,7 +1162,7 @@ def smart_search_laws(
     if doc_ids:
         placeholders = ",".join(["?"] * len(doc_ids))
         try:
-            cursor.execute(f"SELECT id, so_ky_hieu, loai_van_ban, tinh_trang_hieu_luc, title FROM documents WHERE id IN ({placeholders})", doc_ids)
+            cursor.execute(f"SELECT id, so_ky_hieu, loai_van_ban, tinh_trang_hieu_luc, title, co_quan_ban_hanh, ngay_ban_hanh FROM documents WHERE id IN ({placeholders})", doc_ids)
             for row in cursor.fetchall():
                 doc_meta[row["id"]] = dict(row)
         except Exception as e:
@@ -1143,8 +1239,31 @@ def smart_search_laws(
         if "còn hiệu lực" in status_str or "hết hiệu lực một phần" in status_str:
             status_boost = 0.01
 
+        # D. Soft Metadata Boosting (Year, Doc Type, Issuer)
+        metadata_boost = 1.0
+        if use_soft_boosting:
+            if loai_van_ban:
+                doc_type_db = (meta.get("loai_van_ban") or "").lower()
+                if loai_van_ban.lower() == doc_type_db:
+                    metadata_boost += 1.0
+            if co_quan_ban_hanh:
+                co_quan_lower = co_quan_ban_hanh.lower()
+                co_quan_doc = (meta.get("co_quan_ban_hanh") or "").lower()
+                if co_quan_lower in co_quan_doc or co_quan_doc in co_quan_lower:
+                    metadata_boost += 1.0
+            if nam_ban_hanh:
+                date_doc = meta.get("ngay_ban_hanh") or ""
+                year_doc = None
+                if date_doc and len(date_doc) >= 10:
+                    try:
+                        year_doc = int(date_doc[6:10])
+                    except:
+                        pass
+                if year_doc == nam_ban_hanh:
+                    metadata_boost += 2.0
+
         # Thực thi công thức: cộng dồn metadata boost
-        item["score"] = item["score"] + symbol_boost + (type_boost * 0.05) + status_boost
+        item["score"] = (item["score"] + symbol_boost + (type_boost * 0.05) + status_boost) * metadata_boost
 
     # Sắp xếp ứng viên sau Boosting
     sorted_items = sorted(all_candidates, key=lambda x: x["score"], reverse=True)
@@ -1180,9 +1299,9 @@ def smart_search_laws(
         if candidate_ids:
             placeholders = ",".join(["?"] * len(candidate_ids))
             try:
-                cursor.execute(f"SELECT id, chunk_text FROM document_chunks WHERE id IN ({placeholders})", candidate_ids)
+                cursor.execute(f"SELECT id, chunk_with_meta FROM document_chunks WHERE id IN ({placeholders})", candidate_ids)
                 for row in cursor.fetchall():
-                    candidate_chunks[row["id"]] = row["chunk_text"]
+                    candidate_chunks[row["id"]] = row["chunk_with_meta"]
             except Exception as e:
                 print(f"⚠️ Lỗi lấy chunk text để boost: {e}")
                 
@@ -1280,7 +1399,7 @@ def smart_search_laws(
         placeholders = ",".join(["?"] * len(paginated_cids))
         
         query_details = f"""
-            SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.token_estimate,
+            SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.chunk_with_meta, c.token_estimate,
                    d.title as document_title, d.so_ky_hieu as document_so_ky_hieu, d.loai_van_ban as document_loai_van_ban,
                    d.co_quan_ban_hanh as document_co_quan_ban_hanh, d.tinh_trang_hieu_luc as document_tinh_trang_hieu_luc,
                    d.ngay_ban_hanh as document_ngay_ban_hanh

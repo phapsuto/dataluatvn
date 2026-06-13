@@ -52,6 +52,7 @@ STOPWORDS = {
     "có", "là", "thì", "cũng", "lại", "rồi", "mới", "cứ", "đều",
     "tôi", "tui", "mình", "ta", "chúng", "các", "những", "một", "này", "đó",
     "nào", "gì", "ai", "đâu", "sao", "bao", "mấy", "thế", "như", "vậy",
+    # LƯU Ý: "điều" và "khoản" KHÔNG phải stopwords vì là identifier pháp lý cốt lõi
     "việc", "cái", "con", "người",
 }
 

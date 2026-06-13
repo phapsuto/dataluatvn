@@ -112,27 +112,31 @@ def graph_expand_results(
         if not current_layer:
             break
             
-        placeholders = ",".join(["?"] * len(current_layer))
-        query_sql = f"""
-            SELECT r.doc_id, r.other_doc_id, r.relationship,
-                   d.id as dest_id, d.title, d.so_ky_hieu, d.loai_van_ban, d.tinh_trang_hieu_luc, d.ngay_ban_hanh
-            FROM relationships r
-            JOIN documents d ON (r.other_doc_id = d.id AND r.doc_id IN ({placeholders}))
-            UNION
-            SELECT r.doc_id, r.other_doc_id, r.relationship,
-                   d.id as dest_id, d.title, d.so_ky_hieu, d.loai_van_ban, d.tinh_trang_hieu_luc, d.ngay_ban_hanh
-            FROM relationships r
-            JOIN documents d ON (r.doc_id = d.id AND r.other_doc_id IN ({placeholders}))
-        """
-        
-        # Prepare parameters for UNION query (current_layer IDs twice)
-        params = list(current_layer) + list(current_layer)
-        try:
-            cursor.execute(query_sql, params)
-            rows = cursor.fetchall()
-        except Exception as e:
-            print(f"⚠️ Error querying relationships in Graph Expansion: {e}")
-            break
+        # Batch query to avoid "too many SQL variables" (limit of 999 parameters in SQLite)
+        rows = []
+        layer_list = list(current_layer)
+        batch_size = 250
+        for i in range(0, len(layer_list), batch_size):
+            chunk = layer_list[i : i + batch_size]
+            placeholders = ",".join(["?"] * len(chunk))
+            query_sql = f"""
+                SELECT r.doc_id, r.other_doc_id, r.relationship,
+                       d.id as dest_id, d.title, d.so_ky_hieu, d.loai_van_ban, d.tinh_trang_hieu_luc, d.ngay_ban_hanh
+                FROM relationships r
+                JOIN documents d ON (r.other_doc_id = d.id AND r.doc_id IN ({placeholders}))
+                UNION
+                SELECT r.doc_id, r.other_doc_id, r.relationship,
+                       d.id as dest_id, d.title, d.so_ky_hieu, d.loai_van_ban, d.tinh_trang_hieu_luc, d.ngay_ban_hanh
+                FROM relationships r
+                JOIN documents d ON (r.doc_id = d.id AND r.other_doc_id IN ({placeholders}))
+            """
+            params = list(chunk) + list(chunk)
+            try:
+                cursor.execute(query_sql, params)
+                rows.extend(cursor.fetchall())
+            except Exception as e:
+                print(f"⚠️ Error querying relationships in Graph Expansion batch: {e}")
+                break
             
         for row in rows:
             # Identify source node (the one in our current layer) and destination node

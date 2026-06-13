@@ -57,7 +57,7 @@ class LightweightReranker:
             # Format passages for FlashRank: [{"id": idx, "text": "..."}]
             passages = []
             for idx, chunk in enumerate(chunks):
-                text = chunk.get("chunk_text") or chunk.get("text") or ""
+                text = chunk.get("chunk_with_meta") or chunk.get("chunk_text") or chunk.get("text") or ""
                 passages.append({
                     "id": idx,
                     "text": text

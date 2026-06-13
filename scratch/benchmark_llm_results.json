@@ -1,0 +1,448 @@
+{
+  "timestamp": "2026-06-13T12:41:21.254314",
+  "models": {
+    "gemma-4-31B-it": {
+      "name": "Google Gemma 4 31B",
+      "emoji": "🔷",
+      "description": "Model đang dùng hiện tại trong LuatBot"
+    },
+    "Qwen3-32B": {
+      "name": "Alibaba Qwen3 32B",
+      "emoji": "🟢",
+      "description": "Model mới, mạnh về tư duy logic & đa ngôn ngữ"
+    },
+    "SaoLa-Llama3.1-planner": {
+      "name": "FPT Saola Planner (Llama3.1)",
+      "emoji": "🟠",
+      "description": "Model Việt Nam, tối ưu cho tiếng Việt"
+    }
+  },
+  "questions": [
+    {
+      "id": "Q1",
+      "category": "Tra cứu điều khoản",
+      "question": "Điều 24 Luật Hôn nhân và Gia đình 2014 quy định về vấn đề gì?",
+      "expected_keywords": [
+        "hủy việc kết hôn trái pháp luật",
+        "kết hôn trái",
+        "hủy"
+      ],
+      "difficulty": "Dễ"
+    },
+    {
+      "id": "Q2",
+      "category": "Tra cứu điều khoản",
+      "question": "Theo Bộ luật Lao động 2019, thời giờ làm việc bình thường không quá bao nhiêu giờ trong 1 ngày?",
+      "expected_keywords": [
+        "8 giờ",
+        "08 giờ",
+        "không quá 8"
+      ],
+      "difficulty": "Dễ"
+    },
+    {
+      "id": "Q3",
+      "category": "Phân tích tình huống",
+      "question": "Anh A ký hợp đồng lao động thời hạn 12 tháng. Sau 6 tháng, công ty đơn phương chấm dứt hợp đồng mà không báo trước. Anh A có quyền gì theo pháp luật?",
+      "expected_keywords": [
+        "bồi thường",
+        "trợ cấp",
+        "đơn phương chấm dứt",
+        "trái pháp luật",
+        "lương"
+      ],
+      "difficulty": "Trung bình"
+    },
+    {
+      "id": "Q4",
+      "category": "Phân tích tình huống",
+      "question": "Chị B và anh C ly hôn, có con chung 4 tuổi. Ai được quyền nuôi con theo quy định của Luật Hôn nhân và Gia đình?",
+      "expected_keywords": [
+        "dưới 36 tháng",
+        "mẹ",
+        "quyền nuôi",
+        "3 tuổi",
+        "thỏa thuận",
+        "tòa án"
+      ],
+      "difficulty": "Trung bình"
+    },
+    {
+      "id": "Q5",
+      "category": "So sánh tổng hợp",
+      "question": "So sánh trách nhiệm hình sự giữa tội trộm cắp tài sản và tội cướp tài sản theo Bộ luật Hình sự 2015?",
+      "expected_keywords": [
+        "Điều 173",
+        "Điều 168",
+        "trộm cắp",
+        "cướp",
+        "hình phạt",
+        "tù"
+      ],
+      "difficulty": "Khó"
+    },
+    {
+      "id": "Q6",
+      "category": "Thực tiễn",
+      "question": "Tôi muốn thành lập công ty TNHH 1 thành viên. Vốn điều lệ tối thiểu là bao nhiêu và cần những giấy tờ gì?",
+      "expected_keywords": [
+        "vốn điều lệ",
+        "không quy định",
+        "đăng ký kinh doanh",
+        "giấy đề nghị",
+        "CMND",
+        "CCCD"
+      ],
+      "difficulty": "Trung bình"
+    },
+    {
+      "id": "Q7",
+      "category": "Câu hỏi đánh lừa",
+      "question": "Theo pháp luật Việt Nam, trẻ em dưới 14 tuổi có được phép lái xe máy không?",
+      "expected_keywords": [
+        "không được",
+        "cấm",
+        "16 tuổi",
+        "18 tuổi",
+        "giấy phép lái xe",
+        "vi phạm"
+      ],
+      "difficulty": "Dễ"
+    },
+    {
+      "id": "Q8",
+      "category": "Suy luận đa bước",
+      "question": "Ông D có 3 người con: E, F, G. Ông D chết không để lại di chúc. Tài sản thừa kế là 900 triệu đồng. Nhưng E đã chết trước ông D, E có 2 con là H và I. Hỏi H và I được thừa kế bao nhiêu tiền?",
+      "expected_keywords": [
+        "thừa kế thế vị",
+        "150 triệu",
+        "chia đều",
+        "hàng thừa kế"
+      ],
+      "difficulty": "Khó"
+    }
+  ],
+  "results": {
+    "Q1": {
+      "gemma-4-31B-it": {
+        "content": "Điều 24 Luật Hôn nhân và Gia đình 2014 quy định về **\"Nghĩa vụ và quyền của cha mẹ\"**.\n\nCụ thể, điều khoản này quy định các nội dung chính sau:\n\n1. **Nghĩa vụ chăm sóc, nuôi dưỡng:** Cha mẹ có nghĩa vụ thương yêu, tôn trọng, chăm sóc, nuôi dưỡng, bảo vệ quyền và lợi ích hợp pháp của con.\n2. **Trách nhiệm giáo dục:** Cha mẹ có trách nhiệm giáo dục con cái, tạo điều kiện cho con được học tập, phát triển toàn diện.\n3. **Không phân biệt đối xử:** Không được phân biệt đối xử giữa các con (ví dụ: không phân biệt con trai, con gái; con trong giá thú hay con ngoài giá thú).\n4. **Không ngược đãi, bỏ rơi:** Nghiêm cấm hành vi ngược đãi, hành hạ, bỏ rơi hoặc bỏ mặc con.\n\nĐây là quy định nền tảng nhằm bảo vệ quyền trẻ em và xác lập trách nhiệm pháp lý của cha mẹ đối với con cái trong gia đình.",
+        "latency": 1.631,
+        "tokens": 423,
+        "score": 0.0,
+        "matched_keywords": [],
+        "hallucination_flags": []
+      },
+      "Qwen3-32B": {
+        "content": "<think>\nOkay, I need to figure out what Article 24 of the 2014 Vietnam Marriage and Family Law regulates. Let me start by recalling the structure of the law. The 2014 Law on Marriage and Family has several chapters covering marriage, family relations, property, and other related matters. \n\nArticle 24 is in Chapter II, which deals with marriage conditions. From what I remember, the articles around that number discuss the conditions required for a valid marriage. Specifically, Article 24 might outline the essential conditions that must be met for a marriage to be legally recognized.\n\nLet me check the exact content. The key points usually include both parties being of legal age (which is 18 for women and 20 for men), not being in a prohibited relationship (like close relatives), and not being under any legal restrictions such as being a minor or having a mental disorder. Also, there's the requirement of free will and mutual consent without coercion.\n\nI should verify if there are any other conditions mentioned. Maybe something about not being already married? Oh right, bigamy is prohibited. So the article likely lists these conditions. The official text would state them clearly. Since the user asked for the specific regulation, I need to mention each condition as per the law. Also, note that this law is still in effect unless amended. I should reference the correct article number and chapter, and maybe mention the year it was enacted again for clarity.\n</think>\n\nĐiều 24 Luật Hôn nhân và Gia đình 2014 quy định **điều kiện kết hôn**, cụ thể:\n\n1. **Tuổi kết hôn**: Nam từ đủ 20 tuổi trở lên, nữ từ đủ 18 tuổi trở lên (khoản 1).  \n2. **Không thuộc trường hợp cấm kết hôn** (khoản 2):  \n   - Kết hôn giữa những người có quan hệ trực hệ huyết thống hoặc quan hệ nuôi dưỡng;  \n   - Kết hôn giữa những người cùng giới tính.  \n3. **Không bị mất năng lực hành vi dân sự** (khoản 3).  \n4. **Tự nguyện** (khoản 4): Cả hai bên tự nguyện, không bị cưỡng ép, lừa dối, đe dọa.  \n\nLuật này vẫn có hiệu lực thi hành (theo Nghị định 23/2015/NĐ-CP hướng dẫn một số điều).",
+        "latency": 6.369,
+        "tokens": 691,
+        "score": 0.0,
+        "matched_keywords": [],
+        "hallucination_flags": []
+      },
+      "SaoLa-Llama3.1-planner": {
+        "content": "Điều 24 Luật Hôn nhân và Gia đình 2014 quy định về quyền và nghĩa vụ của vợ chồng trong việc chăm sóc, giáo dục, nuôi dưỡng con theo quy định sau:\n\n1. Cha mẹ có trách nhiệm chăm sóc, giáo dục, nuôi dưỡng con theo quy định của pháp luật.\n2. Vợ, chồng có trách nhiệm cùng chăm sóc, giáo dục con, tạo điều kiện cho con phát triển lành mạnh, toàn diện.\n3. Cha mẹ có quyền quyết định việc nuôi dưỡng, chăm sóc con, trừ trường hợp con dưới 6 tuổi cần đưa vào cơ sở bảo trợ xã hội theo quyết định của cơ quan nhà nước có thẩm quyền.\n4. Con có quyền được cha mẹ chăm sóc, nuôi dưỡng theo quy định của pháp luật.",
+        "latency": 1.322,
+        "tokens": 324,
+        "score": 0.0,
+        "matched_keywords": [],
+        "hallucination_flags": []
+      }
+    },
+    "Q2": {
+      "gemma-4-31B-it": {
+        "content": "Theo **Điều 105 Bộ luật Lao động 2019**, thời giờ làm việc bình thường được quy định như sau:\n\n1. **Thời giờ làm việc bình thường không quá 08 giờ trong 01 ngày.**\n2. Thời giờ làm việc bình thường không quá 48 giờ trong 01 tuần.\n\n**Lưu ý:** Nhà nước khuyến khích người sử dụng lao động thực hiện tuần làm việc 40 giờ.",
+        "latency": 0.775,
+        "tokens": 297,
+        "score": 66.7,
+        "matched_keywords": [
+          "8 giờ",
+          "08 giờ"
+        ],
+        "hallucination_flags": []
+      },
+      "Qwen3-32B": {
+        "content": "<think>\nOkay, the user is asking about the maximum regular working hours per day according to the 2019 Labor Code of Vietnam. Let me recall the relevant provisions.\n\nFirst, I remember that the 2019 Labor Code replaced the 2013 version. The key article here is Article 105. In the 2019 Code, Article 105 specifies the standard working time. It states that the regular working hours should not exceed 8 hours per day or 48 hours per week. This is similar to the previous code but it's important to confirm the exact wording.\n\nWait, I need to check if there are any exceptions mentioned in the article. The article does mention that for certain jobs, the working hours can be up to 11 hours per day, but this applies only to specific sectors like agriculture, seasonal work, or when agreed upon by both parties and approved by the local labor authority. However, the general rule remains 8 hours a day.\n\nAlso, the user is specifically asking about \"thời giờ làm việc bình thường,\" which translates to regular working hours. So the answer should focus on the standard limit, which is 8 hours per day as per Article 105.1 of the 2019 Labor Code. I should make sure to cite the correct article and clause to avoid confusion with other articles that might discuss overtime or special cases.\n\nDouble-checking the source: Yes, Article 105, Clause 1 of the 2019 Labor Code clearly states that regular working hours must not exceed 8 hours per day or 48 hours per week. The exceptions are covered in subsequent clauses, but the main answer here is 8 hours. The user might be an employer or employee seeking clarity on standard work hours, so providing the exact legal reference is crucial for their understanding and compliance.\n</think>\n\nTheo **Bộ luật Lao động 2019**, thời giờ làm việc bình thường không được vượt quá **8 giờ/ngày** hoặc **48 giờ/tuần** (Điều 105).  \n\nNgoại lệ:  \n- Một số ngành nghề đặc thù (ví dụ: nông nghiệp, ngư nghiệp, khai thác lâm sản, công tác theo mùa vụ) có thể làm việc tối đa **11 giờ/ngày** nếu được người lao động đồng ý và cơ quan nhà nước có thẩm quyền địa phương chấp thuận (Điều 105, Khoản 2).  \n\nLuật này có hiệu lực từ ngày 01/01/2021.",
+        "latency": 6.165,
+        "tokens": 728,
+        "score": 33.3,
+        "matched_keywords": [
+          "8 giờ"
+        ],
+        "hallucination_flags": []
+      },
+      "SaoLa-Llama3.1-planner": {
+        "content": "Theo Điều 111 Bộ luật Lao động 2019, thời giờ làm việc bình thường không quá 8 giờ trong 1 ngày và không quá 48 giờ trong 1 tuần.",
+        "latency": 0.518,
+        "tokens": 212,
+        "score": 66.7,
+        "matched_keywords": [
+          "8 giờ",
+          "không quá 8"
+        ],
+        "hallucination_flags": []
+      }
+    },
+    "Q3": {
+      "gemma-4-31B-it": {
+        "content": "Chào bạn, tôi là LuatBot. Dựa trên **Bộ luật Lao động 2019**, trường hợp của anh A được phân tích như sau:\n\n**1. Xác định tính chất chấm dứt hợp đồng:**\nViệc công ty đơn phương chấm dứt hợp đồng lao động (HĐLĐ) mà không báo trước (trừ các trường hợp đặc biệt tại Điều 36) và không có căn cứ pháp luật là **đơn phương chấm dứt HĐLĐ trái pháp luật** (Điều 39).\n\n**2. Quyền lợi của anh A (theo Điều 41):**\nKhi bị đơn phương chấm dứt HĐLĐ trái pháp luật, anh A có quyền yêu cầu:\n\n*   **Được nhận lại làm việc:** Công ty phải nhận anh A trở lại làm việc theo HĐLĐ đã ký.\n*   **Nhận tiền lương và bảo hiểm:** Được trả lương, đóng bảo hiểm xã hội, bảo hiểm y tế cho những ngày không được làm việc.\n*   **Bồi thường thêm:** Phải trả thêm cho anh A một khoản tiền ít nhất bằng **02 tháng tiền lương** theo HĐLĐ.\n*   **Bồi thường do không báo trước:** Nếu công ty vi phạm thời hạn báo trước (thông thường là 30 ngày với HĐLĐ xác định thời hạn), công ty phải trả một khoản tiền tương ứng với tiền lương của những ngày không báo trước.\n\n**3. Lựa chọn khác:**\nNếu anh A không muốn quay lại làm việc, ngoài các khoản bồi thường trên, hai bên thỏa thuận khoản bồi thường thêm để chấm dứt HĐLĐ.\n\n**Khuyến nghị:** Anh A nên gửi đơn khiếu nại đến Ban Giám đốc công ty, hoặc yêu cầu Hòa giải viên lao động/Khởi kiện ra Tòa án nhân dân cấp huyện để bảo vệ quyền lợi.",
+        "latency": 8.09,
+        "tokens": 622,
+        "score": 80.0,
+        "matched_keywords": [
+          "bồi thường",
+          "đơn phương chấm dứt",
+          "trái pháp luật",
+          "lương"
+        ],
+        "hallucination_flags": []
+      },
+      "Qwen3-32B": {
+        "content": "<think>\nOkay, let's see. The user is asking about Anh A's rights when his employer unilaterally terminates a 12-month fixed-term contract after 6 months without prior notice. First, I need to recall the relevant Vietnamese labor laws. The main one here is the Labor Code 2019.\n\nFixed-term contracts are covered under Chapter III of the Labor Code. Specifically, Article 23 outlines the conditions for termination by the employer. For a fixed-term contract, the employer can terminate it before the end of the term if certain conditions are met, like the employee violating regulations or the company restructuring. But in this case, the company just terminated it without notice. \n\nArticle 36 mentions that if the employer terminates the contract without a valid reason, they must pay compensation. Also, Article 46 talks about notice periods. Normally, for fixed-term contracts, the notice period is 3 days, but if the employer terminates without notice, they have to pay the employee for those days. \n\nWait, but since the contract is fixed-term, maybe the notice period doesn't apply? Let me check. According to Article 46, even fixed-term contracts require notice unless the termination is due to specific reasons listed in the law. If the company terminates without a valid reason and without notice, Anh A is entitled to compensation as per Article 36. \n\nAlso, the company might have to pay severance pay if the termination is not justified. The compensation would be based on the employee's salary and the length of service. Since the contract was 12 months and terminated at 6 months, the calculation would consider that period. \n\nI should also mention the possibility of Anh A requesting reinstatement if the termination was illegal. But if the company has already terminated, maybe compensation is the main right here. Need to reference the exact articles and make sure about the notice period applicability for fixed-term contracts. \n\nDouble-checking: Article 46(1) states that for fixed-term contracts, the employer must give notice equivalent to the remaining term, but if they don't, they pay for the notice period. However, if the termination is without cause, then Article 36 applies. So Anh A can claim compensation and payment for the notice period. \n\nAlso, check if there's any other provision. Maybe Article 43 about termination without fault? No, that's more about mutual agreement. The key points are Articles 23, 36, and 46. \n\nSo the answer should state that Anh A can demand compensation as per Article 36, payment for the notice period (3 days) under Article 46, and possibly other entitlements like unused leave. Also, mention the right to file a complaint with the labor authorities or court.\n</think>\n\nTheo **Luật Lao động 2019** (có hiệu lực từ 01/01/2021):  \n1. **Quyền yêu cầu bồi thường**: Công ty đơn phương chấm dứt hợp đồng lao động (HĐLĐ) thời hạn 12 tháng sau 6 tháng làm việc **không thuộc trường hợp được chấm dứt theo Điều 34** (ví dụ: vi phạm kỷ luật, cắt giảm lao động). Do đó, Anh A có quyền yêu cầu bồi thường theo **Điều 36**, mức bồi thường tối thiểu bằng **01 tháng lương** (nếu chấm dứt trái pháp luật).  \n\n2. **Quyền nhận tiền lương thay cho thời gian báo trước**: Theo **Điều 46**, nếu công ty chấm dứt HĐLĐ không báo trước, Anh A được nhận tiền lương tương ứng với **thời gian báo trước** (đối với HĐLĐ không xác định thời hạn là 30 ngày, HĐLĐ xác định thời hạn là 3 ngày).  \n\n3. **Quyền khiếu nại**: Anh A có thể **khiếu nại lên cơ quan quản lý lao động** hoặc **tòa án** để yêu cầu xử lý vi phạm và bảo vệ quyền lợi.  \n\n4. **Các quyền khác**: Anh A còn được thanh toán đầy đủ các khoản như lương, thưởng, phụ cấp, bảo hiểm xã hội (nếu có) theo **Điều 88**.  \n\n**Trích dẫn pháp luật**:  \n- Điều 34, 36, 46, 88 Luật Lao động 2019.  \n- Nghị định 145/2020/NĐ-CP hướng dẫn chi tiết một số điều của Luật Lao động 2019.  \n\nAnh A nên yêu cầu công ty cung cấp lý do chấm dứt hợp đồng và thực hiện nghĩa vụ tài",
+        "latency": 11.795,
+        "tokens": 1220,
+        "score": 80.0,
+        "matched_keywords": [
+          "bồi thường",
+          "đơn phương chấm dứt",
+          "trái pháp luật",
+          "lương"
+        ],
+        "hallucination_flags": []
+      },
+      "SaoLa-Llama3.1-planner": {
+        "content": "Theo Điều 45 Luật Lao động 2019, khi công ty đơn phương chấm dứt hợp đồng lao động trước thời hạn mà không có lý do chính đáng, anh A có quyền:\n\n1. Tiền lương cho những ngày làm việc còn lại của thời hạn hợp đồng lao động.\n2. Tiền lương theo mức thỏa thuận trong hợp đồng lao động cho những tháng đã hoàn thành công việc mà hợp đồng lao động chưa hết thời hạn.\n3. Các quyền và lợi ích khác theo quy định của pháp luật.",
+        "latency": 1.023,
+        "tokens": 296,
+        "score": 40.0,
+        "matched_keywords": [
+          "đơn phương chấm dứt",
+          "lương"
+        ],
+        "hallucination_flags": []
+      }
+    },
+    "Q4": {
+      "gemma-4-31B-it": {
+        "content": "Theo **Luật Hôn nhân và Gia đình 2014**, quyền nuôi con khi ly hôn được xác định như sau:\n\n**1. Ưu tiên thỏa thuận (Điều 81):**\nVợ chồng thỏa thuận về người trực tiếp nuôi con, nghĩa vụ, quyền của mỗi bên khi ly hôn. Nếu không thỏa thuận được, Tòa án sẽ quyết định dựa trên quyền lợi về mọi mặt của con.\n\n**2. Quy định đối với con dưới 36 tháng tuổi:**\nLuật quy định con dưới 36 tháng tuổi được giao cho mẹ trực tiếp nuôi, trừ trường hợp người mẹ không đủ điều kiện hoặc có thỏa thuận khác. \n*   **Trường hợp của chị B và anh C:** Con đã **4 tuổi** (trên 36 tháng), nên không mặc nhiên giao cho mẹ.\n\n**3. Căn cứ Tòa án quyết định (Điều 81):**\nVì con đã 4 tuổi, Tòa án sẽ xem xét các điều kiện thực tế để quyết định ai nuôi con, bao gồm:\n*   **Điều kiện vật chất:** Thu nhập, chỗ ở, môi trường sống.\n*   **Điều kiện tinh thần:** Thời gian chăm sóc, đạo đức, lối sống của cha/mẹ.\n*   **Nguyện vọng của con:** Đối với con từ đủ 7 tuổi trở lên mới bắt buộc hỏi ý kiến. Con 4 tuổi chưa đủ tuổi này, nhưng Tòa vẫn có thể xem xét mức độ gắn bó của con với cha hoặc mẹ.\n\n**Kết luận:** Chị B và anh C cần thỏa thuận. Nếu không thỏa thuận được, Tòa án sẽ căn cứ vào **điều kiện thực tế của mỗi bên** để quyết định ai là người nuôi con nhằm đảm bảo lợi ích tốt nhất cho đứa trẻ.",
+        "latency": 2.562,
+        "tokens": 587,
+        "score": 83.3,
+        "matched_keywords": [
+          "dưới 36 tháng",
+          "mẹ",
+          "quyền nuôi",
+          "thỏa thuận",
+          "tòa án"
+        ],
+        "hallucination_flags": []
+      },
+      "Qwen3-32B": {
+        "content": "<think>\nOkay, let's see. The user is asking about child custody after divorce in Vietnam, specifically for a 4-year-old child. I need to recall the relevant provisions of the Marriage and Family Law.\n\nFirst, I remember that under Vietnamese law, the court decides custody based on the child's best interests. For children under 36 months (which is 3 years), the mother typically gets custody unless there are special circumstances. But here, the child is 4 years old, so over 3 years. \n\nLooking at the current Marriage and Family Law 2014, Article 81, Clause 3 states that for children aged 3 to under 10, the court considers various factors like the parents' living conditions, ability to care for the child, and the child's preferences if they can express it. Since the child is 4, the court might take their preference into account if they're able to, but it's not mandatory. \n\nAlso, the law emphasizes the child's welfare as the primary consideration. So even though the default might lean towards the mother for younger children, at 4 years old, the court will evaluate both parents' situations. Factors could include who has been the primary caregiver, financial stability, living environment, and any other relevant circumstances. \n\nI should check if there are any recent amendments to the law. The 2014 law is still in effect, right? Yes, I think so. There was an amendment in 2023, but I don't recall changes to the custody provisions for this age group. \n\nSo the answer would be that the court decides based on the child's best interest, considering the parents' circumstances and possibly the child's wishes. The mother might have a slight advantage, but it's not automatic. Both parents can present their cases, and the court will make a ruling accordingly.\n</think>\n\nTheo **Luật Hôn nhân và Gia đình 2014** (có hiệu lực từ 01/01/2015), việc xác định người trực tiếp nuôi con sau ly hôn với trẻ 4 tuổi được quy định tại **Điều 81** như sau:\n\n1. **Nguyên tắc**: Người được giao con phải đảm bảo quyền lợi về vật chất, tinh thần, giáo dục và chăm sóc sức khỏe cho con.  \n2. **Đối với trẻ từ 3 đến dưới 10 tuổi**: Tòa án xem xét nguyện vọng của cha/mẹ, điều kiện kinh tế, khả năng chăm sóc, môi trường sống, và **nguyện vọng của con nếu có năng lực nhận thức, hành vi phù hợp** (khoản 3 Điều 81).  \n3. **Không quy định ưu tiên tuyệt đối cho cha hoặc mẹ**, nhưng thực tiễn thường xem xét vai trò nuôi dưỡng trước đây, điều kiện sống ổn định, và sự phù hợp với nhu cầu của trẻ.\n\nVì vậy, **chị B hoặc anh C đều có thể được giao nuôi con**, tùy vào đánh giá của tòa án về điều kiện cụ thể của mỗi bên. Nếu có tranh chấp, tòa sẽ tổ chức hòa giải và ra quyết định theo hướng **lợi nhất cho sự phát triển toàn diện của trẻ**.  \n\n> *Lưu ý: Luật này vẫn đang có hiệu lực. Nếu có sửa đổi mới, cần kiểm tra văn bản cập nhật.*",
+        "latency": 8.501,
+        "tokens": 897,
+        "score": 33.3,
+        "matched_keywords": [
+          "mẹ",
+          "tòa án"
+        ],
+        "hallucination_flags": []
+      },
+      "SaoLa-Llama3.1-planner": {
+        "content": "Theo quy định tại Điều 39 Luật Hôn nhân và Gia đình 2014, khi ly hôn, quyền nuôi con sau ly hôn được quyết định dựa trên lợi ích của con. Tòa án sẽ xem xét các yếu tố như:\n\n1. Lứa tuổi, giới tính, đặc điểm tâm lý, sức khỏe của con.\n2. Việc chăm sóc, nuôi dưỡng con của mỗi bên sau ly hôn.\n3. Việc giáo dục, định hướng nghề nghiệp và việc làm của con.\n4. Yêu cầu nuôi dưỡng, chăm sóc con của mỗi bên.\n5. Việc phối hợp giữa hai bên trong việc nuôi dưỡng, chăm sóc con sau ly hôn.\n\nTòa án sẽ quyết định giao con cho một bên hoặc cả hai bên nuôi dưỡng, chăm sóc theo nguyên tắc con được giao nuôi tối thiểu là 50% thời gian của năm. Mỗi trường hợp cụ thể Tòa án sẽ xem xét và quyết định phù hợp với lợi ích của con.",
+        "latency": 1.53,
+        "tokens": 374,
+        "score": 33.3,
+        "matched_keywords": [
+          "quyền nuôi",
+          "tòa án"
+        ],
+        "hallucination_flags": []
+      }
+    },
+    "Q5": {
+      "gemma-4-31B-it": {
+        "content": "Chào bạn, tôi là LuatBot. Dưới đây là bảng so sánh ngắn gọn về trách nhiệm hình sự giữa **Tội trộm cắp tài sản (Điều 173)** và **Tội cướp tài sản (Điều 168)** theo Bộ luật Hình sự 2015 (sửa đổi, bổ sung 2017):\n\n| Tiêu chí | Tội trộm cắp tài sản (Điều 173) | Tội cướp tài sản (Điều 168) |\n| :--- | :--- | :--- |\n| **Hành vi đặc trưng** | Lén lút, bí mật lấy tài sản của người khác. | Dùng vũ lực, đe dọa dùng vũ lực ngay tức khắc hoặc gây tê liệt ý chí để chiếm đoạt tài sản. |\n| **Tính chất** | Xâm phạm quyền sở hữu (ít nguy hiểm hơn). | Xâm phạm cả quyền sở hữu và tính mạng, sức khỏe con người (rất nguy hiểm). |\n| **Điều kiện khởi tố** | Giá trị tài sản $\\ge$ 2 triệu đồng (hoặc dưới 2 triệu nhưng gây hậu quả nghiêm trọng/đã bị xử phạt...). | **Không phụ thuộc vào giá trị tài sản**. Chỉ cần có hành vi dùng vũ lực để chiếm đoạt là cấu thành tội phạm. |\n| **Khung hình phạt** | Thấp hơn. Thấp nhất là cải tạo không giam giữ hoặc phạt tù đến 3 năm. Cao nhất là 20 năm tù. | Cao hơn nhiều. Thấp nhất là 3 - 10 năm tù. Cao nhất là tù chung thân hoặc tử hình. |\n\n**Kết luận:** Tội cướp tài sản có mức độ nguy hiểm cho xã hội cao hơn nhiều so với tội trộm cắp tài sản, do đó khung hình phạt nghiêm khắc hơn và không yêu cầu định mức giá trị tài sản tối thiểu để truy cứu trách nhiệm hình sự.",
+        "latency": 2.551,
+        "tokens": 627,
+        "score": 100.0,
+        "matched_keywords": [
+          "Điều 173",
+          "Điều 168",
+          "trộm cắp",
+          "cướp",
+          "hình phạt",
+          "tù"
+        ],
+        "hallucination_flags": []
+      },
+      "Qwen3-32B": {
+        "content": "<think>\nOkay, so I need to compare the criminal responsibilities between theft and robbery under the 2015 Criminal Code of Vietnam. Let me start by recalling what I know about these two crimes. \n\nFirst, theft (trộm cắp tài sản) is defined in Article 173, right? It involves secretly taking someone else's property with the intent to own it. The key here is that the act is done secretly, without the victim being aware. The penalties for theft are usually imprisonment from 6 months to 5 years, depending on the circumstances like the value of the property or if it's a repeat offense.\n\nThen there's robbery (cướp tài sản), which is covered in Article 168. Robbery is more severe because it involves using violence or threats to take property. The perpetrator might use force, threaten, or even cause injury. The punishment for robbery is harsher, ranging from 2 to 7 years, and can go up to life imprisonment if there are aggravating factors like causing serious harm or committing it in a group.\n\nWait, but I should check the exact articles to make sure. Let me confirm: Article 173 for theft and Article 168 for robbery. Yes, that's correct. Also, the elements differ. Theft requires secrecy, while robbery involves violence or threats. The intent is similar—both aim to possess the property illegally—but the methods and severity of the act are different.\n\nAnother point is the potential for higher penalties in robbery because of the violent nature. For example, if during a robbery someone is injured, the punishment escalates. Theft might have higher penalties if the amount is large, but generally, the base penalty is lower than robbery.\n\nI should also mention the legal consequences. Robbery is considered a more serious crime due to the direct confrontation and threat to personal safety, hence stricter penalties. Theft, while still criminal, doesn't involve immediate violence, so the consequences are less severe unless there are other factors.\n\nHmm, did I miss anything? Maybe the specific conditions for each crime. Theft can be committed even without the victim being present, as long as it's done secretly. Robbery requires the presence of the victim and the use of force or threat. Also, the intent to own is common, but the method of acquisition is the main difference.\n\nI think that's the main comparison. Now, structure the answer clearly, citing the articles and explaining the differences in elements and penalties. Make sure to note that both crimes require intent to own, but robbery involves violence/threats, leading to harsher punishments. Also, mention the possible aggravating circumstances for each.\n</think>\n\nTheo **Bộ luật Hình sự 2015 (sửa đổi, bổ sung 2017)**, tội **trộm cắp tài sản** (Điều 173) và tội **cướp tài sản** (Điều 168) có sự khác biệt về yếu tố cấu thành và mức hình phạt:\n\n1. **Yếu tố cấu thành**:  \n   - **Trộm cắp tài sản**: Người phạm tội **lấy trộm tài sản của người khác** một cách **kín đáo**, không dùng bạo lực hoặc đe dọa trực tiếp.  \n   - **Cướp tài sản**: Người phạm tội **dùng vũ lực, đe dọa dùng vũ lực** hoặc **cưỡng đoạt tài sản** ngay tại chỗ, gây nguy hiểm trực tiếp đến người bị hại.\n\n2. **Mức hình phạt**:  \n   - **Trộm cắp tài sản**:  \n     - Phạt **tù từ 6 tháng đến 5 năm** (nặng hơn nếu có tình tiết tăng nặng như tài sản có giá trị lớn, tái phạm...).  \n     - Mức cao nhất là **10 năm tù** (nếu có nhiều tình tiết tăng nặng).  \n   - **Cướp tài sản**:  \n     - Phạt **tù từ 2 đến 7 năm** (nặng hơn nếu có tình tiết như gây thương tích, tổ chức có tính chất chuyên nghiệp...).  \n     - Mức cao nhất là **chung thân** (nếu có tình tiết đặc biệt nghiêm trọng như giết người trong khi cướp).\n\n3. **Sự khác biệt chính**:  \n   - **Phương thức thực hiện**: Trộm cắp kín đáo; cướp dùng bạo lực hoặc đe dọa.  \n   - **Mức độ nguy hiểm**: Cướp có tính chất xâm phạm trực tiếp đến an toàn thân thể, tính mạng, nên bị xử lý nghiêm khắc hơn.\n\nCả hai tội đều yêu cầu **ý định chiếm đoạt tài sản của người khác**, nhưng cướp tài sản được coi là hành vi phạm tội **nghiêm trọng hơn** do tính chất bạo",
+        "latency": 11.58,
+        "tokens": 1208,
+        "score": 100.0,
+        "matched_keywords": [
+          "Điều 173",
+          "Điều 168",
+          "trộm cắp",
+          "cướp",
+          "hình phạt",
+          "tù"
+        ],
+        "hallucination_flags": []
+      },
+      "SaoLa-Llama3.1-planner": {
+        "content": "Theo Bộ luật Hình sự 2015, tội trộm cắp tài sản quy định tại Điều 138, còn tội cướp tài sản được quy định tại Điều 136.\n\nSo sánh hai tội này:\n\n1. Về đối tượng phạm tội: Tội trộm cắp áp dụng đối với người phạm tội dùng thủ đoạn gian dối để chiếm đoạt tài sản. Tội cướp áp dụng đối với người phạm tội dùng vũ lực, đe dọa dùng vũ lực hoặc lợi dụng tình trạng yếu đuối của nạn nhân để chiếm đoạt tài sản.\n2. Về thủ đoạn phạm tội: Tội trộm cắp có đặc điểm là dùng thủ đoạn gian dối, không dùng vũ lực hoặc đe dọa dùng vũ lực. Tội cướp có đặc điểm là dùng vũ lực, đe dọa dùng vũ lực hoặc lợi dụng tình trạng yếu đuối của nạn nhân.\n3. Về mức phạt: Tội trộm cắp, người phạm tội có thể bị phạt tù từ 6 tháng đến 7 năm. Tội cướp, người phạm tội có thể bị phạt tù từ 2 năm đến 15 năm.\n\nNhư vậy, so với tội trộm cắp, tội cướp tài sản có đặc điểm sử dụng vũ lực, đe dọa dùng vũ lực hoặc lợi dụng yếu đuối nạn nhân, và mức phạt cũng nghiêm khắc hơn.",
+        "latency": 2.204,
+        "tokens": 481,
+        "score": 50.0,
+        "matched_keywords": [
+          "trộm cắp",
+          "cướp",
+          "tù"
+        ],
+        "hallucination_flags": []
+      }
+    },
+    "Q6": {
+      "gemma-4-31B-it": {
+        "content": "Chào bạn, tôi là LuatBot. Về yêu cầu thành lập Công ty TNHH Một thành viên (MTV), tôi xin tư vấn như sau:\n\n**1. Vốn điều lệ tối thiểu:**\nTheo **Luật Doanh nghiệp 2020**, pháp luật **không quy định mức vốn điều lệ tối thiểu** đối với công ty TNHH MTV (trừ các ngành nghề kinh doanh có điều kiện yêu cầu vốn pháp định như ngân hàng, bảo hiểm, bất động sản...). Bạn có thể tự quyết định mức vốn phù hợp với quy mô kinh doanh.\n\n**2. Hồ sơ đăng ký thành lập (Điều 21 Luật Doanh nghiệp 2020):**\nBạn cần chuẩn bị các giấy tờ sau để nộp lên Phòng Đăng ký kinh doanh - Sở Kế hoạch và Đầu tư:\n*   **Giấy đề nghị đăng ký doanh nghiệp** (theo mẫu quy định).\n*   **Điều lệ công ty** (có chữ ký của chủ sở hữu).\n*   **Bản sao hợp lệ giấy tờ pháp lý của cá nhân/tổ chức:**\n    *   *Đối với cá nhân:* CCCD/Hộ chiếu còn hiệu lực.\n    *   *Đối với tổ chức:* Quyết định thành lập/Giấy chứng nhận đăng ký doanh nghiệp và văn bản cử người đại diện theo ủy quyền.\n\n**Lưu ý quan trọng:**\n*   **Thời hạn góp vốn:** Chủ sở hữu phải góp đủ và đúng loại tài sản đã cam kết trong thời hạn **90 ngày** kể từ ngày được cấp Giấy chứng nhận đăng ký doanh nghiệp (Điều 75 Luật Doanh nghiệp 2020).\n*   Nếu không góp đủ vốn trong thời hạn trên, bạn phải đăng ký điều chỉnh giảm vốn điều lệ.",
+        "latency": 2.294,
+        "tokens": 582,
+        "score": 83.3,
+        "matched_keywords": [
+          "vốn điều lệ",
+          "không quy định",
+          "đăng ký kinh doanh",
+          "giấy đề nghị",
+          "CCCD"
+        ],
+        "hallucination_flags": []
+      },
+      "Qwen3-32B": {
+        "content": "<think>\nOkay, the user wants to set up a one-member limited liability company in Vietnam. Let me recall the relevant laws. The main law here is the 2020 Enterprise Law, which replaced the 2014 version. \n\nFirst, about the minimum charter capital. From what I remember, the 2020 Enterprise Law removed the minimum capital requirement for most businesses, except for specific sectors like banking or insurance. So for a general one-member LLC, there's no set minimum. But the user should check if their industry has any special regulations.\n\nNext, the required documents. The standard list includes the business registration form, ID of the owner, proof of address, and maybe a capital contribution statement if applicable. Also, if the owner is a legal entity, they need additional documents like the business license and resolution from the managing board or shareholders. \n\nI need to make sure I'm citing the correct articles. Article 17 of the 2020 Enterprise Law mentions the removal of minimum capital. For the documents, it's Article 20 and 21. Also, the Enterprise Registration Certificate is now called the Business Registration Certificate under Decree 01/2021/ND-CP. \n\nWait, the user might be confused between old and new laws. The previous 2014 law had a minimum capital, but the 2020 law doesn't. I should clarify that. Also, mention that certain industries still have requirements. \n\nDouble-check the Decree 01/2021/ND-CP for the current procedures. The documents required are listed there. Make sure to note that if the owner is a company, they need more paperwork. \n\nI should also mention that the Business Registration Certificate is issued by the Department of Planning and Investment. Maybe add a note about the time frame and any other considerations like tax registration, but the user specifically asked about capital and documents, so keep it focused. \n\nAlright, putting it all together: no minimum capital (except regulated sectors), list the necessary documents with references to the correct legal articles and decrees. Make sure to highlight the key points clearly and concisely.\n</think>\n\nTheo Luật Doanh nghiệp 2020 (có hiệu lực từ 01/07/2021), **công ty TNHH một thành viên** không còn yêu cầu vốn điều lệ tối thiểu (trừ các ngành nghề đặc thù như ngân hàng, bảo hiểm...). Vốn điều lệ do chủ sở hữu tự quyết định.\n\n**Giấy tờ cần chuẩn bị** để đăng ký doanh nghiệp:\n1. **Đơn đề nghị đăng ký doanh nghiệp** (theo Mẫu DkDN-01 tại Nghị định 01/2021/NĐ-CP).\n2. **Danh sách thành viên/cổ đông** (nếu có).\n3. **Giấy tờ tùy thân của chủ sở hữu**:\n   - Cá nhân: CMND/CCCD/Hộ chiếu + Hộ khẩu (bản sao công chứng).\n   - Tổ chức: Giấy chứng nhận đăng ký doanh nghiệp + Quyết định góp vốn/chuyển nhượng vốn.\n4. **Giấy tờ chứng minh địa chỉ trụ sở chính** (hợp đồng thuê nhà, giấy tờ sở hữu đất đai...).\n5. **Chứng minh nguồn vốn đầu tư** (nếu vốn điều lệ ≥ 10 tỷ đồng, phải chứng minh khả năng tài chính theo quy định).\n\n**Lưu ý**:\n- Đăng ký tại Phòng Đăng ký Kinh doanh cấp tỉnh/thành phố nơi đặt trụ sở.\n- Thời gian xử lý: 3 ngày làm việc kể từ khi nộp hồ sơ đầy đủ.\n- Nghị định 01/2021/NĐ-CP hướng dẫn chi tiết thủ tục đăng ký doanh nghiệp.\n\nNếu bạn thuộc ngành nghề có điều kiện (ví dụ: xuất bản, y tế...), cần bổ sung giấy phép phù hợp theo quy định chuyên ngành.",
+        "latency": 9.768,
+        "tokens": 1022,
+        "score": 66.7,
+        "matched_keywords": [
+          "vốn điều lệ",
+          "đăng ký kinh doanh",
+          "CMND",
+          "CCCD"
+        ],
+        "hallucination_flags": []
+      },
+      "SaoLa-Llama3.1-planner": {
+        "content": "Theo Luật Doanh nghiệp 2020, để thành lập công ty TNHH một thành viên, vốn điều lệ tối thiểu không có quy định cụ thể. Tuy nhiên, vốn điều lệ phải đáp ứng được yêu cầu hoạt động của doanh nghiệp.\n\nVề thủ tục thành lập, bạn cần chuẩn bị các giấy tờ sau:\n\n1. Điều lệ công ty.\n2. Bản sao hợp pháp chứng minh nhân dân/căn cước công dân/sổ hộ khẩu của chủ doanh nghiệp một thành viên.\n3. Dịch vụ thành lập doanh nghiệp sẽ giúp bạn chuẩn bị đầy đủ hồ sơ và thực hiện thủ tục đăng ký kinh doanh tại cơ quan đăng ký kinh doanh theo quy định pháp luật.",
+        "latency": 1.165,
+        "tokens": 317,
+        "score": 33.3,
+        "matched_keywords": [
+          "vốn điều lệ",
+          "đăng ký kinh doanh"
+        ],
+        "hallucination_flags": []
+      }
+    },
+    "Q7": {
+      "gemma-4-31B-it": {
+        "content": "Theo pháp luật Việt Nam hiện hành, trẻ em dưới 14 tuổi **KHÔNG ĐƯỢC PHÉP** lái xe máy (bao gồm cả xe gắn máy).\n\n**Căn cứ pháp lý:**\n1. **Luật Giao thông đường bộ 2008:** Quy định người điều khiển xe mô tô hai bánh, xe mô tô ba bánh phải đủ 16 tuổi trở lên (đối với xe dưới 50cm3) và đủ 18 tuổi trở lên (đối với xe từ 50cm3 trở lên).\n2. **Luật Trẻ em 2016:** Trẻ em là người dưới 16 tuổi.\n\n**Mức xử phạt (theo Nghị định 100/2019/NĐ-CP, sửa đổi bởi Nghị định 123/2021/NĐ-CP):**\n*   **Đối với người điều khiển:** Vì trẻ dưới 14 tuổi chưa đủ tuổi chịu trách nhiệm hành chính, sẽ không bị phạt tiền trực tiếp nhưng xe sẽ bị tạm giữ.\n*   **Đối với chủ xe (cha mẹ/người giám hộ):** Sẽ bị phạt tiền từ **800.000 đồng đến 2.000.000 đồng** về hành vi *\"Giao xe cho người không đủ điều kiện điều khiển xe tham gia giao thông đường bộ\"*.\n\n**Kết luận:** Việc cho trẻ dưới 14 tuổi lái xe máy là vi phạm pháp luật và tiềm ẩn nguy cơ tai nạn nghiêm trọng.",
+        "latency": 1.976,
+        "tokens": 526,
+        "score": 66.7,
+        "matched_keywords": [
+          "không được",
+          "16 tuổi",
+          "18 tuổi",
+          "vi phạm"
+        ],
+        "hallucination_flags": []
+      },
+      "Qwen3-32B": {
+        "content": "<think>\nOkay, let's tackle this question. The user is asking whether children under 14 can ride motorcycles in Vietnam according to the law. First, I need to recall the relevant legal provisions. \n\nI remember that Vietnam has specific traffic laws regarding age and vehicle operation. The main law here would be the Road Traffic Law. Let me check the latest version. The 2021 Road Traffic Law might have updated regulations.\n\nLooking at the Road Traffic Law 2021, Article 12 probably outlines the age requirements for different types of vehicles. For motorcycles, which are typically considered motor vehicles, there's a minimum age. From what I know, in many countries, you need a certain age to get a license, and Vietnam likely follows similar rules.\n\nUnder the 2021 law, to ride a motorcycle with an engine capacity of 50cc or more, you need a license. The age requirement for a motorcycle license is 16 years old. So, if the child is under 14, they wouldn't meet the age requirement. Additionally, even if they had a license, they might not be allowed to ride on public roads without supervision, but the primary issue here is the age.\n\nAlso, there's the Law on Education and the Law on the Protection, Care and Education of Children that might mention restrictions on children's activities, including riding vehicles. But the main legal basis is the Road Traffic Law.\n\nSo, putting it all together: Under 14, no license allowed. Therefore, they can't legally ride a motorcycle. Need to cite the specific article and law. Also, note that if they ride without a license, it's a violation. Maybe mention the consequences briefly.\n</think>\n\nTheo Luật Giao thông đường bộ 2021 (có hiệu lực từ 1/7/2022), trẻ em dưới 14 tuổi **không được phép điều khiển xe mô tô**. Điều 12 Luật quy định:  \n- Người đủ **16 tuổi trở lên** mới được cấp giấy phép lái xe hạng A1 (xe mô tô hai bánh có dung tích xy-lanh ≤ 175 cm³).  \n- Trẻ em dưới 16 tuổi không đủ điều kiện tham gia kỳ thi sát hạch để lấy giấy phép lái xe mô tô.  \n\nNgoài ra, Nghị định 100/2019/NĐ-CP (sửa đổi bởi Nghị định 123/2021/NĐ-CP) quy định xử phạt vi phạm giao thông:  \n- Điều khiển xe mô tô khi chưa đủ độ tuổi quy định bị phạt **1-2 triệu đồng** (Điều 5, Khoản 1).  \n\nDo đó, trẻ em dưới 14 tuổi không đủ điều kiện pháp lý để lái xe máy. Việc cho trẻ em này điều khiển xe mô tô là vi phạm pháp luật và tiềm ẩn nguy cơ tai nạn cao.",
+        "latency": 7.265,
+        "tokens": 794,
+        "score": 66.7,
+        "matched_keywords": [
+          "không được",
+          "16 tuổi",
+          "giấy phép lái xe",
+          "vi phạm"
+        ],
+        "hallucination_flags": []
+      },
+      "SaoLa-Llama3.1-planner": {
+        "content": "Theo quy định tại Điều 60 Luật Giao thông đường bộ 2008, người lái xe máy (xe mô-tô, xe gắn máy) phải đủ 16 tuổi trở lên. Do đó, trẻ em dưới 14 tuổi không được phép lái xe máy theo pháp luật Việt Nam hiện hành.",
+        "latency": 0.716,
+        "tokens": 229,
+        "score": 33.3,
+        "matched_keywords": [
+          "không được",
+          "16 tuổi"
+        ],
+        "hallucination_flags": []
+      }
+    },
+    "Q8": {
+      "gemma-4-31B-it": {
+        "content": "Chào bạn, tôi là LuatBot. Về trường hợp này, tôi xin tư vấn như sau:\n\nCăn cứ theo **Điều 652 Bộ luật Dân sự 2015** về **Thừa kế thế vị**:\nKhi con của người để lại di sản chết trước người để lại di sản thì cháu được hưởng phần di sản mà cha hoặc mẹ của cháu được hưởng nếu còn sống.\n\n**Phân tích cụ thể:**\n1. **Hàng thừa kế thứ nhất của ông D gồm:** E, F, G (3 suất thừa kế bằng nhau).\n2. **Giá trị một suất thừa kế:** $900 \\text{ triệu} \\div 3 = 300 \\text{ triệu đồng}$.\n3. **Thừa kế thế vị:** Vì E chết trước ông D, nên hai con của E là H và I sẽ cùng nhau hưởng suất thừa kế mà lẽ ra E được hưởng (300 triệu đồng).\n\n**Kết quả:**\nSố tiền H và I được hưởng là: $300 \\text{ triệu} \\div 2 = 150 \\text{ triệu đồng/người}$.\n\n**Kết luận:** H được thừa kế **150 triệu đồng** và I được thừa kế **150 triệu đồng**.",
+        "latency": 1.945,
+        "tokens": 510,
+        "score": 75.0,
+        "matched_keywords": [
+          "thừa kế thế vị",
+          "150 triệu",
+          "hàng thừa kế"
+        ],
+        "hallucination_flags": []
+      },
+      "Qwen3-32B": {
+        "content": "<think>\nOkay, let's see. The user is asking about inheritance in Vietnam. So, the situation is that Mr. D has three children: E, F, and G. He dies without a will, so it's intestate succession. The estate is 900 million VND. But E died before Mr. D, and E has two children, H and I. The question is how much H and I inherit.\n\nFirst, I need to recall the relevant laws. In Vietnam, the main law governing inheritance is the 2015 Civil Code, specifically Chapter 67 on Inheritance. Since there's no will, we apply the rules of statutory inheritance.\n\nUnder Article 651 of the Civil Code, when a person dies without a will, their heirs are the spouse, children, parents, siblings, etc., in order of priority. The first-order heirs are spouse, children, and parents. If the deceased (Mr. D) has children, they inherit equally. However, if a child predeceases the deceased but leaves their own children (grandchildren of the deceased), those grandchildren can inherit by representation, as per Article 653.\n\nSo, Mr. D's children are E, F, G. Normally, each would get 300 million (900/3). But E is deceased, so his share goes to his children H and I. According to Article 653, the grandchildren (H and I) inherit E's portion equally. Therefore, E's 300 million is split between H and I, each getting 150 million.\n\nWait, but I should check if there are any other factors. For example, does Mr. D have a spouse or parents who are also heirs? The problem doesn't mention them, so maybe they're not part of this scenario. The question only mentions the children, so we can assume that F and G are the surviving children, and H and I are the representatives of E.\n\nTherefore, the total inheritance would be divided into three parts: F, G, and the share of E (which goes to H and I). Each of the three original children gets 300 million. Since E is dead, his 300 million is split between H and I, each getting 150 million. So the final answer is H and I each inherit 150 million.\n</think>\n\nTheo quy định tại **Điều 651 và Điều 653 Bộ luật Dân sự 2015**, tài sản của ông D được chia đều cho 3 người con (E, F, G). Tuy nhiên, E đã chết trước ông D nhưng để lại 2 người con (H và I). Trong trường hợp này, H và I được **thừa kế thay thế** phần của cha họ (E) theo nguyên tắc chia đều. \n\n- Tổng tài sản: 900 triệu đồng.  \n- Mỗi người con (E, F, G) được hưởng: 900 triệu / 3 = **300 triệu đồng**.  \n- Phần của E (300 triệu) được chia đều cho H và I: 300 triệu / 2 = **150 triệu đồng/người**.  \n\n**Kết luận:** H và I mỗi người được thừa kế **150 triệu đồng**.",
+        "latency": 6.719,
+        "tokens": 928,
+        "score": 50.0,
+        "matched_keywords": [
+          "150 triệu",
+          "chia đều"
+        ],
+        "hallucination_flags": []
+      },
+      "SaoLa-Llama3.1-planner": {
+        "content": "Theo quy định tại Điều 651 của Luật Dân sự 2005, khi người chết không để lại di chúc, tài sản thừa kế được phân chia theo pháp luật. Trong trường hợp này, H và I là hậu duệ trực tiếp của người thừa kế thứ nhất E, họ sẽ được hưởng một phần tài sản thừa kế theo pháp luật.\n\nTheo Điều 209 của Luật này, phần tài sản thừa kế của mỗi người chết trước người lập di chúc được chia theo pháp luật như sau:\n\n- Nếu người chết trước có chỉ định người thừa kế tài sản của họ, thì người được chỉ định đó sẽ nhận toàn bộ tài sản của người chết trước.\n- Nếu không chỉ định người thừa kế, thì tài sản của người chết trước được chia đều cho những người thừa kế theo pháp luật của họ.\n\nTuy nhiên, do thông tin không đủ rõ về việc ông D có chỉ định ai là người thừa kế tài sản của E hay không, cũng như số lượng và mức độ liên quan của các người thừa kế khác của ông D, nên không thể tính toán chính xác phần thừa kế của H và I.\n\nTôi không có đủ thông tin để đưa ra câu trả lời chính xác. Bạn nên cung cấp thêm thông tin về di chúc (nếu có) và mối quan hệ giữa các bên để tôi có thể trả lời chính xác hơn.",
+        "latency": 2.079,
+        "tokens": 488,
+        "score": 25.0,
+        "matched_keywords": [
+          "chia đều"
+        ],
+        "hallucination_flags": []
+      }
+    }
+  },
+  "summary": {
+    "gemma-4-31B-it": {
+      "name": "Google Gemma 4 31B",
+      "avg_score": 69.4,
+      "avg_latency": 2.73,
+      "avg_tokens": 522.0,
+      "hallucination_count": 0,
+      "success_count": 8
+    },
+    "Qwen3-32B": {
+      "name": "Alibaba Qwen3 32B",
+      "avg_score": 53.8,
+      "avg_latency": 8.52,
+      "avg_tokens": 936.0,
+      "hallucination_count": 0,
+      "success_count": 8
+    },
+    "SaoLa-Llama3.1-planner": {
+      "name": "FPT Saola Planner (Llama3.1)",
+      "avg_score": 35.2,
+      "avg_latency": 1.32,
+      "avg_tokens": 340.0,
+      "hallucination_count": 0,
+      "success_count": 8
+    }
+  }
+}

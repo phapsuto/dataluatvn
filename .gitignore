@@ -1,3 +1,8 @@
+# ─── Secrets ───
+.env
+.env.*
+!.env.example
+
 # ─── Python ───
 venv/
 __pycache__/
@@ -59,3 +64,12 @@ Thumbs.db
 # ─── Backup & Corrupt ───
 *_corrupt.db
 *_new.db-*
+
+# ─── Miscellaneous ───
+.conversation_id
+.telegram_sync.json
+*.sqlite
+ai study vnlaw/
+artifacts/
+
+

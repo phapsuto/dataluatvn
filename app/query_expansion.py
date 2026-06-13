@@ -117,65 +117,57 @@ def expand_query(q: str) -> List[str]:
     if cached is not None:
         return cached
 
-    # 3. Kiểm tra switch bypass LLM (dùng cho benchmark hoặc chạy offline)
-    if os.environ.get("DISABLE_LLM_EXPANSION") == "1":
-        return []
-
-    # 4. Chuẩn bị gọi LLM FPT Cloud
-    if not FPT_CLOUD_API_KEY:
-        print("⚠️ FPT_CLOUD_API_KEY chưa được cấu hình. Bỏ qua Query Expansion.")
-        return []
+    # 3. LLM Expansion (FPT Cloud)
+    terms = None
+    if not terms and os.environ.get("DISABLE_LLM_EXPANSION") != "1":
+        if not FPT_CLOUD_API_KEY:
+            print("⚠️ FPT_CLOUD_API_KEY chưa được cấu hình. Bỏ qua Query Expansion.")
+            return []
+            
+        headers = {
+            "Authorization": f"Bearer {FPT_CLOUD_API_KEY}",
+            "Content-Type": "application/json"
+        }
         
-    headers = {
-        "Authorization": f"Bearer {FPT_CLOUD_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    system_prompt = (
-        "Bạn là trợ lý đắc lực cho hệ thống tìm kiếm pháp luật Việt Nam.\n"
-        "Nhiệm vụ của bạn là đọc câu hỏi của người dùng và trả về chính xác từ 2 đến 3 từ khóa hoặc cụm từ đồng nghĩa, hoặc thuật ngữ pháp lý tương đương liên quan trực tiếp nhất đến câu hỏi.\n"
-        "Quy tắc tuyệt đối:\n"
-        "- Chỉ trả về các cụm từ cách nhau bằng dấu phẩy.\n"
-        "- KHÔNG viết thêm bất kỳ lời giải thích, mở đầu, kết luận hoặc markdown nào khác."
-    )
-    
-    payload = {
-        "model": FPT_MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": "thủ tục ly hôn và chia đất"},
-            {"role": "assistant", "content": "chấm dứt hôn nhân, phân chia tài sản chung, quyền sử dụng đất"},
-            {"role": "user", "content": "bị công an bắt xe máy phạt bao nhiêu tiền"},
-            {"role": "assistant", "content": "tạm giữ phương tiện giao thông, xử phạt vi phạm hành chính, luật giao thông đường bộ"},
-            {"role": "user", "content": q}
-        ],
-        "temperature": 0.3,
-        "max_tokens": 100
-    }
-    
-    # 3. Gọi API với Timeout Fallback
-    try:
-        response = requests.post(FPT_URL, json=payload, headers=headers, timeout=API_TIMEOUT)
-        if response.status_code == 200:
-            data = response.json()
-            content = data["choices"][0]["message"]["content"].strip()
-            
-            # Parsing và làm sạch
-            terms = [t.strip() for t in content.split(",") if t.strip()]
-            
-            # Chỉ lấy tối đa 3 terms để tránh nhiễu
-            terms = terms[:3]
-            
-            # Ghi vào cache
-            if terms:
-                set_cached_expansion(q_clean, terms)
-                return terms
-        else:
-            print(f"⚠️ API FPT Cloud trả về mã lỗi: {response.status_code} | {response.text}")
-    except requests.Timeout:
-        print(f"⌛ Timeout ({API_TIMEOUT}s) khi gọi FPT Cloud API cho query: '{q}'. Fallback sử dụng query gốc.")
-    except Exception as e:
-        print(f"⚠️ Lỗi kết nối khi gọi FPT Cloud API: {e}")
+        system_prompt = (
+            "Bạn là trợ lý đắc lực cho hệ thống tìm kiếm pháp luật Việt Nam.\n"
+            "Nhiệm vụ của bạn là đọc câu hỏi của người dùng và trả về chính xác từ 2 đến 3 từ khóa hoặc cụm từ đồng nghĩa, hoặc thuật ngữ pháp lý tương đương liên quan trực tiếp nhất đến câu hỏi.\n"
+            "Quy tắc tuyệt đối:\n"
+            "- Chỉ trả về các cụm từ cách nhau bằng dấu phẩy.\n"
+            "- KHÔNG viết thêm bất kỳ lời giải thích, mở đầu, kết luận hoặc markdown nào khác."
+        )
+        
+        payload = {
+            "model": FPT_MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": "thủ tục ly hôn và chia đất"},
+                {"role": "assistant", "content": "chấm dứt hôn nhân, phân chia tài sản chung, quyền sử dụng đất"},
+                {"role": "user", "content": "bị công an bắt xe máy phạt bao nhiêu tiền"},
+                {"role": "assistant", "content": "tạm giữ phương tiện giao thông, xử phạt vi phạm hành chính, luật giao thông đường bộ"},
+                {"role": "user", "content": q}
+            ],
+            "temperature": 0.3,
+            "max_tokens": 100
+        }
+        
+        try:
+            response = requests.post(FPT_URL, json=payload, headers=headers, timeout=API_TIMEOUT)
+            if response.status_code == 200:
+                data = response.json()
+                content = data["choices"][0]["message"]["content"].strip()
+                terms = [t.strip() for t in content.split(",") if t.strip()]
+                terms = terms[:3]
+            else:
+                print(f"⚠️ API FPT Cloud trả về mã lỗi: {response.status_code} | {response.text}")
+        except requests.Timeout:
+            print(f"⌛ Timeout ({API_TIMEOUT}s) khi gọi FPT Cloud API cho query: '{q}'. Fallback sử dụng query gốc.")
+        except Exception as e:
+            print(f"⚠️ Lỗi kết nối khi gọi FPT Cloud API: {e}")
+
+    if terms:
+        set_cached_expansion(q_clean, terms)
+        return terms
         
     return []
 
