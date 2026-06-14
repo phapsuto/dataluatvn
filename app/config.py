@@ -14,6 +14,7 @@ CONTENT_DB = os.environ.get("CONTENT_DB_PATH", "content_store.db")
 ADMIN_DB = os.environ.get("ADMIN_DB_PATH", "admin.db")
 MEMORY_DB = os.environ.get("MEMORY_DB_PATH", "user_session_memory.db")
 FPT_CLOUD_API_KEY = os.environ.get("FPT_CLOUD_API_KEY", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 API_PORT = int(os.environ.get("API_PORT", 2004))
 JWT_SECRET = os.environ.get("JWT_SECRET", "")
 JWT_ALGORITHM = "HS256"
@@ -24,9 +25,9 @@ if not JWT_SECRET:
     import warnings
     warnings.warn("⚠️  JWT_SECRET not set in .env — using insecure default. Set JWT_SECRET for production!", stacklevel=2)
     JWT_SECRET = "dlvn-dev-only-insecure-default"
-if not FPT_CLOUD_API_KEY:
+if not FPT_CLOUD_API_KEY and not GEMINI_API_KEY:
     import warnings
-    warnings.warn("⚠️  FPT_CLOUD_API_KEY not set in .env — LLM features will be disabled.", stacklevel=2)
+    warnings.warn("⚠️  Cả FPT_CLOUD_API_KEY và GEMINI_API_KEY đều chưa được thiết lập trong .env — các tính năng LLM sẽ bị tắt.", stacklevel=2)
 
 # --- SOTA RAG Config ---
 VECTOR_DB_SOTA = os.environ.get("VECTOR_DB_SOTA_PATH", "vector_store.db")

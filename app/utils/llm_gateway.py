@@ -24,7 +24,7 @@ if not llm_logger.handlers:
 
 class LLMGateway:
     # Class level state to hold the currently selected provider
-    _active_provider = "fpt"
+    _active_provider = os.environ.get("ACTIVE_LLM_PROVIDER", "gemini")
     
     # Providers configuration
     PROVIDERS = {
@@ -33,6 +33,10 @@ class LLMGateway:
             "api_base": "https://mkp-api.fptcloud.com/v1",
             "api_key": os.environ.get("FPT_CLOUD_API_KEY") or "",
         },
+        "gemini": {
+            "model": "gemini/gemini-1.5-flash",
+            "api_key": os.environ.get("GEMINI_API_KEY") or "",
+        },
         "ollama": {
             "model": "ollama/llama3.2",
             "api_base": os.environ.get("OLLAMA_API_BASE") or "http://localhost:11434",
@@ -40,7 +44,7 @@ class LLMGateway:
     }
     
     # Default fallback path
-    FALLBACK_CHAIN = ["fpt", "ollama"]
+    FALLBACK_CHAIN = ["gemini", "fpt", "ollama"]
 
     @classmethod
     def get_status(cls) -> Dict[str, Any]:
