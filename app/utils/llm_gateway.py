@@ -34,7 +34,7 @@ class LLMGateway:
             "api_key": os.environ.get("FPT_CLOUD_API_KEY") or "",
         },
         "gemini": {
-            "model": "gemini/gemini-1.5-flash",
+            "model": "gemini/gemini-2.5-flash",
             "api_key": os.environ.get("GEMINI_API_KEY") or "",
         },
         "ollama": {
