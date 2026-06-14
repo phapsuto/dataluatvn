@@ -36,50 +36,51 @@ def ultimate_retrieve(
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            # Step 1: Find the doc_id from documents table using indexed search
+            # Step 1: Find the doc_ids from documents table using indexed search
             cursor.execute("SELECT id FROM documents WHERE so_ky_hieu = ?", (so_hieu,))
-            row = cursor.fetchone()
-            if not row:
+            rows = cursor.fetchall()
+            if not rows:
                 # Fallback to whitespace-stripped search (covers documents with messy symbol spaces)
                 cursor.execute("SELECT id FROM documents WHERE REPLACE(so_ky_hieu, ' ', '') = ?", (so_hieu_clean,))
-                row = cursor.fetchone()
+                rows = cursor.fetchall()
                 
-            if row:
-                doc_id = row[0]
-                # Step 2: Retrieve chunks for the specific doc_id using fast primary key and index
-                if dieu_match:
-                    dieu_num = dieu_match.group(1)
-                    cursor.execute("""
-                        SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.chunk_with_meta, c.token_estimate,
-                               d.title as document_title, d.so_ky_hieu as document_so_ky_hieu, d.loai_van_ban as document_loai_van_ban,
-                               d.co_quan_ban_hanh as document_co_quan_ban_hanh, d.tinh_trang_hieu_luc as document_tinh_trang_hieu_luc,
-                               d.ngay_ban_hanh as document_ngay_ban_hanh
-                        FROM document_chunks c
-                        JOIN documents d ON c.doc_id = d.id
-                        WHERE c.doc_id = ?
-                        AND c.chunk_header LIKE ?
-                        ORDER BY c.chunk_index
-                        LIMIT 5
-                    """, (doc_id, f"Điều {dieu_num}%"))
-                else:
-                    cursor.execute("""
-                        SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.chunk_with_meta, c.token_estimate,
-                               d.title as document_title, d.so_ky_hieu as document_so_ky_hieu, d.loai_van_ban as document_loai_van_ban,
-                               d.co_quan_ban_hanh as document_co_quan_ban_hanh, d.tinh_trang_hieu_luc as document_tinh_trang_hieu_luc,
-                               d.ngay_ban_hanh as document_ngay_ban_hanh
-                        FROM document_chunks c
-                        JOIN documents d ON c.doc_id = d.id
-                        WHERE c.doc_id = ?
-                        AND c.chunk_type = 'dieu'
-                        ORDER BY c.chunk_index
-                        LIMIT 5
-                    """, (doc_id,))
-                
-                for row in cursor.fetchall():
-                    item = dict(row)
-                    item["score"] = 1000.0  # High base score
-                    item["is_exact_match"] = True
-                    exact_chunks.append(item)
+            if rows:
+                doc_ids = [r[0] for r in rows][:3] # Limit to top 3 matching documents to prevent loading too many chunks
+                for doc_id in doc_ids:
+                    # Step 2: Retrieve chunks for the specific doc_id using fast primary key and index
+                    if dieu_match:
+                        dieu_num = dieu_match.group(1)
+                        cursor.execute("""
+                            SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.chunk_with_meta, c.token_estimate,
+                                   d.title as document_title, d.so_ky_hieu as document_so_ky_hieu, d.loai_van_ban as document_loai_van_ban,
+                                   d.co_quan_ban_hanh as document_co_quan_ban_hanh, d.tinh_trang_hieu_luc as document_tinh_trang_hieu_luc,
+                                   d.ngay_ban_hanh as document_ngay_ban_hanh
+                            FROM document_chunks c
+                            JOIN documents d ON c.doc_id = d.id
+                            WHERE c.doc_id = ?
+                            AND c.chunk_header LIKE ?
+                            ORDER BY c.chunk_index
+                            LIMIT 5
+                        """, (doc_id, f"Điều {dieu_num}%"))
+                    else:
+                        cursor.execute("""
+                            SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.chunk_with_meta, c.token_estimate,
+                                   d.title as document_title, d.so_ky_hieu as document_so_ky_hieu, d.loai_van_ban as document_loai_van_ban,
+                                   d.co_quan_ban_hanh as document_co_quan_ban_hanh, d.tinh_trang_hieu_luc as document_tinh_trang_hieu_luc,
+                                   d.ngay_ban_hanh as document_ngay_ban_hanh
+                            FROM document_chunks c
+                            JOIN documents d ON c.doc_id = d.id
+                            WHERE c.doc_id = ?
+                            AND c.chunk_type = 'dieu'
+                            ORDER BY c.chunk_index
+                            LIMIT 5
+                        """, (doc_id,))
+                    
+                    for row in cursor.fetchall():
+                        item = dict(row)
+                        item["score"] = 1000.0  # High base score
+                        item["is_exact_match"] = True
+                        exact_chunks.append(item)
             
             if exact_chunks:
                 print(f"📌 Exact match '{so_hieu}': {len(exact_chunks)} chunks injected into pool")

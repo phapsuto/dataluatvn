@@ -120,6 +120,12 @@ class SemanticCacheManager:
         Returns:
             (is_hit, response, citation_map)
         """
+        # Bắt buộc bypass cache nếu query chứa số hiệu văn bản hoặc điều khoản cụ thể
+        # để tránh Cache Collision đối với các câu hỏi có cấu trúc giống nhau nhưng số hiệu khác nhau.
+        if re.search(r'[Đđ]iều\s+\d+', query) or re.search(r'(\b\d+[\w\-\/]*\/[A-Za-zĐđÀ-ỹ0-9\-]+\b|\b\d+-[A-Za-zĐđÀ-ỹ]{2,}\b)', query):
+            logger.info(f"⏭️ Semantic Cache BYPASS (contains document number or article): '{query}'")
+            return False, None, None
+
         query = self.clean_query(query)
         if not query or not query.strip():
             return False, None, None
