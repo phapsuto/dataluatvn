@@ -629,22 +629,76 @@ def get_smart_search_provinces(conn):
             _SMART_SEARCH_PROVINCES = set()
     return _SMART_SEARCH_PROVINCES
 
+class RemoteFPTEmbedder:
+    def __init__(self, api_key: str, model_name: str = "Vietnamese_Embedding"):
+        self.api_key = api_key
+        self.model_name = model_name
+        self.dimension = 1024
+        
+    def get_embedding_dimension(self) -> int:
+        return self.dimension
+        
+    def get_sentence_embedding_dimension(self) -> int:
+        return self.dimension
+        
+    def encode(self, sentences: list, **kwargs):
+        import requests
+        import numpy as np
+        
+        url = "https://mkp-api.fptcloud.com/v1/embeddings"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": self.model_name,
+            "input": sentences
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=10.0)
+            if response.status_code == 200:
+                data = response.json()
+                embeddings = [item["embedding"] for item in data["data"]]
+                return np.array(embeddings, dtype=np.float32)
+            else:
+                print(f"⚠️ RemoteFPTEmbedder error {response.status_code}: {response.text}")
+        except Exception as e:
+            print(f"⚠️ RemoteFPTEmbedder failed: {e}")
+            
+        # Fallback to zero vectors if it fails
+        return np.zeros((len(sentences), self.dimension), dtype=np.float32)
+
 def get_smart_search_resources():
     global _SMART_SEARCH_MODEL, _SMART_SEARCH_INDEX, _SMART_SEARCH_ID_MAP
     import os
     from app.config import EMBEDDING_MODEL_SOTA, FAISS_INDEX_SOTA
     
-    # Lazy load sentence-transformers & PyTorch
-    if _SMART_SEARCH_MODEL is None:
-        try:
-            import torch
-            from sentence_transformers import SentenceTransformer
-            device = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
-            model_kwargs = {"torch_dtype": torch.float16} if device in ["mps", "cuda"] else {}
-            _SMART_SEARCH_MODEL = SentenceTransformer(EMBEDDING_MODEL_SOTA, device=device, model_kwargs=model_kwargs)
-            print(f"✅ Loaded Embedding Model {EMBEDDING_MODEL_SOTA} on {device.upper()} (float16)")
-        except Exception as e:
-            print(f"⚠️ Không thể load embedding model {EMBEDDING_MODEL_SOTA}: {e}")
+    # ── EMBEDDING MODEL SELECTION ──
+    # QUAN TRỌNG: Embedding model phải KHỚP với model đã dùng để build FAISS index.
+    # FAISS index hiện tại build bằng bge-m3 (1024-d) → PHẢI dùng bge-m3 để encode query.
+    # Chỉ dùng FPT Vietnamese_Embedding khi EMBEDDING_PROVIDER=fpt VÀ đã rebuild index tương ứng.
+    # LƯU Ý: ACTIVE_LLM_PROVIDER chỉ ảnh hưởng LLM generation, KHÔNG ảnh hưởng embedding.
+    from app.config import FPT_CLOUD_API_KEY
+    embedding_provider = os.environ.get("EMBEDDING_PROVIDER", "local")  # default: local bge-m3
+    if embedding_provider == "fpt" and FPT_CLOUD_API_KEY:
+        if _SMART_SEARCH_MODEL is None:
+            _SMART_SEARCH_MODEL = RemoteFPTEmbedder(FPT_CLOUD_API_KEY)
+            print("🌐 Loaded Remote FPT Embedding Model (Vietnamese_Embedding)")
+            print("⚠️  ĐẢM BẢO: FAISS index đã được rebuild bằng Vietnamese_Embedding!")
+    else:
+        # Lazy load sentence-transformers & PyTorch — dùng bge-m3 local (mặc định, khớp FAISS index)
+        if _SMART_SEARCH_MODEL is None:
+            try:
+                import torch
+                from sentence_transformers import SentenceTransformer
+                device = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
+                model_kwargs = {"torch_dtype": torch.float16} if device in ["mps", "cuda"] else {}
+                _SMART_SEARCH_MODEL = SentenceTransformer(EMBEDDING_MODEL_SOTA, device=device, model_kwargs=model_kwargs)
+                print(f"✅ Loaded Embedding Model {EMBEDDING_MODEL_SOTA} on {device.upper()} (float16)")
+            except Exception as e:
+                print(f"⚠️ Không thể load embedding model {EMBEDDING_MODEL_SOTA}: {e}")
+
             
     # Lazy load FAISS index
     if _SMART_SEARCH_INDEX is None:
@@ -746,7 +800,7 @@ def preprocess_and_correct_query(q: str) -> str:
             return clean_q
 
         FPT_URL = "https://mkp-api.fptcloud.com/v1/chat/completions"
-        FPT_MODEL = "gemma-4-31B-it"
+        FPT_MODEL = "Qwen3-32B"
         headers = {
             "Authorization": f"Bearer {FPT_CLOUD_API_KEY}",
             "Content-Type": "application/json"
@@ -811,6 +865,7 @@ def smart_search_laws(
     nam_ban_hanh: Optional[int] = Query(None, description="Lọc theo năm ban hành"),
     use_soft_boosting: bool = True,
     _key=Depends(require_api_key),
+    query_vector: Optional[Any] = None,
 ):
     """
     Tìm kiếm ngữ nghĩa kết hợp FTS5, FAISS Vector và thuật toán RRF Boosting (khớp số ký hiệu, độ hiệu lực pháp lý, tình trạng văn bản).
@@ -977,7 +1032,6 @@ def smart_search_laws(
             except Exception as e:
                 print(f"⚠️ Lỗi truy vấn FTS5 Chunks: {e}")
 
-    query_vector = None
     # 3. Chạy Vector Search trên FAISS (Top 150)
     vector_results = []
     model, faiss_index = get_smart_search_resources()
@@ -990,9 +1044,10 @@ def smart_search_laws(
             if expanded_terms:
                 q_norm = q_norm + " " + " ".join([normalize_spelling(term) for term in expanded_terms])
                 
-            query_vector = model.encode([q_norm], show_progress_bar=False, convert_to_numpy=True)
-            query_vector = query_vector.astype(np.float32)
-            faiss.normalize_L2(query_vector)
+            if query_vector is None:
+                query_vector = model.encode([q_norm], show_progress_bar=False, convert_to_numpy=True)
+                query_vector = query_vector.astype(np.float32)
+                faiss.normalize_L2(query_vector)
             
             distances, indices = faiss_index.search(query_vector, 150)
             
@@ -1176,7 +1231,7 @@ def smart_search_laws(
             continue
             
         so_ky_hieu = (meta.get("so_ky_hieu") or "").lower()
-        loai_van_ban = (meta.get("loai_van_ban") or "").lower()
+        doc_type_lower = (meta.get("loai_van_ban") or "").lower()
         status_str = (meta.get("tinh_trang_hieu_luc") or "").lower()
 
         # A. Flexible Symbol Match Boost
@@ -1189,11 +1244,11 @@ def smart_search_laws(
             nums_in_doc = re.findall(r'\b\d+\b', so_ky_hieu)
             for num_q in numbers_in_q:
                 if num_q in nums_in_doc:
-                    doc_type_short = loai_van_ban.replace("luật", "").replace("nghị định", "").strip()
+                    doc_type_short = doc_type_lower.replace("luật", "").replace("nghị định", "").strip()
                     if doc_type_short and doc_type_short in q_lower:
                         symbol_boost = 2.5
                         break
-                    elif loai_van_ban in q_lower:
+                    elif doc_type_lower in q_lower:
                         symbol_boost = 2.5
                         break
                     else:
@@ -1203,41 +1258,45 @@ def smart_search_laws(
         # B. Dynamic Document Type Boost
         type_boost = 0.0
         if is_detail_query:
-            if "nghị định" in loai_van_ban:
+            if "nghị định" in doc_type_lower:
                 type_boost = 0.12
-            elif "thông tư" in loai_van_ban:
+            elif "thông tư" in doc_type_lower:
                 type_boost = 0.10
-            elif "quyết định" in loai_van_ban:
+            elif "quyết định" in doc_type_lower:
                 type_boost = 0.08
-            elif "bộ luật" in loai_van_ban or "luật" in loai_van_ban:
+            elif "bộ luật" in doc_type_lower or "luật" in doc_type_lower:
                 type_boost = 0.05
         elif is_general_query:
-            if "hiến pháp" in loai_van_ban:
+            if "hiến pháp" in doc_type_lower:
                 type_boost = 0.20
-            elif "bộ luật" in loai_van_ban or "luật" in loai_van_ban:
+            elif "bộ luật" in doc_type_lower or "luật" in doc_type_lower:
                 type_boost = 0.15
-            elif "pháp lệnh" in loai_van_ban:
+            elif "pháp lệnh" in doc_type_lower:
                 type_boost = 0.10
-            elif "nghị định" in loai_van_ban:
+            elif "nghị định" in doc_type_lower:
                 type_boost = 0.05
         else:
-            if "hiến pháp" in loai_van_ban:
+            if "hiến pháp" in doc_type_lower:
                 type_boost = 0.12
-            elif "bộ luật" in loai_van_ban or "luật" in loai_van_ban:
+            elif "bộ luật" in doc_type_lower or "luật" in doc_type_lower:
                 type_boost = 0.10
-            elif "pháp lệnh" in loai_van_ban:
+            elif "pháp lệnh" in doc_type_lower:
                 type_boost = 0.08
-            elif "nghị định" in loai_van_ban:
+            elif "nghị định" in doc_type_lower:
                 type_boost = 0.06
-            elif "quyết định" in loai_van_ban:
+            elif "quyết định" in doc_type_lower:
                 type_boost = 0.04
-            elif "thông tư" in loai_van_ban:
+            elif "thông tư" in doc_type_lower:
                 type_boost = 0.02
 
-        # C. Status Boost
+        # C. Status Boost (ưu tiên VB còn hiệu lực, phạt VB đã hết hiệu lực)
         status_boost = 0.0
-        if "còn hiệu lực" in status_str or "hết hiệu lực một phần" in status_str:
-            status_boost = 0.01
+        if "còn hiệu lực" in status_str:
+            status_boost = 0.15
+        elif "hết hiệu lực một phần" in status_str:
+            status_boost = 0.08
+        elif "hết hiệu lực" in status_str:
+            status_boost = -0.10  # Phạt văn bản đã hết hiệu lực
 
         # D. Soft Metadata Boosting (Year, Doc Type, Issuer)
         metadata_boost = 1.0
@@ -1247,9 +1306,16 @@ def smart_search_laws(
                 if loai_van_ban.lower() == doc_type_db:
                     metadata_boost += 1.0
             if co_quan_ban_hanh:
-                co_quan_lower = co_quan_ban_hanh.lower()
-                co_quan_doc = (meta.get("co_quan_ban_hanh") or "").lower()
-                if co_quan_lower in co_quan_doc or co_quan_doc in co_quan_lower:
+                def norm_agency(val):
+                    if not val:
+                        return ""
+                    val = val.lower()
+                    val = val.replace("ubnd", "ủy ban nhân dân")
+                    val = val.replace("hđnd", "hội đồng nhân dân")
+                    return val
+                co_quan_norm = norm_agency(co_quan_ban_hanh)
+                co_quan_doc_norm = norm_agency(meta.get("co_quan_ban_hanh"))
+                if co_quan_norm in co_quan_doc_norm or co_quan_doc_norm in co_quan_norm:
                     metadata_boost += 1.0
             if nam_ban_hanh:
                 date_doc = meta.get("ngay_ban_hanh") or ""
@@ -1263,7 +1329,7 @@ def smart_search_laws(
                     metadata_boost += 2.0
 
         # Thực thi công thức: cộng dồn metadata boost
-        item["score"] = (item["score"] + symbol_boost + (type_boost * 0.05) + status_boost) * metadata_boost
+        item["score"] = (item["score"] + symbol_boost + type_boost + status_boost) * metadata_boost
 
     # Sắp xếp ứng viên sau Boosting
     sorted_items = sorted(all_candidates, key=lambda x: x["score"], reverse=True)

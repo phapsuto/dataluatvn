@@ -42,6 +42,10 @@ async def rewrite_user_query(query: str, session_id: Optional[str] = None) -> st
     if re.search(r'[Đđ]iều\s+\d+', query) or re.search(r'(\b\d+[\w\-\/]*\/[A-Za-zĐđÀ-ỹ0-9\-]+\b|\b\d+-[A-Za-zĐđÀ-ỹ]{2,}\b)', query):
         return query
 
+    # 3. Nếu chứa cụm từ trích dẫn trong ngoặc kép/đơn (Hỏi ngược) -> không cần rewrite để giữ nguyên FTS5 exact phrase match
+    if re.search(r'["\']([^"\']{8,})["\']', query):
+        return query
+
     # Lấy lịch sử hội thoại từ Memory DB (tối đa 3 lượt gần nhất để tránh loãng ngữ cảnh)
     chat_history = []
     if session_id:
@@ -71,8 +75,12 @@ async def rewrite_user_query(query: str, session_id: Optional[str] = None) -> st
     messages.append({"role": "user", "content": f"Hãy tối ưu câu hỏi sau: {query}"})
 
     try:
+        custom_model = None
+        if LLMGateway.get_status().get("active_provider") == "fpt":
+            custom_model = "custom_openai/DeepSeek-V4-Flash"
+            
         tokens = []
-        async for token in LLMGateway.call_stream(messages, SYSTEM_PROMPT, temperature=0.0):
+        async for token in LLMGateway.call_stream(messages, SYSTEM_PROMPT, temperature=0.0, custom_model=custom_model):
             tokens.append(token)
         rewritten = "".join(tokens).strip()
         

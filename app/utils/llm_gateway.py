@@ -29,7 +29,7 @@ class LLMGateway:
     # Providers configuration
     PROVIDERS = {
         "fpt": {
-            "model": "custom_openai/gemma-4-31B-it",
+            "model": f"custom_openai/{os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'Qwen3-32B')}" if not (os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'Qwen3-32B') or "").startswith("custom_openai/") else os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'Qwen3-32B'),
             "api_base": "https://mkp-api.fptcloud.com/v1",
             "api_key": os.environ.get("FPT_CLOUD_API_KEY") or "",
         },
@@ -81,7 +81,8 @@ class LLMGateway:
         messages: List[Dict[str, str]], 
         system_prompt: str, 
         temperature: float = 0.1,
-        custom_model: str = None
+        custom_model: str = None,
+        max_tokens: int = 1024
     ) -> AsyncGenerator[str, None]:
         """
         Asynchronously streams completion tokens from the active LLM provider,
@@ -116,7 +117,8 @@ class LLMGateway:
                     "model": model,
                     "messages": payload_messages,
                     "temperature": temperature,
-                    "stream": True
+                    "stream": True,
+                    "max_tokens": max_tokens
                 }
                 if api_key:
                     kwargs["api_key"] = api_key

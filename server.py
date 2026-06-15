@@ -11,6 +11,10 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["DISABLE_LLM_EXPANSION"] = "1"
+os.environ["USE_LOCAL_RERANKER"] = "false"
+os.environ["DISABLE_SPELL_CORRECTION"] = "1"
+# FPT Cloud Reranker is ENABLED (critical for D-type accuracy)
+# os.environ["DISABLE_RERANKER"] = "1"  # DO NOT disable - reranker needed for province disambiguation
 
 import sqlite3
 from contextlib import asynccontextmanager
@@ -132,4 +136,12 @@ app.include_router(chatbot.router)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("server:app", host="0.0.0.0", port=API_PORT, reload=True)
+    reload_opt = os.environ.get("RELOAD", "true").lower() == "true"
+
+    uvicorn.run(
+        "server:app",
+        host="0.0.0.0",
+        port=API_PORT,
+        reload=reload_opt,
+        reload_excludes=["*.log", "scratch/*", "logs/*", "*.json"]
+    )

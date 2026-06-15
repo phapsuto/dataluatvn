@@ -7,7 +7,7 @@ from app.config import FPT_CLOUD_API_KEY, MEMORY_DB
 
 # Cấu hình API FPT Cloud
 FPT_URL = "https://mkp-api.fptcloud.com/v1/chat/completions"
-FPT_MODEL = "gemma-4-31B-it"
+FPT_MODEL = "Qwen3-32B"
 API_TIMEOUT = 2.5  # Giới hạn timeout 2.5s để bảo vệ độ trễ API
 
 def init_cache_db():

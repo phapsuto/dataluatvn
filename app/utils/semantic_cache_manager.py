@@ -28,16 +28,15 @@ class SemanticCacheManager:
         
         self.db_path = db_path
         self.threshold = threshold
-        self.embedding_dim = 768  # Dimension of bkai-foundation-models/vietnamese-bi-encoder
+        self.embedding_dim = 1024  # Default placeholder, updated dynamically
         
         # Lazy imports for model & index
         self.model = None
         self.faiss_index = None
         self.cache_map = []  # Maps FAISS index position to SQLite record data
         
-        # Initialize SQLite & build index
+        # Initialize SQLite (but do not build FAISS index yet)
         self._init_db()
-        self._build_faiss_index()
         
         self._initialized = True
         logger.info(f"✅ Semantic Cache Manager initialized with threshold {self.threshold}")
@@ -75,8 +74,21 @@ class SemanticCacheManager:
             self.model, _ = get_smart_search_resources()
             if self.model is None:
                 raise RuntimeError("Không thể tải mô hình nhúng để sử dụng cho Semantic Cache")
+            
+            # Detect model dimension dynamically
+            if hasattr(self.model, "get_embedding_dimension"):
+                self.embedding_dim = self.model.get_embedding_dimension()
+            elif hasattr(self.model, "get_sentence_embedding_dimension"):
+                # Fallback for older sentence-transformers versions
+                self.embedding_dim = self.model.get_sentence_embedding_dimension()
+            
+            # Build the FAISS index with the correct dimension
+            self._build_faiss_index()
                 
     def _build_faiss_index(self):
+        if self.faiss_index is not None:
+            return
+            
         import faiss
         
         # Initialize flat Inner Product index (equivalent to Cosine similarity if vectors are normalized)
@@ -90,7 +102,7 @@ class SemanticCacheManager:
         conn.close()
         
         if not rows:
-            logger.info("ℹ️ Semantic Cache SQLite is empty. Initialized empty FAISS index.")
+            logger.info(f"ℹ️ Semantic Cache SQLite is empty. Initialized empty FAISS index (dimension: {self.embedding_dim}).")
             return
             
         vectors = []
@@ -112,7 +124,7 @@ class SemanticCacheManager:
             # Normalize for cosine similarity
             faiss.normalize_L2(vectors_np)
             self.faiss_index.add(vectors_np)
-            logger.info(f"✅ Loaded {len(self.cache_map)} records from SQLite into FAISS Cache Index.")
+            logger.info(f"✅ Loaded {len(self.cache_map)} records from SQLite into FAISS Cache Index (dimension: {self.embedding_dim}).")
 
     def lookup(self, query: str) -> tuple[bool, str | None, dict | None]:
         """
@@ -209,7 +221,9 @@ class SemanticCacheManager:
                 conn.close()
                 
         except Exception as e:
-            logger.error(f"⚠️ Error updating semantic cache: {e}")
+            import traceback
+            traceback.print_exc()
+            logger.error(f"⚠️ Error updating semantic cache: {e}", exc_info=True)
 
 # Singleton helper
 _cache_manager = None

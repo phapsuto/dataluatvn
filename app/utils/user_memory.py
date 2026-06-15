@@ -6,11 +6,12 @@ from typing import Dict, Any, List
 os.makedirs("logs", exist_ok=True)
 logger = logging.getLogger("user_memory")
 
-# Import FPT credentials from project config
+# Import credentials from project config
 try:
-    from app.config import FPT_CLOUD_API_KEY
+    from app.config import FPT_CLOUD_API_KEY, GEMINI_API_KEY
 except ImportError:
     FPT_CLOUD_API_KEY = os.environ.get("FPT_CLOUD_API_KEY", "")
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 # Config for Mem0 with local FAISS, SQLite, and local HF embedding model
 MEM0_CONFIG = {
@@ -31,9 +32,9 @@ MEM0_CONFIG = {
     "llm": {
         "provider": "openai",
         "config": {
-            "openai_base_url": "https://mkp-api.fptcloud.com/v1",
-            "api_key": FPT_CLOUD_API_KEY,
-            "model": "gemma-4-31B-it",
+            "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+            "api_key": GEMINI_API_KEY,
+            "model": "gemini-2.5-flash",
             "temperature": 0.1,
             "max_tokens": 500
         }
