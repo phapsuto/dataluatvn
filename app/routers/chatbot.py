@@ -17,6 +17,11 @@ from app.utils.flare_retrieval import flare_generate_stream
 router = APIRouter(prefix="/assistant", tags=["🤖 Trợ lý ảo - AI Chatbot & RAG"])
 
 
+def strip_thinking_tags(text: str) -> str:
+    """Loại bỏ <think>...</think> blocks từ output của Gemma/reasoning models."""
+    return re.sub(r'<think>.*?</think>\s*', '', text, flags=re.DOTALL).strip()
+
+
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                      SCHEMAS                                 ║
 # ╚══════════════════════════════════════════════════════════════╝
@@ -216,7 +221,7 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
             tokens = []
             async for token in LLMGateway.call_stream([{"role": "user", "content": prompt}], system_prompt):
                 tokens.append(token)
-            ai_reply = "".join(tokens)
+            ai_reply = strip_thinking_tags("".join(tokens))
             
             # ── STEP 6: SAVE INTERACTION TO MEMORY (Tầng 2) ──
             try:
@@ -251,6 +256,47 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
             "flare_activated": False,
             "search_count": 0
         }
+    
+    # ── STEP 1.5: CLARIFICATION DIALOGUE ──
+    # Kiểm tra câu hỏi có mơ hồ không → hỏi gợi mở thay vì trả kết quả kém
+    try:
+        from app.utils.clarification_engine import (
+            needs_clarification, get_smart_clarification
+        )
+        
+        # Đếm history length để skip clarification cho follow-up messages
+        chat_history_len = 0
+        try:
+            m_conn = get_memory_db()
+            m_cursor = m_conn.cursor()
+            m_cursor.execute(
+                "SELECT COUNT(*) FROM chat_messages WHERE session_id = ?",
+                (session_id,)
+            )
+            chat_history_len = m_cursor.fetchone()[0]
+            m_conn.close()
+        except Exception:
+            pass
+        
+        if needs_clarification(prompt, domain, chat_history_len):
+            print(f"🔮 [Clarification] Query mơ hồ, đang tạo câu hỏi gợi mở...")
+            
+            # Tier 2: Gọi DeepSeek (async) với kịch bản domain-specific
+            clarification_text = await get_smart_clarification(prompt, domain)
+            
+            if clarification_text:
+                # Lưu vào history để lượt sau không hỏi lại
+                _save_chat_history(session_id, prompt, clarification_text)
+                
+                return {
+                    "response": clarification_text,
+                    "citations": [],
+                    "domain": domain,
+                    "flare_activated": False,
+                    "search_count": 0
+                }
+    except Exception as e:
+        print(f"⚠️ [Clarification] Lỗi, bỏ qua và chạy RAG bình thường: {e}")
         
     # ── STEP 2: LOAD LONG-TERM MEMORY (Tầng 2) ──
     memory_context = LegalUserMemory.get_relevant_memories(session_id, prompt)
@@ -264,13 +310,15 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     # FIX TRIỆT ĐỂ: Tất cả legal queries → 1 pipeline duy nhất (ultimate_retrieve)
     # Pipeline: Exact Match Boost → FTS5 + FAISS Vector → Domain Scoring → Graph Expansion → Vietnamese Cross-Encoder Reranker
     print(f"🔍 [Retrieval] Full RAG pipeline for: '{search_query}' (Original: '{prompt}') (Domain: {domain}, Filters: {route_res['doc_type_filter']})")
-    formatted_chunks, citation_map = ultimate_retrieve(
+    passed_vector = route_res.get("query_vector") if prompt == search_query else None
+    formatted_chunks, citation_map = await ultimate_retrieve(
         query=search_query,
         domain_filter=route_res["doc_type_filter"],
         top_k=5,
         extracted_year=route_res.get("extracted_year"),
         extracted_doc_type=route_res.get("extracted_doc_type"),
-        extracted_issuer=route_res.get("extracted_issuer")
+        extracted_issuer=route_res.get("extracted_issuer"),
+        query_vector=passed_vector
     )
     flare_activated = False
     search_count = 1
@@ -279,6 +327,13 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     final_text = ""
     citations_list = list(citation_map.values())
     
+    # Detect if top result was exact match → skip FLARE draft for speed
+    has_exact_match = any("is_exact_match" not in str(v) for v in citation_map.values()) if not citation_map else False
+    # Simpler: check if query contains a legal symbol that was matched
+    import re as _re
+    _has_legal_ref = bool(_re.search(r'(\b\d+[\w\-\/]*\/[A-Za-zĐđÀ-ỹ0-9\-]+\b|[Đđ]iều\s+\d+)', prompt))
+    force_simple = _has_legal_ref  # Skip FLARE draft when query has explicit legal references
+    
     if formatted_chunks:
         try:
             async for event in flare_generate_stream(
@@ -286,7 +341,8 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
                 initial_context=formatted_chunks,
                 citation_map=citation_map,
                 domain_filter=route_res["doc_type_filter"],
-                custom_model="custom_openai/gemma-4-31B-it"
+                custom_model=None,  # Sử dụng model mặc định của FPT provider (Qwen3-32B)
+                force_simple=force_simple
             ):
                 ev_type = event.get("type")
                 if ev_type == "token":
@@ -299,6 +355,9 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
             raise HTTPException(status_code=500, detail=f"Lỗi RAG Generation: {str(ex)}")
     else:
         final_text = "Không tìm thấy tài liệu pháp lý liên quan phù hợp để trả lời câu hỏi của bạn."
+
+    # ── STRIP THINKING TAGS (Gemma reasoning artifacts) ──
+    final_text = strip_thinking_tags(final_text)
 
     # ── CẬP NHẬT SEMANTIC CACHE (RAG Gen 3) ──
     # Không cache các câu trả lời thất bại/trống để tránh đóng băng lỗi

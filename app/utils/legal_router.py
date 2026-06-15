@@ -165,11 +165,31 @@ def route_query(query: str) -> Dict[str, Any]:
     # 2. Check general legal keywords to prevent false positives in chitchat/out_of_scope
     legal_keywords = [
         "điều luật", "điều khoản", "nghị quyết", "thông tư", "nghị định", "quyết định", 
-        "bộ luật", "luật pháp", "pháp luật việt nam", "văn bản pháp luật"
+        "bộ luật", "luật pháp", "pháp luật việt nam", "văn bản pháp luật",
+        "văn bản", "ban hành", "quy định", "điều nào", "khoản nào"
     ]
     query_lower = query.lower()
     if not has_legal_identifier and any(k in query_lower for k in legal_keywords):
         has_legal_identifier = True
+    
+    # 3. Keyword Boost: Query ngắn chứa từ pháp lý → không phải chitchat
+    # Fix: "Công ty tôi có vấn đề" bị nhận nhầm là chitchat
+    _LEGAL_ENTITY_KEYWORDS = {
+        "doanh_nghiep": ["công ty", "cong ty", "doanh nghiệp", "doanh nghiep", "cổ đông", "cổ phần", "giám đốc", "kinh doanh"],
+        "dat_dai": ["đất đai", "dat dai", "sổ đỏ", "so do", "nhà đất", "nha dat", "thửa đất", "lấn đất", "quyền sử dụng đất"],
+        "lao_dong": ["sa thải", "sa thai", "đuổi việc", "duoi viec", "lương", "luong", "hợp đồng lao động", "bảo hiểm", "công nhân"],
+        "dan_su": ["ly hôn", "ly hon", "thừa kế", "thua ke", "ly dị", "vợ chồng", "nuôi con", "di chúc", "bồi thường"],
+        "hinh_su": ["bắt giam", "bat giam", "tội phạm", "toi pham", "lừa đảo", "lua dao", "trộm cắp", "giết người", "ma túy"],
+        "hanh_chinh": ["phạt giao thông", "phat giao thong", "xử phạt", "xu phat", "căn cước", "can cuoc", "hộ chiếu", "ho chieu"],
+    }
+    if best_domain in ["chitchat", "out_of_scope"] and len(words) <= 10:
+        for legal_domain, kw_list in _LEGAL_ENTITY_KEYWORDS.items():
+            if any(kw in query_lower for kw in kw_list):
+                print(f"🔄 [Router Boost] '{query}' chứa từ pháp lý → override {best_domain} → {legal_domain}")
+                best_domain = legal_domain
+                best_score = max(best_score, 0.5)
+                has_legal_identifier = True
+                break
         
     is_legal = best_domain not in ["chitchat", "out_of_scope"]
     
@@ -246,46 +266,68 @@ def route_query(query: str) -> Dict[str, Any]:
         doc_type = "Chỉ thị"
 
     issuer = None
-    if "chính phủ" in query_lower:
-        issuer = "Chính phủ"
-    elif "thủ tướng" in query_lower:
-        issuer = "Thủ tướng Chính phủ"
-    elif "bộ tài chính" in query_lower:
-        issuer = "Bộ Tài chính"
-    elif "bộ y tế" in query_lower:
-        issuer = "Bộ Y tế"
-    elif "bộ công thương" in query_lower:
-        issuer = "Bộ Công thương"
-    elif "bộ giáo dục" in query_lower or "bộ gd&đt" in query_lower or "bộ gd-đt" in query_lower:
-        issuer = "Bộ Giáo dục và Đào tạo"
-    elif "bộ lao động" in query_lower or "bộ ldtbxh" in query_lower or "bộ lđtbxh" in query_lower or "thương binh và xã hội" in query_lower:
-        issuer = "Bộ Lao động - Thương binh và Xã hội"
-    elif "bộ công an" in query_lower:
-        issuer = "Bộ Công an"
-    elif "bộ quốc phòng" in query_lower:
-        issuer = "Bộ Quốc phòng"
-    elif "bộ tư pháp" in query_lower:
-        issuer = "Bộ Tư pháp"
-    elif "bộ xây dựng" in query_lower:
-        issuer = "Bộ Xây dựng"
-    elif "bộ giao thông" in query_lower or "bộ gtvt" in query_lower:
-        issuer = "Bộ Giao thông vận tải"
-    elif "bộ kế hoạch" in query_lower or "bộ kh&đt" in query_lower or "bộ kh-đt" in query_lower:
-        issuer = "Bộ Kế hoạch và Đầu tư"
-    elif "bộ tài nguyên" in query_lower or "bộ tn&mt" in query_lower or "bộ tn-mt" in query_lower:
-        issuer = "Bộ Tài nguyên và Môi trường"
-    elif "bộ thông tin" in query_lower or "bộ tt&tt" in query_lower or "bộ tt-tt" in query_lower:
-        issuer = "Bộ Thông tin và Truyền thông"
-    elif "bộ nông nghiệp" in query_lower or "bộ nn&ptnt" in query_lower or "bộ nn-ptnt" in query_lower:
-        issuer = "Bộ Nông nghiệp và Phát triển nông thôn"
-    elif "quốc hội" in query_lower:
-        issuer = "Quốc hội"
-    elif "ủy ban thường vụ quốc hội" in query_lower or "ubtvqh" in query_lower:
-        issuer = "Ủy ban Thường vụ Quốc hội"
-    elif "tòa án nhân dân tối cao" in query_lower or "tandtc" in query_lower:
-        issuer = "Tòa án nhân dân tối cao"
-    elif "viện kiểm sát" in query_lower or "vksndtc" in query_lower:
-        issuer = "Viện kiểm sát nhân dân tối cao"
+    # ── Priority: "do X ban hành" pattern (most reliable for D-type queries) ──
+    do_ban_hanh = re.search(r'do\s+(.+?)\s+ban\s+hành', query, re.IGNORECASE)
+    if do_ban_hanh:
+        raw_issuer = do_ban_hanh.group(1).strip()
+        # Chỉ dùng nếu issuer có ít nhất 2 từ (loại bỏ false positive)
+        if len(raw_issuer.split()) >= 2:
+            issuer = raw_issuer
+    
+    if not issuer:
+        if "chính phủ" in query_lower:
+            issuer = "Chính phủ"
+        elif "thủ tướng" in query_lower:
+            issuer = "Thủ tướng Chính phủ"
+        elif "bộ tài chính" in query_lower:
+            issuer = "Bộ Tài chính"
+        elif "bộ y tế" in query_lower:
+            issuer = "Bộ Y tế"
+        elif "bộ công thương" in query_lower:
+            issuer = "Bộ Công thương"
+        elif "bộ giáo dục" in query_lower or "bộ gd&đt" in query_lower or "bộ gd-đt" in query_lower:
+            issuer = "Bộ Giáo dục và Đào tạo"
+        elif "bộ lao động" in query_lower or "bộ ldtbxh" in query_lower or "bộ lđtbxh" in query_lower or "thương binh và xã hội" in query_lower:
+            issuer = "Bộ Lao động - Thương binh và Xã hội"
+        elif "bộ công an" in query_lower:
+            issuer = "Bộ Công an"
+        elif "bộ quốc phòng" in query_lower:
+            issuer = "Bộ Quốc phòng"
+        elif "bộ tư pháp" in query_lower:
+            issuer = "Bộ Tư pháp"
+        elif "bộ xây dựng" in query_lower:
+            issuer = "Bộ Xây dựng"
+        elif "bộ giao thông" in query_lower or "bộ gtvt" in query_lower:
+            issuer = "Bộ Giao thông vận tải"
+        elif "bộ kế hoạch" in query_lower or "bộ kh&đt" in query_lower or "bộ kh-đt" in query_lower:
+            issuer = "Bộ Kế hoạch và Đầu tư"
+        elif "bộ tài nguyên" in query_lower or "bộ tn&mt" in query_lower or "bộ tn-mt" in query_lower:
+            issuer = "Bộ Tài nguyên và Môi trường"
+        elif "bộ thông tin" in query_lower or "bộ tt&tt" in query_lower or "bộ tt-tt" in query_lower:
+            issuer = "Bộ Thông tin và Truyền thông"
+        elif "bộ nông nghiệp" in query_lower or "bộ nn&ptnt" in query_lower or "bộ nn-ptnt" in query_lower:
+            issuer = "Bộ Nông nghiệp và Phát triển nông thôn"
+        elif "quốc hội" in query_lower:
+            issuer = "Quốc hội"
+        elif "ủy ban thường vụ quốc hội" in query_lower or "ubtvqh" in query_lower:
+            issuer = "Ủy ban Thường vụ Quốc hội"
+        elif "tòa án nhân dân tối cao" in query_lower or "tandtc" in query_lower:
+            issuer = "Tòa án nhân dân tối cao"
+    if not issuer:
+        local_match = re.search(
+            r'((?:ubnd|hđnd|ủy ban nhân dân|hội đồng nhân dân)\s+(?:tỉnh|thành phố|quận|huyện|thị xã)\s+[A-ZĐđÀ-ỹ0-9][a-zđà-ỹ0-9]*(\s+[A-ZĐđÀ-ỹ0-9][a-zđà-ỹ0-9]*)*)',
+            query,
+            flags=re.IGNORECASE
+        )
+        if local_match:
+            full_match = local_match.group(1).strip()
+            full_match = re.sub(r'\s+(?:ban\s+hành|ban|quy|có|nội|về|thuộc|nằm|trích|đọc)\b.*$', '', full_match, flags=re.IGNORECASE).strip()
+            full_match_lower = full_match.lower()
+            if full_match_lower.startswith("ubnd"):
+                full_match = "Ủy ban nhân dân" + full_match[4:]
+            elif full_match_lower.startswith("hđnd"):
+                full_match = "Hội đồng nhân dân" + full_match[4:]
+            issuer = full_match
         
     return {
         "domain": best_domain,

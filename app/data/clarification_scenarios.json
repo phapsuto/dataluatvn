@@ -1,0 +1,257 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "description": "Kịch bản hỏi ngược cho chatbot pháp luật Việt Nam. Mỗi pattern: triggers (regex), followup (câu hỏi gợi mở), data_points (dữ kiện cần thu thập).",
+    "note": "Triggers hỗ trợ cả CÓ DẤU và KHÔNG DẤU tiếng Việt"
+  },
+  "scenarios": [
+    {
+      "id": "dd_mat_so_do",
+      "domain": "dat_dai",
+      "triggers": ["mất sổ đỏ", "mat so do", "mất giấy chứng nhận quyền sử dụng đất", "làm lại sổ đỏ", "lam lai so do", "sổ đỏ bị mất", "so do bi mat", "mất gcn"],
+      "followup": "Để tư vấn chính xác về sổ đỏ bị mất, anh/chị cho biết thêm:\n\n1️⃣ **Nguyên nhân mất** sổ đỏ là gì? (thất lạc, bị hư hỏng, bị người khác chiếm giữ)\n2️⃣ **Loại đất** thuộc loại nào? (đất ở, đất nông nghiệp, đất rừng)\n3️⃣ Anh/chị ở **tỉnh/thành** nào?\n\n_Thông tin càng chi tiết, tôi sẽ hướng dẫn thủ tục càng cụ thể._",
+      "data_points": ["nguyên nhân mất", "loại đất", "địa phương"]
+    },
+    {
+      "id": "dd_lan_dat",
+      "domain": "dat_dai",
+      "triggers": ["hàng xóm lấn đất", "hang xom lan dat", "bị lấn chiếm đất", "bi lan chiem dat", "tranh chấp đất với hàng xóm", "tranh chap dat", "đất bị lấn"],
+      "followup": "Về tranh chấp đất đai, anh/chị vui lòng cho biết thêm:\n\n1️⃣ Đất của anh/chị đã có **sổ đỏ/giấy chứng nhận** chưa?\n2️⃣ Hàng xóm **lấn chiếm từ bao giờ**? (mới đây hay đã lâu)\n3️⃣ Đã **hòa giải ở UBND xã/phường** chưa?\n\n_Điều này giúp tôi xác định bước pháp lý tiếp theo phù hợp nhất._",
+      "data_points": ["tình trạng giấy tờ đất", "thời gian lấn chiếm", "đã hòa giải chưa"]
+    },
+    {
+      "id": "dd_tach_thua",
+      "domain": "dat_dai",
+      "triggers": ["tách thửa", "tach thua", "chia đất", "chia dat", "tách sổ", "tach so", "tách thửa đất"],
+      "followup": "Về việc tách thửa đất, anh/chị cho biết thêm:\n\n1️⃣ **Diện tích** thửa đất hiện tại là bao nhiêu m²?\n2️⃣ Đất thuộc **loại nào**? (đất ở, đất nông nghiệp, đất hỗn hợp)\n3️⃣ **Mục đích** tách thửa? (bán, cho tặng, thừa kế, xây nhà)\n4️⃣ Ở **tỉnh/thành** nào? (mỗi nơi có quy định diện tích tối thiểu khác nhau)\n\n_Thông tin này rất quan trọng vì mỗi địa phương có diện tích tối thiểu tách thửa khác nhau._",
+      "data_points": ["diện tích", "loại đất", "mục đích", "địa phương"]
+    },
+    {
+      "id": "dd_tranh_chap",
+      "domain": "dat_dai",
+      "triggers": ["tranh chấp đất đai", "tranh chap dat dai", "kiện đất", "kien dat", "đất đai tranh chấp"],
+      "followup": "Về tranh chấp đất đai, anh/chị cho biết cụ thể:\n\n1️⃣ **Tranh chấp với ai**? (hàng xóm, anh chị em trong gia đình, nhà nước)\n2️⃣ Mỗi bên có **giấy tờ gì** về quyền sử dụng đất?\n3️⃣ Đã **nộp đơn hòa giải** ở UBND xã/phường hoặc **khởi kiện** tòa án chưa?",
+      "data_points": ["đối tượng tranh chấp", "giấy tờ", "tình trạng tố tụng"]
+    },
+    {
+      "id": "dd_den_bu",
+      "domain": "dat_dai",
+      "triggers": ["đền bù đất", "den bu dat", "giải tỏa", "giai toa", "thu hồi đất", "thu hoi dat", "giải phóng mặt bằng", "giai phong mat bang", "bị thu hồi đất"],
+      "followup": "Về đền bù/thu hồi đất, anh/chị cho biết thêm:\n\n1️⃣ Đất bị thu hồi để làm **dự án gì**? (giao thông, khu công nghiệp, khu dân cư)\n2️⃣ Anh/chị đã nhận được **quyết định thu hồi đất** chưa?\n3️⃣ Mức giá đền bù mà nhà nước **đưa ra** là bao nhiêu/m²?\n4️⃣ Anh/chị có **đồng ý** với mức đền bù không?",
+      "data_points": ["loại dự án", "quyết định thu hồi", "giá đền bù", "ý kiến"]
+    },
+    {
+      "id": "dd_sang_ten",
+      "domain": "dat_dai",
+      "triggers": ["sang tên sổ đỏ", "sang ten so do", "chuyển nhượng đất", "chuyen nhuong dat", "mua bán đất", "mua ban dat", "sang tên đất"],
+      "followup": "Về chuyển nhượng đất, anh/chị cho biết:\n\n1️⃣ Anh/chị là bên **mua** hay bên **bán**?\n2️⃣ Đất đã có **sổ đỏ** chưa?\n3️⃣ Có đặt **cọc** hay ký **hợp đồng** nào chưa?\n4️⃣ Đất có **đang thế chấp** ngân hàng không?",
+      "data_points": ["vai trò", "tình trạng sổ đỏ", "hợp đồng", "thế chấp"]
+    },
+    {
+      "id": "dd_xay_nha",
+      "domain": "dat_dai",
+      "triggers": ["xây nhà", "xay nha", "giấy phép xây dựng", "giay phep xay dung", "cấp phép xây", "xin phép xây"],
+      "followup": "Về việc xây nhà/giấy phép xây dựng:\n\n1️⃣ Anh/chị xây nhà ở **nông thôn** hay **đô thị**? (thị trấn, thành phố)\n2️⃣ Xây nhà **mới** hay **sửa chữa/cải tạo** nhà cũ?\n3️⃣ Diện tích đất và **số tầng** dự kiến?\n4️⃣ Đất đã có **sổ đỏ** và đúng **mục đích đất ở** chưa?",
+      "data_points": ["vị trí", "loại công trình", "quy mô", "tình trạng đất"]
+    },
+    {
+      "id": "ld_sa_thai",
+      "domain": "lao_dong",
+      "triggers": ["bị sa thải", "bi sa thai", "bị đuổi việc", "bi duoi viec", "bị cho nghỉ việc", "bi cho nghi viec", "mất việc", "mat viec", "cho thôi việc"],
+      "followup": "Để tư vấn đúng quyền lợi khi bị sa thải:\n\n1️⃣ Anh/chị ký **hợp đồng lao động** loại nào? (có thời hạn / không thời hạn / thử việc)\n2️⃣ Công ty đưa ra **lý do** sa thải là gì?\n3️⃣ Đã **làm việc** ở công ty bao lâu?\n4️⃣ Công ty có ra **quyết định bằng văn bản** không?",
+      "data_points": ["loại hợp đồng", "lý do sa thải", "thâm niên", "văn bản"]
+    },
+    {
+      "id": "ld_no_luong",
+      "domain": "lao_dong",
+      "triggers": ["nợ lương", "no luong", "chậm lương", "cham luong", "không trả lương", "khong tra luong", "quỵt lương", "quyt luong", "công ty nợ tiền"],
+      "followup": "Về việc bị nợ lương:\n\n1️⃣ Công ty **nợ bao nhiêu tháng** lương?\n2️⃣ Anh/chị đã **gửi đơn yêu cầu** thanh toán cho công ty chưa?\n3️⃣ Có giữ **bằng chứng** nào không? (bảng lương, hợp đồng lao động, tin nhắn)\n4️⃣ Công ty còn hoạt động hay **đã đóng cửa**?",
+      "data_points": ["số tháng nợ", "khiếu nại", "bằng chứng", "tình trạng công ty"]
+    },
+    {
+      "id": "ld_tai_nan",
+      "domain": "lao_dong",
+      "triggers": ["tai nạn lao động", "tai nan lao dong", "bị tai nạn ở công ty", "tai nạn nghề nghiệp", "bị thương khi làm việc", "bi thuong khi lam viec"],
+      "followup": "Về tai nạn lao động:\n\n1️⃣ Tai nạn xảy ra **trong giờ làm việc** hay ngoài giờ?\n2️⃣ Đã **giám định** mức suy giảm khả năng lao động chưa?\n3️⃣ Công ty đã **lập biên bản** tai nạn lao động chưa?\n4️⃣ Anh/chị có đóng **bảo hiểm xã hội** không?",
+      "data_points": ["thời điểm", "mức suy giảm", "biên bản", "BHXH"]
+    },
+    {
+      "id": "ld_nghi_thai_san",
+      "domain": "lao_dong",
+      "triggers": ["nghỉ thai sản", "nghi thai san", "chế độ thai sản", "che do thai san", "sinh con", "mang thai đi làm"],
+      "followup": "Về chế độ thai sản:\n\n1️⃣ Anh/chị đã đóng **BHXH bao lâu** rồi?\n2️⃣ Sinh con **lần thứ mấy**? (con thứ nhất, thứ hai...)\n3️⃣ Sinh **thường** hay **mổ**? Sinh đôi/ba không?\n4️⃣ Muốn hỏi về **mức hưởng**, **thời gian nghỉ**, hay **thủ tục hồ sơ**?",
+      "data_points": ["thời gian đóng BHXH", "lần sinh", "hình thức sinh", "nội dung cần tư vấn"]
+    },
+    {
+      "id": "ld_hop_dong",
+      "domain": "lao_dong",
+      "triggers": ["hợp đồng lao động", "hop dong lao dong", "ký hợp đồng", "ky hop dong", "không ký hợp đồng"],
+      "followup": "Về hợp đồng lao động:\n\n1️⃣ Anh/chị đang muốn hỏi về vấn đề gì?\n   • Ký hợp đồng mới\n   • Chấm dứt hợp đồng\n   • Tranh chấp hợp đồng\n   • Không được ký hợp đồng\n2️⃣ Hiện đang làm việc ở **loại hình** nào? (công ty, hộ kinh doanh, cá nhân)",
+      "data_points": ["vấn đề cụ thể", "loại hình doanh nghiệp"]
+    },
+    {
+      "id": "hs_con_bi_bat",
+      "domain": "hinh_su",
+      "triggers": ["con bị bắt", "con bi bat", "người thân bị bắt", "nguoi than bi bat", "chồng bị bắt", "chong bi bat", "vợ bị bắt", "bố bị bắt", "mẹ bị bắt", "anh bị bắt", "em bị bắt"],
+      "followup": "Rất tiếc khi nghe tin này. Để hỗ trợ pháp lý:\n\n1️⃣ Người thân bị bắt vì **tội gì**? (nếu biết)\n2️⃣ Hiện đang ở **giai đoạn nào**? (tạm giữ, tạm giam, đã khởi tố)\n3️⃣ Đã có **luật sư bào chữa** chưa?\n4️⃣ Bị bắt **bao lâu** rồi?",
+      "data_points": ["tội danh", "giai đoạn tố tụng", "luật sư", "thời gian"]
+    },
+    {
+      "id": "hs_lua_dao",
+      "domain": "hinh_su",
+      "triggers": ["bị lừa đảo", "bi lua dao", "bị lừa tiền", "bi lua tien", "bị gạt", "bi gat", "lừa đảo qua mạng", "lua dao qua mang", "bị scam"],
+      "followup": "Về việc bị lừa đảo:\n\n1️⃣ Bị lừa theo **hình thức** nào? (mua bán online, đầu tư tài chính, vay tiền, tình cảm)\n2️⃣ **Số tiền** thiệt hại bao nhiêu?\n3️⃣ Đã **trình báo công an** chưa?\n4️⃣ Có giữ **bằng chứng** không? (tin nhắn, chuyển khoản, hợp đồng)\n\n_Số tiền thiệt hại từ 2 triệu đồng trở lên có thể bị truy cứu trách nhiệm hình sự._",
+      "data_points": ["hình thức lừa", "số tiền", "trình báo", "bằng chứng"]
+    },
+    {
+      "id": "hs_bi_danh",
+      "domain": "hinh_su",
+      "triggers": ["bị đánh", "bi danh", "bị hành hung", "bi hanh hung", "bị đánh đập", "bi danh dap", "đánh nhau"],
+      "followup": "Về việc bị hành hung:\n\n1️⃣ Bị đánh bởi **ai**? (người quen, người lạ, nhóm người)\n2️⃣ Mức độ **thương tích** ra sao? Đã đi **bệnh viện** chưa?\n3️⃣ Có **nhân chứng** hoặc **camera** ghi lại không?\n4️⃣ Anh/chị muốn **khởi kiện hình sự** hay yêu cầu **bồi thường dân sự**?",
+      "data_points": ["hung thủ", "mức thương tích", "bằng chứng", "yêu cầu"]
+    },
+    {
+      "id": "hs_trom_cap",
+      "domain": "hinh_su",
+      "triggers": ["bị trộm", "bi trom", "mất cắp", "mat cap", "bị cướp", "bi cuop", "trộm cắp", "trom cap", "giật đồ", "giat do"],
+      "followup": "Về vụ trộm cắp/cướp:\n\n1️⃣ Bị mất **tài sản gì** và **giá trị** bao nhiêu?\n2️⃣ Xảy ra ở **đâu** và **khi nào**?\n3️⃣ Đã **trình báo công an** chưa?\n4️⃣ Có biết **người thực hiện** không?",
+      "data_points": ["tài sản", "địa điểm/thời gian", "trình báo", "nghi phạm"]
+    },
+    {
+      "id": "hs_ma_tuy",
+      "domain": "hinh_su",
+      "triggers": ["ma túy", "ma tuy", "chất cấm", "chat cam", "sử dụng ma túy", "tàng trữ ma túy", "buôn bán ma túy"],
+      "followup": "Về vấn đề liên quan đến ma túy:\n\n1️⃣ Hành vi cụ thể là gì? (sử dụng, tàng trữ, mua bán, vận chuyển)\n2️⃣ **Loại** và **khối lượng** chất ma túy? (nếu biết)\n3️⃣ Hiện người liên quan đang ở **tình trạng** nào? (tại ngoại, bị tạm giam)\n4️⃣ Đã có **luật sư** chưa?",
+      "data_points": ["hành vi", "loại/khối lượng", "tình trạng", "luật sư"]
+    },
+    {
+      "id": "hn_ly_hon",
+      "domain": "dan_su",
+      "triggers": ["muốn ly hôn", "muon ly hon", "ly hôn", "ly hon", "xin ly hôn", "bỏ vợ", "bo vo", "bỏ chồng", "bo chong", "ly dị", "ly di"],
+      "followup": "Về thủ tục ly hôn, cho tôi biết:\n\n1️⃣ Hai vợ chồng có **đồng thuận** ly hôn không? (thuận tình / đơn phương)\n2️⃣ Có **con chung** không? Bao nhiêu tuổi?\n3️⃣ Có **tài sản chung** cần phân chia không? (nhà, đất, xe, tiền gửi)\n4️⃣ Có vấn đề **bạo lực gia đình** không?\n\n_Thuận tình ly hôn thì nhanh hơn nhiều so với đơn phương._",
+      "data_points": ["hình thức ly hôn", "con chung", "tài sản chung", "bạo lực"]
+    },
+    {
+      "id": "hn_bao_luc",
+      "domain": "dan_su",
+      "triggers": ["chồng đánh", "chong danh", "vợ bị đánh", "vo bi danh", "bạo lực gia đình", "bao luc gia dinh", "bạo hành", "bao hanh", "bị chồng đánh"],
+      "followup": "Rất tiếc khi nghe điều này. Để hỗ trợ pháp lý:\n\n1️⃣ Mức độ bạo lực ra sao? (đe dọa, gây thương tích nhẹ/nặng)\n2️⃣ Đã **trình báo công an** hoặc UBND phường/xã chưa?\n3️⃣ Có **giấy khám thương** hoặc bằng chứng không? (ảnh, video, nhân chứng)\n4️⃣ Anh/chị muốn **ly hôn** hay **yêu cầu cấm tiếp xúc**?\n\n_⚠️ Nếu đang bị đe dọa tính mạng, hãy gọi **113** ngay._",
+      "data_points": ["mức độ", "trình báo", "bằng chứng", "yêu cầu"]
+    },
+    {
+      "id": "hn_quyen_nuoi_con",
+      "domain": "dan_su",
+      "triggers": ["quyền nuôi con", "quyen nuoi con", "giành quyền nuôi con", "gianh quyen nuoi con", "tranh chấp nuôi con", "ai nuôi con"],
+      "followup": "Về quyền nuôi con sau ly hôn:\n\n1️⃣ Con bao **nhiêu tuổi**? (dưới 36 tháng ưu tiên mẹ nuôi)\n2️⃣ Hiện con đang **sống với ai**?\n3️⃣ Hai bên đã **ly hôn** chưa hay đang trong quá trình?\n4️⃣ Anh/chị có **điều kiện kinh tế** ổn định không?",
+      "data_points": ["tuổi con", "người nuôi hiện tại", "tình trạng ly hôn", "điều kiện kinh tế"]
+    },
+    {
+      "id": "hn_thua_ke",
+      "domain": "dan_su",
+      "triggers": ["thừa kế", "thua ke", "chia tài sản thừa kế", "chia tai san thua ke", "di chúc", "di chuc", "cha mẹ mất để lại tài sản", "chia đất thừa kế"],
+      "followup": "Về thừa kế tài sản:\n\n1️⃣ Người mất có để lại **di chúc** không?\n2️⃣ Tài sản thừa kế gồm những gì? (nhà, đất, tiền, xe)\n3️⃣ Có bao nhiêu **người thừa kế**? (vợ/chồng, con, cha mẹ)\n4️⃣ Có xảy ra **tranh chấp** giữa những người thừa kế không?",
+      "data_points": ["di chúc", "tài sản", "số người thừa kế", "tranh chấp"]
+    },
+    {
+      "id": "hn_ket_hon",
+      "domain": "dan_su",
+      "triggers": ["kết hôn", "ket hon", "đăng ký kết hôn", "dang ky ket hon", "kết hôn với người nước ngoài", "cưới người nước ngoài"],
+      "followup": "Về đăng ký kết hôn:\n\n1️⃣ Cả hai đều là **công dân Việt Nam** hay có người **nước ngoài**?\n2️⃣ Cả hai đủ **tuổi kết hôn** chưa? (nam ≥20, nữ ≥18)\n3️⃣ Có thuộc trường hợp **cấm kết hôn** không? (đang có vợ/chồng, cùng huyết thống)\n4️⃣ Muốn hỏi về **thủ tục**, **hồ sơ**, hay **điều kiện**?",
+      "data_points": ["quốc tịch", "độ tuổi", "điều kiện", "nội dung cần tư vấn"]
+    },
+    {
+      "id": "ds_vay_tien",
+      "domain": "dan_su",
+      "triggers": ["cho vay tiền", "cho vay tien", "nợ tiền", "no tien", "đòi nợ", "doi no", "mượn tiền", "muon tien", "bùng nợ", "bung no", "quỵt nợ", "quyt no", "vay không trả"],
+      "followup": "Về vấn đề cho vay/nợ tiền:\n\n1️⃣ **Số tiền** cho vay/nợ bao nhiêu?\n2️⃣ Có **giấy tờ** gì không? (giấy vay, hợp đồng, tin nhắn, chuyển khoản)\n3️⃣ Đã **đến hạn trả** chưa? Bao lâu rồi?\n4️⃣ Anh/chị muốn **đòi nợ dân sự** hay **tố cáo hình sự**?",
+      "data_points": ["số tiền", "bằng chứng", "thời hạn", "phương án"]
+    },
+    {
+      "id": "ds_hop_dong",
+      "domain": "dan_su",
+      "triggers": ["hợp đồng bị vi phạm", "hop dong bi vi pham", "phá vỡ hợp đồng", "vi phạm hợp đồng", "bội ước", "boi uoc"],
+      "followup": "Về vi phạm hợp đồng:\n\n1️⃣ Loại **hợp đồng** gì? (mua bán, thuê, dịch vụ, vay)\n2️⃣ Bên nào **vi phạm** và vi phạm điều khoản gì?\n3️⃣ Có **thiệt hại** gì không? Ước tính bao nhiêu?\n4️⃣ Hợp đồng có **công chứng** không?",
+      "data_points": ["loại hợp đồng", "bên vi phạm", "thiệt hại", "công chứng"]
+    },
+    {
+      "id": "dn_thanh_lap",
+      "domain": "doanh_nghiep",
+      "triggers": ["mở công ty", "mo cong ty", "thành lập công ty", "thanh lap cong ty", "lập doanh nghiệp", "lap doanh nghiep", "đăng ký kinh doanh", "dang ky kinh doanh", "mở doanh nghiệp"],
+      "followup": "Về thành lập công ty/doanh nghiệp:\n\n1️⃣ Muốn thành lập **loại hình** nào? (Công ty TNHH 1 TV, TNHH 2+ TV, cổ phần, hộ kinh doanh)\n2️⃣ **Ngành nghề** kinh doanh chính là gì?\n3️⃣ **Vốn điều lệ** dự kiến bao nhiêu?\n4️⃣ **Trụ sở** đặt ở tỉnh/thành nào?",
+      "data_points": ["loại hình", "ngành nghề", "vốn điều lệ", "địa điểm"]
+    },
+    {
+      "id": "dn_pha_san",
+      "domain": "doanh_nghiep",
+      "triggers": ["phá sản", "pha san", "giải thể công ty", "giai the cong ty", "đóng cửa công ty", "dong cua cong ty", "công ty nợ nần"],
+      "followup": "Về phá sản/giải thể doanh nghiệp:\n\n1️⃣ Công ty thuộc **loại hình** nào? (TNHH, cổ phần, hộ kinh doanh)\n2️⃣ Muốn **giải thể** (tự nguyện) hay **phá sản** (mất khả năng thanh toán)?\n3️⃣ Công ty hiện có **nợ thuế**, nợ **BHXH**, hoặc nợ **nhân viên** không?\n4️⃣ Có bao nhiêu **lao động** đang làm việc?",
+      "data_points": ["loại hình", "giải thể/phá sản", "nợ", "lao động"]
+    },
+    {
+      "id": "dn_co_dong",
+      "domain": "doanh_nghiep",
+      "triggers": ["tranh chấp cổ đông", "tranh chap co dong", "góp vốn", "gop von", "quyền cổ đông", "quyen co dong", "cổ phần bị chiếm"],
+      "followup": "Về tranh chấp cổ đông/vốn góp:\n\n1️⃣ Anh/chị đóng **vai trò gì** trong công ty? (cổ đông, thành viên góp vốn, giám đốc)\n2️⃣ Tranh chấp **nội dung** gì? (chia lợi nhuận, tăng vốn, quyền biểu quyết, chuyển nhượng)\n3️⃣ **Tỷ lệ vốn** anh/chị sở hữu bao nhiêu %?\n4️⃣ Có **điều lệ công ty** quy định về vấn đề này không?",
+      "data_points": ["vai trò", "nội dung tranh chấp", "tỷ lệ vốn", "điều lệ"]
+    },
+    {
+      "id": "hc_xu_phat",
+      "domain": "hanh_chinh",
+      "triggers": ["bị phạt", "bi phat", "xử phạt", "xu phat", "bị phạt hành chính", "bi phat hanh chinh", "phạt tiền"],
+      "followup": "Về xử phạt hành chính:\n\n1️⃣ Bị phạt về **lĩnh vực** nào? (giao thông, xây dựng, kinh doanh, môi trường)\n2️⃣ **Lỗi** vi phạm cụ thể là gì?\n3️⃣ Đã nhận **quyết định xử phạt** bằng văn bản chưa?\n4️⃣ Anh/chị muốn **đóng phạt**, **khiếu nại**, hay hỏi về **mức phạt**?",
+      "data_points": ["lĩnh vực", "lỗi vi phạm", "quyết định", "yêu cầu"]
+    },
+    {
+      "id": "hc_giao_thong",
+      "domain": "hanh_chinh",
+      "triggers": ["phạt giao thông", "phat giao thong", "vi phạm giao thông", "vi pham giao thong", "vượt đèn đỏ", "vuot den do", "nồng độ cồn", "nong do con", "bằng lái bị tước", "bang lai bi tuoc"],
+      "followup": "Về vi phạm giao thông:\n\n1️⃣ Vi phạm **lỗi gì**? (vượt đèn đỏ, nồng độ cồn, quá tốc độ, không giấy tờ)\n2️⃣ **Phương tiện** gì? (xe máy, ô tô, xe tải)\n3️⃣ Đã nhận **quyết định xử phạt** chưa?\n4️⃣ Có bị **tạm giữ xe** hoặc **tước giấy phép lái xe** không?",
+      "data_points": ["lỗi vi phạm", "phương tiện", "quyết định", "tạm giữ"]
+    },
+    {
+      "id": "hc_giay_to",
+      "domain": "hanh_chinh",
+      "triggers": ["làm căn cước", "lam can cuoc", "làm hộ chiếu", "lam ho chieu", "giấy tờ tùy thân", "giay to tuy than", "đổi CCCD", "doi cccd", "mất chứng minh", "mat chung minh", "đổi căn cước"],
+      "followup": "Về giấy tờ tùy thân:\n\n1️⃣ Anh/chị cần làm **loại giấy tờ** nào? (CCCD, hộ chiếu, khai sinh, hộ khẩu)\n2️⃣ Làm **lần đầu**, **cấp đổi**, hay **cấp lại** do mất?\n3️⃣ Anh/chị đang ở **tỉnh/thành** nào?",
+      "data_points": ["loại giấy tờ", "lần đầu/cấp lại", "địa phương"]
+    },
+    {
+      "id": "hc_khieu_nai",
+      "domain": "hanh_chinh",
+      "triggers": ["khiếu nại", "khieu nai", "tố cáo", "to cao", "kiện nhà nước", "kiến nghị", "kien nghi"],
+      "followup": "Về khiếu nại/tố cáo:\n\n1️⃣ Anh/chị muốn **khiếu nại** (bảo vệ quyền lợi của mình) hay **tố cáo** (tố giác hành vi vi phạm)?\n2️⃣ Khiếu nại/tố cáo về **vấn đề gì**? (quyết định hành chính, hành vi cán bộ, tham nhũng)\n3️⃣ **Cơ quan** nào ra quyết định/có hành vi vi phạm?\n4️⃣ Đã **gửi đơn** lần nào chưa?",
+      "data_points": ["khiếu nại/tố cáo", "vấn đề", "cơ quan", "tình trạng đơn"]
+    },
+    {
+      "id": "ds_dat_coc",
+      "domain": "dan_su",
+      "triggers": ["đặt cọc", "dat coc", "mất cọc", "mat coc", "bị mất tiền cọc", "tiền đặt cọc", "cọc mua nhà", "cọc mua đất"],
+      "followup": "Về vấn đề đặt cọc:\n\n1️⃣ Đặt cọc để **mua/bán gì**? (nhà, đất, xe, hàng hóa)\n2️⃣ **Số tiền** đặt cọc bao nhiêu?\n3️⃣ Anh/chị là bên **đặt cọc** hay bên **nhận cọc**?\n4️⃣ Bên nào **vi phạm** giao kết? Có **biên nhận/hợp đồng** đặt cọc không?",
+      "data_points": ["đối tượng mua bán", "số tiền cọc", "vai trò", "vi phạm"]
+    },
+    {
+      "id": "ds_boi_thuong",
+      "domain": "dan_su",
+      "triggers": ["bồi thường", "boi thuong", "đòi bồi thường", "doi boi thuong", "bồi thường thiệt hại", "boi thuong thiet hai"],
+      "followup": "Về bồi thường thiệt hại:\n\n1️⃣ Thiệt hại xảy ra do **nguyên nhân** gì? (tai nạn, vi phạm hợp đồng, hành vi trái pháp luật)\n2️⃣ **Loại thiệt hại** gì? (tài sản, sức khỏe, tính mạng, tinh thần)\n3️⃣ **Số tiền** thiệt hại ước tính bao nhiêu?\n4️⃣ Có **bằng chứng** gì? (hóa đơn, biên lai, giấy khám bệnh)",
+      "data_points": ["nguyên nhân", "loại thiệt hại", "số tiền", "bằng chứng"]
+    }
+  ],
+  "generic_vague_patterns": {
+    "description": "Patterns phát hiện câu hỏi quá chung chung (không thuộc scenario cụ thể nào)",
+    "patterns": [
+      {
+        "id": "generic_tinh_huong",
+        "regex_hint": "chỉ mô tả tình trạng, không có câu hỏi cụ thể",
+        "examples": ["Tôi bị mất sổ đỏ", "Hàng xóm lấn đất nhà tôi", "Con tôi bị bắt", "Chồng tôi ngoại tình"],
+        "followup_template": "Tôi hiểu tình huống của anh/chị. Để tư vấn chính xác nhất, anh/chị có thể cho biết thêm:\n\n• Anh/chị muốn biết **thủ tục pháp lý** để xử lý vấn đề này?\n• Hay muốn biết **quyền lợi** của mình trong trường hợp này?\n• Hoặc đã có **tranh chấp/kiện tụng** và cần hướng dẫn cụ thể?\n\n_Anh/chị cung cấp càng nhiều chi tiết, tôi càng tư vấn chính xác hơn._"
+      },
+      {
+        "id": "generic_ultra_short",
+        "regex_hint": "câu hỏi <= 4 từ, không có ngữ cảnh",
+        "examples": ["Thủ tục ly hôn", "Tội trộm cắp", "Luật đất đai", "Hợp đồng lao động"],
+        "followup_template": "Anh/chị muốn tìm hiểu về **{topic}** theo hướng nào?\n\n• **Tình huống cụ thể** anh/chị đang gặp phải?\n• **Văn bản pháp luật** quy định?\n• **Thủ tục** cần thực hiện?\n\n_Vui lòng mô tả tình huống thực tế để tôi tư vấn phù hợp nhất._"
+      }
+    ]
+  }
+}
