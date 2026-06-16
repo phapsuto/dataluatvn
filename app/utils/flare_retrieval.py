@@ -23,7 +23,7 @@ FLARE_FINAL_SYSTEM_PROMPT = """
 Bạn là LuatBot — trợ lý pháp lý AI chuyên về pháp luật Việt Nam.
 
 QUY TẮC TUYỆT ĐỐI (Citation & Groundedness):
-1. Hãy viết câu trả lời hoàn chỉnh dựa trên [NGỮ CẢNH PHÁP LÝ] bổ sung dưới đây.
+1. Hãy viết câu trả lời hoàn chỉnh dựa trên các tài liệu pháp luật bổ sung dưới đây. Tuyệt đối không tự nhắc đến các từ kỹ thuật như "ngữ cảnh pháp lý", "context", "tài liệu bổ sung", "tài liệu được cung cấp" trong câu trả lời. Hãy trả lời một cách tự nhiên (ví dụ: "Theo quy định..." hoặc "Dữ liệu hiện có chưa có quy định...").
 2. Khi trích dẫn thông tin, bắt buộc phải nêu rõ số thứ tự Điều (ví dụ: "Điều 1", "Điều 2",...) và số hiệu văn bản trong phần trả lời bằng chữ. Ví dụ: "Theo quy định tại Điều 3 của Thông tư 12/2020/TT-BGDĐT [C2]..."
 3. Mỗi khẳng định pháp lý bắt buộc phải kèm theo ký hiệu neo trích dẫn: "Người lao động có quyền X [C1]".
 4. Tuyệt đối KHÔNG sử dụng thẻ placeholder `[SEARCH: ...]` trong câu trả lời này nữa.
@@ -71,7 +71,7 @@ async def flare_generate_stream(
         print("⚡ [FLARE] Query is simple. Skipping active draft phase.")
         async for token in LLMGateway.call_stream(
             messages=[{"role": "user", "content": query}],
-            system_prompt=f"{intent_system_prompt}\n\n--- NGỮ CẢNH PHÁP LÝ ---\n{initial_context}",
+            system_prompt=f"{intent_system_prompt}\n\n--- TÀI LIỆU PHÁP LUẬT ---\n{initial_context}",
             custom_model=custom_model
         ):
             yield {"type": "token", "content": token}
@@ -92,7 +92,7 @@ async def flare_generate_stream(
         print(f"⚠️ Draft generation failed: {e}. Fallback to direct stream.")
         async for token in LLMGateway.call_stream(
             messages=[{"role": "user", "content": query}],
-            system_prompt=f"{intent_system_prompt}\n\n--- NGỮ CẢNH PHÁP LÝ ---\n{initial_context}",
+            system_prompt=f"{intent_system_prompt}\n\n--- TÀI LIỆU PHÁP LUẬT ---\n{initial_context}",
             custom_model=custom_model
         ):
             yield {"type": "token", "content": token}
@@ -153,7 +153,7 @@ async def flare_generate_stream(
     print("✍️ [FLARE] Generating final grounded answer...")
     
     final_messages = [
-        {"role": "system", "content": f"--- NGỮ CẢNH PHÁP LÝ BỔ SUNG ---\n{merged_context}"},
+        {"role": "system", "content": f"--- TÀI LIỆU PHÁP LUẬT BỔ SUNG ---\n{merged_context}"},
         {"role": "user", "content": query}
     ]
     

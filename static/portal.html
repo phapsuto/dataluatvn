@@ -618,9 +618,14 @@
     .message-row {
       display: flex;
       gap: 1.25rem;
-      max-width: 800px;
+      max-width: 850px;
       width: 100%;
       margin: 0 auto;
+      align-items: flex-end; /* Align avatars to the bottom of message bubbles like Telegram */
+    }
+
+    .message-row.user-row {
+      flex-direction: row-reverse;
     }
 
     .message-avatar {
@@ -634,11 +639,13 @@
       font-size: 0.85rem;
       flex-shrink: 0;
       box-shadow: var(--shadow-sm);
+      margin-bottom: 2px;
     }
 
     .avatar-user {
-      background: #e2e8f0;
-      color: var(--text-main);
+      background: #cbd5e1;
+      color: var(--primary-dark);
+      border: 1.5px solid #94a3b8;
     }
 
     .avatar-assistant {
@@ -648,10 +655,105 @@
     }
 
     .message-bubble {
-      flex: 1;
+      max-width: 75%;
+      padding: 0.85rem 1.15rem;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
+      gap: 0.5rem;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      transition: all var(--transition);
+    }
+
+    .message-bubble.user-bubble {
+      background: var(--primary-light) !important;
+      color: var(--primary-dark) !important;
+      border-radius: 16px 16px 4px 16px !important;
+      border: 1px solid rgba(15, 44, 89, 0.12) !important;
+      align-self: flex-end;
+    }
+
+    .message-bubble.assistant-bubble {
+      background: #ffffff !important;
+      color: var(--text-main) !important;
+      border-radius: 16px 16px 16px 4px !important;
+      border: 1px solid var(--border-color) !important;
+      align-self: flex-start;
+    }
+
+    .message-bot-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.15rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      border-bottom: 1px dashed rgba(184, 149, 108, 0.2);
+      padding-bottom: 0.25rem;
+      user-select: none;
+    }
+
+    .message-bot-header .bot-icon {
+      font-size: 0.9rem;
+    }
+
+    .message-metadata-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+      border-top: 1px dashed rgba(15, 44, 89, 0.08);
+      padding-top: 0.4rem;
+      user-select: none;
+    }
+
+    .message-metadata-footer.user-metadata {
+      justify-content: flex-end;
+      border-top: none;
+      padding-top: 0.25rem;
+      color: rgba(15, 44, 89, 0.5);
+    }
+
+    .metadata-stats {
+      font-style: italic;
+    }
+
+    .metadata-time {
+      font-weight: 600;
+    }
+
+    /* Typing wave loader style */
+    .typing-wave {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 18px;
+      padding: 0.1rem 0.2rem;
+    }
+
+    .typing-wave span {
+      width: 6px;
+      height: 6px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      display: inline-block;
+      animation: waveBounce 1.3s infinite ease-in-out;
+    }
+
+    .typing-wave span:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .typing-wave span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes waveBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
     }
 
     .message-content {
@@ -661,6 +763,10 @@
 
     .message-content p {
       margin-bottom: 0.75rem;
+    }
+
+    .message-content p:last-child {
+      margin-bottom: 0;
     }
 
     .message-content strong {
@@ -757,16 +863,16 @@
     }
 
     .citations-container {
-      background: #ffffff;
+      background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-left: 3px solid var(--accent);
       border-radius: var(--border-radius);
-      padding: 0.75rem 1rem;
-      margin-top: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      margin-top: 0.5rem;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      box-shadow: var(--shadow-sm);
+      gap: 0.4rem;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
     }
 
     .citations-title {
@@ -781,18 +887,36 @@
     }
 
     .citation-link {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--primary);
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 0.35rem;
-      width: fit-content;
+      gap: 0.4rem;
+      width: 100%;
       font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .citation-status-emoji {
+      font-size: 0.72rem;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    .citation-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .citation-link:hover {
       color: var(--accent-hover);
+    }
+    
+    .citation-link:hover .citation-text {
       text-decoration: underline;
     }
 
@@ -3003,27 +3127,86 @@
         const avatarClass = isUser ? 'avatar-user' : 'avatar-assistant';
         const label = isUser ? 'U' : 'AI';
         
+        let botHeaderHTML = '';
+        if (!isUser) {
+          const domainIcons = {
+            "chitchat": "💬",
+            "lao_dong": "👷",
+            "dan_su": "📋",
+            "hinh_su": "⚖️",
+            "dat_dai": "🏘️",
+            "doanh_nghiep": "🏢",
+            "hanh_chinh": "📜",
+            "cached": "🎯",
+            "out_of_scope": "🛑"
+          };
+          const icon = domainIcons[msg.domain] || "⚖️";
+          botHeaderHTML = `
+            <div class="message-bot-header">
+              <span class="bot-icon">${icon}</span>
+              <span class="bot-name">LuatBot</span>
+            </div>
+          `;
+        }
+
         let citationsHTML = '';
         if (msg.citations && msg.citations.length > 0) {
           citationsHTML = `
             <div class="citations-container">
               <div class="citations-title"><i data-lucide="bookmark" style="width: 14px; height: 14px;"></i> Văn bản pháp luật liên quan</div>
-              ${msg.citations.map(c => `
-                <div class="citation-link" onclick="viewDocument(${c.id})">
-                  <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
-                  ${c.title} (${c.so_ky_hieu || 'N/A'})
-                </div>
-              `).join('')}
+              ${msg.citations.map(c => {
+                const status = c.tinh_trang_hieu_luc || '';
+                const isHieuLuc = status.toLowerCase().includes('hiệu lực');
+                const statusEmoji = isHieuLuc ? '🟢' : '⚪';
+                return `
+                  <div class="citation-link" onclick="viewDocument(${c.id})">
+                    <span class="citation-status-emoji" title="${status || 'Không rõ hiệu lực'}">${statusEmoji}</span>
+                    <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+                    <span class="citation-text">${c.title} (${c.so_ky_hieu || 'N/A'})</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+
+        let footerHTML = '';
+        const timeStr = msg.timestamp || '';
+        if (!isUser) {
+          const footerItems = [];
+          if (msg.latency) {
+            footerItems.push(`⏱️ ${msg.latency}s`);
+          }
+          if (msg.domain && msg.domain !== 'chitchat' && msg.domain !== 'out_of_scope') {
+            footerItems.push(`📂 ${msg.domain}`);
+          }
+          if (msg.flare_activated) {
+            footerItems.push(`🔄 FLARE`);
+          }
+          if (footerItems.length > 0 || timeStr) {
+            footerHTML = `
+              <div class="message-metadata-footer">
+                <span class="metadata-stats">${footerItems.join('  ·  ')}</span>
+                <span class="metadata-time">${timeStr}</span>
+              </div>
+            `;
+          }
+        } else if (timeStr) {
+          footerHTML = `
+            <div class="message-metadata-footer user-metadata">
+              <span class="metadata-time">${timeStr}</span>
             </div>
           `;
         }
 
         return `
-          <div class="message-row">
+          <div class="message-row ${isUser ? 'user-row' : 'assistant-row'}">
             <div class="message-avatar ${avatarClass}">${label}</div>
-            <div class="message-bubble">
+            <div class="message-bubble ${isUser ? 'user-bubble' : 'assistant-bubble'}">
+              ${botHeaderHTML}
               <div class="message-content">${formatMessageContent(msg.content)}</div>
               ${citationsHTML}
+              ${footerHTML}
             </div>
           </div>
         `;
@@ -3045,15 +3228,18 @@
       // 2. Inline code (`...`)
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
-      // 3. Headings (#### → h4, ### → h3, ## → h2, # → h1)
-      html = html.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
-      html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-      html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-      html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+      // 3. Headings (#### → h4, ### → h3, ## → h2, # → h1) with premium icons
+      html = html.replace(/^#### (.*$)/gm, '<h4>🔸 $1</h4>');
+      html = html.replace(/^### (.*$)/gm, '<h3>🔹 $1</h3>');
+      html = html.replace(/^## (.*$)/gm, '<h2>📌 $1</h2>');
+      html = html.replace(/^# (.*$)/gm, '<h1>⚖️ $1</h1>');
 
       // 4. Bold & Italic
       html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+      // 4.5. Citations format: [C1] -> <sup>[1]</sup> (in bold and accent color)
+      html = html.replace(/\[C(\d+)\]/g, '<sup style="font-weight: bold; color: var(--accent); font-size: 0.75rem; margin-left: 2px;">[$1]</sup>');
 
       // 5. Horizontal rules
       html = html.replace(/^---$/gm, '<hr>');
@@ -3139,7 +3325,12 @@
         session = chatHistory[0];
       }
 
-      const userMsg = { role: 'user', content: prompt };
+      const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const userMsg = { 
+        role: 'user', 
+        content: prompt,
+        timestamp: timeStr
+      };
       session.messages.push(userMsg);
       
       if (session.messages.length === 1) {
@@ -3159,10 +3350,14 @@
       msgList.style.display = 'flex';
 
       const loaderRow = document.createElement('div');
-      loaderRow.className = 'message-row';
+      loaderRow.className = 'message-row assistant-row';
       loaderRow.innerHTML = `
         <div class="message-avatar avatar-assistant">AI</div>
-        <div class="message-bubble">
+        <div class="message-bubble assistant-bubble">
+          <div class="message-bot-header">
+            <span class="bot-icon">⚖️</span>
+            <span class="bot-name">LuatBot</span>
+          </div>
           <div class="typing-wave">
             <span></span>
             <span></span>
@@ -3173,6 +3368,7 @@
       msgList.appendChild(loaderRow);
       container.scrollTop = container.scrollHeight;
 
+      const startTime = Date.now();
       try {
         const res = await fetch('/assistant/chat', {
           method: 'POST',
@@ -3189,12 +3385,18 @@
         if (!res.ok) throw new Error('Không thể kết nối đến Trợ lý AI.');
         const data = await res.json();
         
+        const latency = ((Date.now() - startTime) / 1000).toFixed(2);
+        
         msgList.removeChild(loaderRow);
 
         const assistantMsg = {
           role: 'assistant',
           content: data.response,
-          citations: data.citations || []
+          citations: data.citations || [],
+          domain: data.domain,
+          flare_activated: data.flare_activated,
+          latency: latency,
+          timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
         };
         session.messages.push(assistantMsg);
         saveChatHistory();
@@ -3204,7 +3406,8 @@
         msgList.removeChild(loaderRow);
         const assistantMsg = {
           role: 'assistant',
-          content: `❌ Lỗi kết nối hệ thống AI: ${err.message}`
+          content: `❌ Lỗi kết nối hệ thống AI: ${err.message}`,
+          timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
         };
         session.messages.push(assistantMsg);
         saveChatHistory();

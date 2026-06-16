@@ -30,6 +30,10 @@ from datetime import datetime
 from typing import Optional
 
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables from .env if present
+load_dotenv()
 
 
 # ══════════════════════════════════════════════════
@@ -38,7 +42,7 @@ import requests
 
 TELEGRAM_BOT_TOKEN = os.environ.get(
     "TELEGRAM_BOT_TOKEN",
-    "7660859485:AAFiyYQF7sh3nSp0dkYNFMo8-31LPyj7RRA"
+    "8530018297:AAG0MJIN5M0aT9C9rdx768nyQ-mU6ohAwUs"
 )
 
 LUATBOT_API_URL = os.environ.get("LUATBOT_API_URL", "http://localhost:2004")
@@ -85,28 +89,69 @@ def tg_request(method: str, data: dict = None, timeout: float = 30.0) -> dict:
 
 
 def md_to_html(text: str) -> str:
-    """Chuyển đổi Telegram Markdown V1 sang HTML."""
+    """Chuyển đổi Markdown nâng cao sang HTML đẹp mắt cho Telegram."""
     import re
     import html
     
-    # 1. Escape HTML special characters
+    # 1. Escape HTML special characters để tránh lỗi cú pháp Telegram
     text = html.escape(text, quote=False)
     
-    # 2. Convert code blocks: ```lang ... ``` or ``` ... ```
-    text = re.sub(r'```(?:\w+)?\n(.*?)\n```', r'<pre>\1</pre>', text, flags=re.DOTALL)
-    text = re.sub(r'```(.*?)```', r'<pre>\1</pre>', text, flags=re.DOTALL)
+    # 2. Tách và bảo lưu các khối code blocks (```)
+    code_blocks = []
+    def save_code_block(match):
+        code_blocks.append(match.group(1))
+        return f"__CODE_BLOCK_{len(code_blocks)-1}__"
+        
+    text = re.sub(r'```(?:\w+)?\n(.*?)\n```', save_code_block, text, flags=re.DOTALL)
+    text = re.sub(r'```(.*?)```', save_code_block, text, flags=re.DOTALL)
     
-    # 3. Convert inline code: `code`
+    # 3. Xử lý định dạng dòng (tiêu đề, danh sách, đường kẻ ngang)
+    lines = text.split("\n")
+    for i in range(len(lines)):
+        line = lines[i]
+        stripped = line.strip()
+        
+        # Tiêu đề H1: # Title -> ⚖️ TITLE (In đậm, viết hoa)
+        if stripped.startswith("# "):
+            lines[i] = f"<b>⚖️ {stripped[2:].upper()}</b>"
+        # Tiêu đề H2: ## Title -> 📌 Title
+        elif stripped.startswith("## "):
+            lines[i] = f"\n<b>📌 {stripped[3:]}</b>"
+        # Tiêu đề H3: ### Title -> 🔹 Title
+        elif stripped.startswith("### "):
+            lines[i] = f"\n<b>🔹 {stripped[4:]}</b>"
+        # Tiêu đề H4: #### Title -> 🔸 Title
+        elif stripped.startswith("#### "):
+            lines[i] = f"\n<b>🔸 {stripped[5:]}</b>"
+        # Đường kẻ ngang
+        elif stripped == "---":
+            lines[i] = "──────────────────"
+        # Danh sách (bullet points)
+        elif stripped.startswith("- ") or stripped.startswith("* ") or stripped.startswith("+ "):
+            content = stripped[2:]
+            lines[i] = f"  • {content}"
+            
+    text = "\n".join(lines)
+    
+    # 4. Khôi phục các khối code blocks dưới dạng <pre>
+    for idx, block in enumerate(code_blocks):
+        text = text.replace(f"__CODE_BLOCK_{idx}__", f"<pre>{block}</pre>")
+        
+    # 5. Định dạng inline code `code`
     text = re.sub(r'`([^`\n]+)`', r'<code>\1</code>', text)
     
-    # 4. Convert bold: **text** hoặc *text*
+    # 6. Định dạng in đậm **text**
     text = re.sub(r'\*\*([^*<\n]+)\*\*', r'<b>\1</b>', text)
-    text = re.sub(r'\*([^*<\n]+)\*', r'<b>\1</b>', text)
     
-    # 5. Convert italic: _text_
+    # 7. Định dạng in đậm/nghiêng: *text* (in đậm) hoặc _text_ (in nghiêng)
+    text = re.sub(r'\*([^*<\n]+)\*', r'<b>\1</b>', text)
     text = re.sub(r'_([^_<\n]+)_', r'<i>\1</i>', text)
     
+    # 8. Định dạng thẻ trích dẫn [C1] -> [1] (in đậm)
+    text = re.sub(r'\[C(\d+)\]', r'<b>[\1]</b>', text)
+    
     return text
+
 
 
 def send_message(chat_id: int, text: str, parse_mode: str = "HTML",
@@ -979,8 +1024,28 @@ def process_update(update: dict):
             handle_chat(chat_id, user_id, text, message_id)
 
 
+_lock_socket = None
+
+def ensure_single_instance(port: int = 12005):
+    """Sử dụng socket to lock và ensure single instance."""
+    import socket
+    global _lock_socket
+    try:
+        _lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _lock_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        _lock_socket.bind(('127.0.0.1', port))
+        _lock_socket.listen(1)
+        logger.info(f"Đã thiết lập socket lock trên cổng {port} thành công.")
+    except socket.error:
+        logger.error(f"❌ Lỗi: Có vẻ một tiến trình telegram_bot.py khác đã chạy trên cổng {port} hoặc tiến trình cũ chưa giải phóng hoàn toàn.")
+        print(f"\n❌ Lỗi: Một tiến trình telegram_bot.py khác đang chạy hoặc cổng {port} đang bận!")
+        print("Vui lòng tắt tiến trình trùng lặp trước khi khởi chạy mới.")
+        sys.exit(1)
+
+
 def main():
     """Main polling loop — Long Polling."""
+    ensure_single_instance()
     print("=" * 60)
     print("⚖️  LuatBot Telegram — Trợ lý Pháp lý AI")
     print("=" * 60)

@@ -22,6 +22,30 @@ def strip_thinking_tags(text: str) -> str:
     return re.sub(r'<think>.*?</think>\s*', '', text, flags=re.DOTALL).strip()
 
 
+def clean_context_artifacts(text: str) -> str:
+    """Loại bỏ các từ khóa kỹ thuật thô cứng như [NGỮ CẢNH PHÁP LÝ] trong câu trả lời."""
+    if not text:
+        return ""
+    
+    # 1. Các thẻ tiêu đề dạng [NGỮ CẢNH ...] hoặc [TÀI LIỆU ...]
+    text = re.sub(r'\[\s*(?:NGỮ CẢNH PHÁP LÝ|NGỮ CẢNH PHÁP LÝ BỔ SUNG|TÀI LIỆU PHÁP LUẬT BỔ SUNG|TÀI LIỆU PHÁP LUẬT)\s*\]', '', text, flags=re.IGNORECASE)
+    
+    # 2. Câu dẫn thô kiểu "Dựa trên ngữ cảnh...", "Dưới đây là câu trả lời dựa trên...", "Theo tài liệu được cung cấp..."
+    text = re.sub(
+        r'(?:dựa trên|dựa vào|theo|căn cứ vào)\s+(?:ngữ cảnh pháp lý|ngữ cảnh pháp lý bổ sung|tài liệu pháp luật bổ sung|tài liệu pháp luật|tài liệu|context)(?:\s+(?:được cung cấp|dưới đây|trên|này|chi tiết|bổ sung))*,?\s*',
+        '', text, flags=re.IGNORECASE
+    )
+    
+    # 3. Loại bỏ tàn dư của thẻ placeholder [SEARCH: ...] nếu còn sót lại
+    text = re.sub(r'\[SEARCH:\s*.*?\]', '', text, flags=re.IGNORECASE)
+    
+    # Sửa hoa đầu câu nếu ký tự đầu bị chuyển thành chữ thường hoặc bị cắt mất từ đầu tiên
+    text = text.strip()
+    if text and text[0].islower():
+        text = text[0].upper() + text[1:]
+    return text
+
+
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                      SCHEMAS                                 ║
 # ╚══════════════════════════════════════════════════════════════╝
@@ -221,7 +245,7 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
             tokens = []
             async for token in LLMGateway.call_stream([{"role": "user", "content": prompt}], system_prompt):
                 tokens.append(token)
-            ai_reply = strip_thinking_tags("".join(tokens))
+            ai_reply = clean_context_artifacts(strip_thinking_tags("".join(tokens)))
             
             # ── STEP 6: SAVE INTERACTION TO MEMORY (Tầng 2) ──
             try:
@@ -356,8 +380,8 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     else:
         final_text = "Không tìm thấy tài liệu pháp lý liên quan phù hợp để trả lời câu hỏi của bạn."
 
-    # ── STRIP THINKING TAGS (Gemma reasoning artifacts) ──
-    final_text = strip_thinking_tags(final_text)
+    # ── STRIP THINKING TAGS & CONTEXT ARTIFACTS ──
+    final_text = clean_context_artifacts(strip_thinking_tags(final_text))
 
     # ── CẬP NHẬT SEMANTIC CACHE (RAG Gen 3) ──
     # Không cache các câu trả lời thất bại/trống để tránh đóng băng lỗi
