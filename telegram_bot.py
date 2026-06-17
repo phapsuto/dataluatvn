@@ -1026,7 +1026,7 @@ def process_update(update: dict):
 
 _lock_socket = None
 
-def ensure_single_instance(port: int = 12005):
+def ensure_single_instance(port: int = 12008):
     """Sử dụng socket to lock và ensure single instance."""
     import socket
     global _lock_socket
