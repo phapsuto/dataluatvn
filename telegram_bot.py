@@ -235,7 +235,7 @@ def call_luatbot_chat(prompt: str, session_id: str = "telegram_default") -> dict
     
     try:
         start = time.time()
-        resp = requests.post(url, json=payload, headers=headers, timeout=120)
+        resp = requests.post(url, json=payload, headers=headers, timeout=30)
         latency = time.time() - start
         
         if resp.status_code == 200:
@@ -268,7 +268,7 @@ def call_luatbot_search(query: str, limit: int = 5) -> dict:
     params = {"q": query, "limit": limit}
     
     try:
-        resp = requests.get(url, params=params, headers=headers, timeout=60)
+        resp = requests.get(url, params=params, headers=headers, timeout=20)
         if resp.status_code == 200:
             return resp.json()
         return {"error": True, "detail": f"HTTP {resp.status_code}"}
@@ -285,7 +285,7 @@ def check_server_health() -> dict:
         if resp.status_code == 200:
             return {"online": True, "data": resp.json()}
         return {"online": False, "detail": f"HTTP {resp.status_code}"}
-    except:
+    except requests.RequestException:
         return {"online": False, "detail": "Connection refused"}
 
 
@@ -679,7 +679,7 @@ def poll_agent_continuous_loop(chat_id: int, stop_event: threading.Event):
                         idx = step.get("step_index", 0)
                         if idx > last_idx:
                             new_lines.append(step)
-                    except:
+                    except json.JSONDecodeError:
                         pass
         except Exception as e:
             logger.error(f"Lỗi đọc file transcript trong continuous loop: {e}")
@@ -816,7 +816,7 @@ def get_latest_step_index(conversation_id: str) -> int:
                     idx = step.get("step_index", 0)
                     if idx > max_idx:
                         max_idx = idx
-                except:
+                except json.JSONDecodeError:
                     pass
     except Exception as e:
         logger.error(f"Lỗi đọc step_index: {e}")

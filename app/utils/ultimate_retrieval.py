@@ -249,7 +249,7 @@ async def ultimate_retrieve(
                     if ngay_ban_hanh and len(ngay_ban_hanh) >= 10:
                         try:
                             year_db = int(ngay_ban_hanh[6:10])
-                        except:
+                        except ValueError:
                             pass
                             
                     score = 0
@@ -498,7 +498,7 @@ async def ultimate_retrieve(
                     if date_db and len(date_db) >= 10:
                         try:
                             year_db = int(date_db[6:10])
-                        except:
+                        except ValueError:
                             pass
                             
                     if extracted_doc_type and extracted_doc_type.lower() == doc_type_db:
@@ -590,7 +590,7 @@ async def ultimate_retrieve(
         if date_db and len(date_db) >= 10:
             try:
                 year_db = int(date_db[6:10])
-            except:
+            except ValueError:
                 pass
                 
         boost_multiplier = 1.0

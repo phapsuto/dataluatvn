@@ -698,17 +698,25 @@ def get_smart_search_resources():
 
     # ── SEARCH BACKEND SELECTION (ZVEC or FAISS) ──
     if USE_ZVEC_BACKEND:
-        if _SMART_SEARCH_ZVEC_COLLECTION is None:
-            try:
-                import zvec
-                if os.path.exists(ZVEC_DB_PATH):
-                    _SMART_SEARCH_ZVEC_COLLECTION = zvec.open(path=ZVEC_DB_PATH)
-                    print(f"✅ Loaded Zvec Collection from {ZVEC_DB_PATH}")
-                else:
-                    print(f"⚠️ Zvec database path not found: {ZVEC_DB_PATH}")
-            except Exception as e:
-                print(f"⚠️ Không thể load Zvec Collection từ {ZVEC_DB_PATH}: {e}")
-        return _SMART_SEARCH_MODEL, _SMART_SEARCH_ZVEC_COLLECTION
+        coll = None
+        try:
+            import zvec
+            if os.path.exists(ZVEC_DB_PATH):
+                opt = zvec.CollectionOption(read_only=True)
+                import time
+                for attempt in range(10):
+                    try:
+                        coll = zvec.open(path=ZVEC_DB_PATH, option=opt)
+                        break
+                    except Exception as ex:
+                        if attempt == 9:
+                            raise ex
+                        time.sleep(0.1)
+            else:
+                print(f"⚠️ Zvec database path not found: {ZVEC_DB_PATH}")
+        except Exception as e:
+            print(f"⚠️ Không thể mở Zvec Collection từ {ZVEC_DB_PATH}: {e}")
+        return _SMART_SEARCH_MODEL, coll
     else:
         index_path = FAISS_INDEX_SOTA
         if _SMART_SEARCH_INDEX is None:
@@ -1058,14 +1066,20 @@ def smart_search_laws(
                 
             from app.config import USE_ZVEC_BACKEND
             if USE_ZVEC_BACKEND:
-                import zvec
-                q_vec_list = query_vector[0].tolist()
-                zvec_results = search_backend.query(
-                    queries=zvec.Query(field_name="dense_vector", vector=q_vec_list),
-                    topk=150
-                )
-                for res in zvec_results:
-                    vector_results.append((int(res.id), float(res.score)))
+                try:
+                    import zvec
+                    q_vec_list = query_vector[0].tolist()
+                    zvec_results = search_backend.query(
+                        queries=zvec.Query(field_name="dense_vector", vector=q_vec_list),
+                        topk=150
+                    )
+                    for res in zvec_results:
+                        vector_results.append((int(res.id), float(res.score)))
+                finally:
+                    try:
+                        search_backend.close()
+                    except Exception:
+                        pass
             else:
                 import faiss
                 faiss.normalize_L2(query_vector)
@@ -1342,7 +1356,7 @@ def smart_search_laws(
                 if date_doc and len(date_doc) >= 10:
                     try:
                         year_doc = int(date_doc[6:10])
-                    except:
+                    except ValueError:
                         pass
                 if year_doc == nam_ban_hanh:
                     metadata_boost += 2.0

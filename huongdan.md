@@ -98,21 +98,24 @@ OMP_NUM_THREADS=1 python3 scratch/run_hybrid_benchmark_500.py
 ### B. Tiến Trình Đồng Bộ Gia Tăng (`sync_new_laws.py`)
 *   **Vị trí**: [sync_new_laws.py](file:///Users/tonguyen/Library/CloudStorage/OneDrive-Personal/DrTo/luatvietnam/scripts/sync_new_laws.py).
 *   **Các bước thực hiện tự động**:
-    1. **Tải luật mới**: Quét các văn bản luật mới cập nhật trên hệ thống.
+    1. **Tải luật mới**: Quét các văn bản luật mới cập nhật trên 3 hệ thống (VBPL, LuatVietnam, PhapLuat.gov.vn).
     2. **Phân tách & Clean HTML**: Áp dụng bộ parser TokenJuice-style để tạo ra các Markdown chunks sạch.
-    3. **Sinh vector & Lưu trữ**: Gọi mô hình nhúng BGE-M3 (chạy offline) để sinh embedding cho các chunks mới, sau đó lưu trực tiếp vào cơ sở dữ liệu `vector_store.db` để tránh phải tính toán lại sau này.
+    3. **Sinh vector & Lưu trữ**: Sử dụng mô hình nhúng BGE-M3 cục bộ (cached trong RAM cho tốc độ đồng bộ nhanh hơn 8x, ~2 giây/văn bản) để sinh embedding cho các chunks mới, sau đó lưu trực tiếp vào cơ sở dữ liệu `vector_store.db`.
     4. **Cập nhật đồng thời các Chỉ mục FAISS**:
         *   Tự động đọc và thêm (append) các vector mới vào chỉ mục Flat mặc định (`chunks_faiss.index`).
         *   Tự động thêm vào chỉ mục lượng tử hóa SQ8 (`chunks_faiss_sq8.index`).
         *   Tự động thêm vào chỉ mục nén IVF-SQ8 (`chunks_faiss_ivf_sq8.index`) sử dụng phương thức `add_with_ids`.
-    5. Ghi nhận ID của các văn bản đã xử lý để đảm bảo không trùng lặp và ghi nhận log rõ ràng.
+    5. **Đồng bộ vào cơ sở dữ liệu Vector Alibaba Zvec**:
+        *   Tự động mở cơ sở dữ liệu vector Zvec cục bộ (`zvec_laws_db`), đồng bộ hóa các chunks và vectors mới dưới dạng lô (batch) và gọi `flush()`.
+        *   Áp dụng cơ chế an toàn concurrency (đóng kết nối ngay trong block `finally`, retry 30 lần giãn cách 0.2s) để tránh xung đột khóa đọc/ghi (database lock) với API server đang chạy.
+    6. Ghi nhận ID của các văn bản đã xử lý để đảm bảo không trùng lặp và ghi nhận log rõ ràng.
 
 ### C. Cách chạy đồng bộ thủ công hoặc đặt Cronjob
 Bạn có thể chạy trực tiếp lệnh sau để kiểm tra và cập nhật luật mới:
 ```bash
-python3 scripts/sync_new_laws.py
+CRAWLER_HEADLESS=1 SYNC_PAGES=1 python3 scripts/sync_new_laws.py
 ```
 Để chạy tự động hàng ngày (ví dụ vào lúc 2 giờ sáng), bạn có thể cấu hình Crontab trên server:
 ```bash
-0 2 * * * cd /Users/tonguyen/Library/CloudStorage/OneDrive-Personal/DrTo/luatvietnam && OMP_NUM_THREADS=1 python3 scripts/sync_new_laws.py >> logs/sync.log 2>&1
+0 2 * * * cd /Users/tonguyen/Library/CloudStorage/OneDrive-Personal/DrTo/luatvietnam && CRAWLER_HEADLESS=1 OMP_NUM_THREADS=1 python3 scripts/sync_new_laws.py >> logs/sync.log 2>&1
 ```

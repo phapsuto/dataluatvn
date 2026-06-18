@@ -54,7 +54,7 @@ def log(message):
     try:
         with open(LOG_NAME, "a", encoding="utf-8") as f:
             f.write(msg + "\n")
-    except:
+    except Exception:
         pass
 
 
@@ -65,7 +65,7 @@ def write_progress(data):
     try:
         with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-    except:
+    except Exception:
         pass
 
 
@@ -93,7 +93,7 @@ async def save_content_safe(item_id, content_html, conn_main, conn_content):
                     "INSERT OR REPLACE INTO documents_fts (rowid, title, so_ky_hieu) VALUES (?, ?, ?)",
                     (item_id, row[0], row[1]),
                 )
-            except:
+            except Exception:
                 pass
         mods = extract_modifications(item_id, content_html, conn_main)
         conn_main.commit()
@@ -127,7 +127,7 @@ def extract_modifications(item_id, content_html, conn_main):
                         (other_doc_id, article, item_id, snippet)
                     )
                     inserted += 1
-                except:
+                except Exception:
                     pass
     return inserted
 
@@ -263,7 +263,7 @@ async def crawl_documents(missing_ids):
                     # Đợi cho trang chi tiết load (URL thay đổi)
                     try:
                         await page.wait_for_url("**/chi-tiet/**", timeout=10000)
-                    except:
+                    except Exception:
                         pass
                     await page.wait_for_timeout(3000)
 
@@ -448,7 +448,7 @@ def main():
         # Cleanup PID file
         try:
             os.remove(PID_FILE)
-        except:
+        except Exception:
             pass
 
 

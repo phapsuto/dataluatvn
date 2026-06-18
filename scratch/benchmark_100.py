@@ -4,16 +4,22 @@ V21 SQ8 + Reranker ON + Router Fix
 """
 import requests, time, json, random, subprocess
 
-API = 'http://localhost:8000/assistant/chat'
+API = 'http://localhost:2004/assistant/chat'
 HEADERS = {'Content-Type': 'application/json', 'X-API-Key': 'dlvn_testkey'}
 
 def get_ram_mb():
     try:
-        result = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
-        for line in result.stdout.split('\n'):
-            if 'uvicorn server:app' in line and 'grep' not in line:
-                return int(line.split()[5]) / 1024
-    except:
+        pid_res = subprocess.run(['lsof', '-t', '-i', ':2004'], capture_output=True, text=True)
+        pids = pid_res.stdout.strip().split('\n')
+        if pids and pids[0]:
+            total_rss = 0.0
+            for pid in pids:
+                ps_res = subprocess.run(['ps', '-o', 'rss=', '-p', pid.strip()], capture_output=True, text=True)
+                rss_kb = ps_res.stdout.strip()
+                if rss_kb:
+                    total_rss += int(rss_kb)
+            return total_rss / 1024
+    except Exception:
         pass
     return 0
 

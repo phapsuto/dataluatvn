@@ -45,7 +45,7 @@ def get_content_fts_count(db_path):
     try:
         cursor.execute("SELECT count(*) FROM content_fts")
         count = cursor.fetchone()[0]
-    except:
+    except Exception:
         count = 0
     conn.close()
     return count
@@ -93,7 +93,7 @@ def rebuild_content_fts():
             e = TextExtractor()
             e.feed(html)
             return re.sub(r'\s+', ' ', e.get_text()).strip()
-        except:
+        except Exception:
             return re.sub(r'<[^>]+>', ' ', html)
     
     main_conn = sqlite3.connect(MAIN_DB)
@@ -105,7 +105,7 @@ def rebuild_content_fts():
     try:
         main_cursor.execute("SELECT rowid FROM content_fts")
         existing_ids = {row[0] for row in main_cursor.fetchall()}
-    except:
+    except Exception:
         existing_ids = set()
     
     # Tìm doc_ids mới (có trong documents nhưng chưa trong content_fts)
@@ -141,7 +141,7 @@ def rebuild_content_fts():
                     (doc_id, title, full_text)
                 )
                 added += 1
-            except:
+            except Exception:
                 pass
     
     main_conn.commit()

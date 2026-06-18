@@ -47,6 +47,8 @@ BASE_URL = "https://vbpl.vn"
 LIST_URL = f"{BASE_URL}/van-ban/trung-uong"
 
 _shutdown = False
+_EMBEDDING_MODEL_CACHE = None
+
 
 
 def handle_signal(sig, frame):
@@ -66,7 +68,7 @@ def log(message):
     try:
         with open(LOG_NAME, "a", encoding="utf-8") as f:
             f.write(msg + "\n")
-    except:
+    except Exception:
         pass
 
 
@@ -75,7 +77,7 @@ def write_progress(data):
     try:
         with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-    except:
+    except Exception:
         pass
 
 
@@ -145,7 +147,7 @@ def save_document(title, so_hieu, ngay_bh, loai_vb, co_quan, tinh_trang,
             "INSERT OR REPLACE INTO documents_fts (rowid, title, so_ky_hieu) VALUES (?, ?, ?)",
             (doc_id, title, so_hieu)
         )
-    except:
+    except Exception:
         pass
     conn.commit()
     conn.close()
@@ -606,6 +608,10 @@ async def sync_phapluat_source(page, context, stats):
                 final_title, final_so_hieu, ngay_bh, loai_vb,
                 co_quan, tinh_trang, ngay_hieu_luc, content_html
             )
+            
+            index_document_incrementally(doc_id, final_title, final_so_hieu, loai_vb, content_html)
+            stats["new_docs"] += 1
+            log(f"   ✅ ID {doc_id} ({final_so_hieu}) đồng bộ thành công")
 async def run_sync():
     global _shutdown
 
@@ -667,7 +673,7 @@ async def run_sync():
             try:
                 await page.wait_for_selector('[class*="documentCard"], [class*="DocumentCard"]', timeout=15000)
                 log("✅ Trang list đã load, tìm thấy DocumentCards")
-            except:
+            except Exception:
                 await page.wait_for_timeout(8000)
                 log("⚠️ Chờ thêm 8s cho JS render...")
                 
@@ -864,9 +870,13 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
         conn.close()
         
         # 4. Sinh vector embeddings bằng model BGE-M3 (1024-dim)
-        from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer(EMBEDDING_MODEL_SOTA, device="cpu")
-        model.max_seq_length = 512
+        global _EMBEDDING_MODEL_CACHE
+        if _EMBEDDING_MODEL_CACHE is None:
+            from sentence_transformers import SentenceTransformer
+            log(f"   ⚙️ Đang tải mô hình nhúng {EMBEDDING_MODEL_SOTA}...")
+            _EMBEDDING_MODEL_CACHE = SentenceTransformer(EMBEDDING_MODEL_SOTA, device="cpu")
+            _EMBEDDING_MODEL_CACHE.max_seq_length = 512
+        model = _EMBEDDING_MODEL_CACHE
         
         texts = [cd[1] for cd in chunks_data]
         embeddings = model.encode(texts, batch_size=len(texts), convert_to_numpy=True)
@@ -875,6 +885,12 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
         # 5. Lưu vectors vào cache VECTOR_DB_SOTA
         v_conn = sqlite3.connect(VECTOR_DB_SOTA, timeout=30)
         v_cursor = v_conn.cursor()
+        v_cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chunk_vectors (
+                chunk_id INTEGER PRIMARY KEY,
+                vector BLOB NOT NULL
+            )
+        """)
         for (chunk_uid, _), emb in zip(chunks_data, embeddings):
             v_cursor.execute(
                 "INSERT OR REPLACE INTO chunk_vectors (chunk_id, vector) VALUES (?, ?)",
@@ -911,6 +927,7 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
                     log(f"   ⚠️ Lỗi cập nhật gia tăng file index {idx_file}: {ex}")
                     
         # 7. Cập nhật Zvec Collection
+        collection = None
         try:
             schema = zvec.CollectionSchema(
                 name="zvec_laws",
@@ -925,10 +942,18 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
                     zvec.FieldSchema("chunk_text", zvec.DataType.STRING)
                 ]
             )
-            try:
-                collection = zvec.open(path=ZVEC_DB_PATH)
-            except Exception:
-                collection = zvec.create_and_open(path=ZVEC_DB_PATH, schema=schema)
+            import time
+            for attempt in range(30):
+                try:
+                    collection = zvec.open(path=ZVEC_DB_PATH)
+                    break
+                except Exception as ex:
+                    if attempt == 29:
+                        if not os.path.exists(ZVEC_DB_PATH):
+                            collection = zvec.create_and_open(path=ZVEC_DB_PATH, schema=schema)
+                        else:
+                            raise ex
+                    time.sleep(0.2)
                 
             zvec_docs = []
             for (chunk_uid, chunk_with_meta), emb in zip(chunks_data, embeddings):
@@ -952,6 +977,12 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
                 log(f"   ⚡ Đã cập nhật gia tăng {len(zvec_docs)} vectors vào Zvec collection tại {ZVEC_DB_PATH}")
         except Exception as ez:
             log(f"   ⚠️ Lỗi cập nhật gia tăng Zvec: {ez}")
+        finally:
+            if collection is not None:
+                try:
+                    collection.close()
+                except Exception:
+                    pass
             
     except Exception as e:
         log(f"   ⚠️ Lỗi đồng bộ index gia tăng cho ID {doc_id}: {e}")
@@ -965,7 +996,7 @@ def main():
     finally:
         try:
             os.remove(PID_FILE)
-        except:
+        except Exception:
             pass
 
 

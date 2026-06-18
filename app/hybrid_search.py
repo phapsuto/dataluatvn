@@ -83,7 +83,7 @@ def html_to_text(html: str) -> str:
         e = HTMLTextExtractor()
         e.feed(html)
         text = e.get_text()
-    except:
+    except Exception:
         text = re.sub(r'<[^>]+>', ' ', html)
     return re.sub(r'\s+', ' ', text).strip()
 

@@ -112,7 +112,7 @@ def main():
                 r = conn_main.execute("SELECT title, so_ky_hieu FROM documents WHERE id = ?", (doc_id_int,)).fetchone()
                 if r:
                     updates_fts.append((doc_id_int, r[0], r[1]))
-            except:
+            except Exception:
                 pass
                 
             filled += 1

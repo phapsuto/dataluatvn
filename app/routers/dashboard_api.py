@@ -39,13 +39,13 @@ def dashboard_stats():
     try:
         c.execute("SELECT COUNT(*) FROM article_modifications")
         total_mods = c.fetchone()[0]
-    except:
+    except Exception:
         total_mods = 0
 
     try:
         c.execute("SELECT COUNT(*) FROM documents_fts")
         fts_count = c.fetchone()[0]
-    except:
+    except Exception:
         fts_count = 0
 
     try:
@@ -57,7 +57,7 @@ def dashboard_stats():
         total_phapdien = c.fetchone()[0]
         c.execute("SELECT COUNT(*) FROM phapdien_glossary")
         total_glossary = c.fetchone()[0]
-    except:
+    except Exception:
         total_anle = total_precedents = total_phapdien = total_glossary = 0
 
     conn.close()
@@ -118,7 +118,7 @@ def dashboard_sample(limit: int = 20):
             cr = cc.fetchone()
             doc["content_length"] = cr[0] if cr else 0
             conn_c.close()
-        except:
+        except Exception:
             doc["content_length"] = 0
         docs.append(doc)
     conn.close()
@@ -150,7 +150,7 @@ def dashboard_check(id: int = Query(...)):
             doc["content_preview"] = None
             doc["content_length"] = 0
         conn_c.close()
-    except:
+    except Exception:
         doc["content_preview"] = None
         doc["content_length"] = 0
 
@@ -178,7 +178,7 @@ def dashboard_check(id: int = Query(...)):
             {"article": r[0], "by_doc_id": r[1], "text": (r[2] or "")[:200], "by_title": r[3]}
             for r in c.fetchall()
         ]
-    except:
+    except Exception:
         doc["modifications"] = []
 
     conn.close()
@@ -204,7 +204,7 @@ def dashboard_crawler_progress():
             is_running = False
             try:
                 os.remove(pid_file)
-            except:
+            except Exception:
                 pass
 
     if os.path.exists(progress_file):
@@ -214,7 +214,7 @@ def dashboard_crawler_progress():
             data["is_running"] = is_running
             data["pid"] = pid
             return data
-        except:
+        except Exception:
             pass
 
     return {"status": "idle", "is_running": False, "total": 0, "success": 0, "fail": 0}
@@ -235,7 +235,7 @@ async def dashboard_crawler_start(request: Request):
         except (ProcessLookupError, ValueError):
             try:
                 os.remove(pid_file)
-            except:
+            except Exception:
                 pass
 
     body = await request.json()
@@ -279,7 +279,7 @@ def dashboard_crawler_stop():
         except ProcessLookupError:
             try:
                 os.remove(pid_file)
-            except:
+            except Exception:
                 pass
             return {"ok": True, "message": "Crawler đã dừng trước đó."}
         except Exception as e:
@@ -302,7 +302,7 @@ async def dashboard_sync_start(request: Request):
         except (ProcessLookupError, ValueError):
             try:
                 os.remove(pid_file)
-            except:
+            except Exception:
                 pass
 
     body = await request.json()
@@ -345,7 +345,7 @@ def dashboard_sync_progress():
             is_running = False
             try:
                 os.remove(pid_file)
-            except:
+            except Exception:
                 pass
 
     if os.path.exists(progress_file):
@@ -355,7 +355,7 @@ def dashboard_sync_progress():
             data["is_running"] = is_running
             data["pid"] = pid
             return data
-        except:
+        except Exception:
             pass
 
     return {"status": "idle", "is_running": False, "new_docs": 0}
