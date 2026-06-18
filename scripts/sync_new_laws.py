@@ -14,6 +14,13 @@ Env vars:
 """
 
 import os
+# Set single-thread CPU execution for PyTorch, FAISS, and OpenBLAS to prevent deadlocks and segfaults
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import re
 import sys
 import time
@@ -22,12 +29,15 @@ import signal
 import sqlite3
 import asyncio
 import platform
+import gc
 from urllib.parse import quote
 from playwright.async_api import async_playwright
 
 # Thêm thư mục gốc vào path để import config
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from app.config import DB_NAME, CONTENT_DB, VECTOR_DB_SOTA, FAISS_INDEX_SOTA, EMBEDDING_MODEL_SOTA
+from app.config import DB_NAME, CONTENT_DB, VECTOR_DB_SOTA, FAISS_INDEX_SOTA, EMBEDDING_MODEL_SOTA, ZVEC_DB_PATH
+import zvec
+from bs4 import BeautifulSoup
 
 LOG_NAME = "sync.log"
 PROGRESS_FILE = "sync_progress.json"
@@ -285,6 +295,317 @@ async def extract_detail_content(page):
         return None, None
 
 
+def remove_watermarks(html_content: str) -> str:
+    if not html_content:
+        return ""
+    cleaned = html_content
+    promotional_keywords = [
+        r"Bản quyền\s+©\s+\d{4}-\d{4}\s+bởi\s+LuatVietnam.*",
+        r"Chứng nhận bản quyền tác giả số.*",
+        r"www\.LuatVietnam\.vn",
+        r"LuatVietnam\.vn",
+        r"Tổng đài trực tuyến\s+\d+",
+        r"Tổng đài tư vấn\s+\d+",
+        r"Hỗ trợ giải đáp pháp luật:\s*\d+",
+        r"Điện thoại:\s*\d+\s*-\s*Email:\s*[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+",
+        r"Đây là tiện ích dành cho thành viên đăng ký phần mềm.*",
+        r"Vui lòng Đăng nhập tài khoản để xem chi tiết.*",
+        r"Tiện ích dành cho tài khoản.*",
+        r"Vui lòng liên hệ.* để được hỗ trợ.*",
+    ]
+    for pat in promotional_keywords:
+        cleaned = re.sub(pat, "", cleaned, flags=re.IGNORECASE)
+    return cleaned
+
+
+async def crawl_luatvietnam_detail(page, detail_url):
+    try:
+        await page.goto(detail_url, wait_until="domcontentloaded", timeout=30000)
+        await page.wait_for_timeout(4000)
+        
+        meta = await page.evaluate("""
+        () => {
+            const r = { title:'', so_hieu:'', ngay_bh:'', loai_vb:'', co_quan:'', tinh_trang:'', ngay_hieu_luc:'', linh_vuc:'' };
+            const h1 = document.querySelector('h1');
+            if (h1) r.title = h1.textContent.trim();
+            const table = document.querySelector('table');
+            if (table) {
+                const text = table.innerText || '';
+                const p = [
+                    [/Số hiệu[:\\s]+([^\\n]+)/i, 'so_hieu'],
+                    [/Ngày ban hành[:\\s]+(\\d{2}\\/\\d{2}\\/\\d{4})/i, 'ngay_bh'],
+                    [/Loại văn bản[:\\s]+([^\\n]+)/i, 'loai_vb'],
+                    [/Cơ quan ban hành[:\\s]+([^\\n]+)/i, 'co_quan'],
+                    [/Tình trạng hiệu lực[:\\s]+([^\\n]+)/i, 'tinh_trang'],
+                    [/Ngày hết hiệu lực[:\\s]+(\\d{2}\\/\\d{2}\\/\\d{4})/i, 'ngay_hieu_luc'],
+                    [/Lĩnh vực[:\\s]+([^\\n]+)/i, 'linh_vuc'],
+                ];
+                for (const [rx, f] of p) { const m = text.match(rx); if (m) r[f] = m[1].trim(); }
+            }
+            return r;
+        }
+        """)
+        
+        content_html = await page.evaluate("""
+        () => {
+            const divs = document.querySelectorAll('div');
+            let best = '', bestLen = 0;
+            for (const d of divs) {
+                const classes = d.className || '';
+                if (classes.includes('tab-noi-dung') || classes.includes('tab-content')) {
+                    const textLen = (d.textContent || '').trim().length;
+                    if (textLen > bestLen && textLen > 500) {
+                        bestLen = textLen;
+                        best = d.innerHTML;
+                    }
+                }
+            }
+            return best;
+        }
+        """)
+        return meta, content_html
+    except Exception as e:
+        log(f"   ⚠️ Lỗi crawl detail LuatVietnam: {str(e)[:60]}")
+        return None, None
+
+
+async def crawl_phapluat_detail(page, context, card_index):
+    try:
+        async with context.expect_page(timeout=10000) as new_page_info:
+            await page.evaluate(f"""
+            (idx) => {{
+                const els = document.querySelectorAll('div[class*="cursor-pointer"]');
+                let card_idx = 0;
+                for (const el of els) {{
+                    const text = el.textContent.trim();
+                    if (text.includes('Quyết định') || text.includes('Nghị định') || text.includes('Thông tư')) {{
+                        if (card_idx === idx) {{
+                            el.click();
+                            return true;
+                        }}
+                        card_idx++;
+                    }}
+                }}
+                return false;
+            }}
+            """, card_index)
+            
+        new_page = await new_page_info.value
+        await new_page.wait_for_timeout(8000)
+        
+        meta = await new_page.evaluate("""
+        () => {
+            const r = { title:'', so_hieu:'', ngay_bh:'', loai_vb:'', co_quan:'', tinh_trang:'', ngay_hieu_luc:'' };
+            const h1 = document.querySelector('h1, h2, [class*="title"]');
+            if (h1) r.title = h1.textContent.trim();
+            const text = document.body.innerText || '';
+            const p = [
+                [/Số hiệu[:\\s]+([^\\n]+)/i, 'so_hieu'],
+                [/Ngày ban hành[:\\s]+(\\d{2}\\/\\d{2}\\/\\d{4})/i, 'ngay_bh'],
+                [/Loại văn bản[:\\s]+([^\\n]+)/i, 'loai_vb'],
+                [/Cơ quan ban hành[:\\s]+([^\\n]+)/i, 'co_quan'],
+                [/Tình trạng hiệu lực[:\\s]+([^\\n]+)/i, 'tinh_trang'],
+                [/Ngày hết hiệu lực[:\\s]+(\\d{2}\\/\\d{2}\\/\\d{4})/i, 'ngay_hieu_luc'],
+            ];
+            for (const [rx, f] of p) { const m = text.match(rx); if (m) r[f] = m[1].trim(); }
+            return r;
+        }
+        """)
+        
+        content_html = await new_page.evaluate("""
+        () => {
+            const el = document.querySelector('div.document-content');
+            return el ? el.innerHTML : '';
+        }
+        """)
+        await new_page.close()
+        return meta, content_html
+    except Exception as e:
+        log(f"   ⚠️ Lỗi crawl detail PhapLuat: {str(e)[:60]}")
+        return None, None
+
+
+async def sync_luatvietnam_source(page, stats):
+    url = "https://luatvietnam.vn/van-ban-moi.html"
+    log(f"🔍 Mở trang danh sách LuatVietnam: {url}")
+    try:
+        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        await page.wait_for_timeout(5000)
+    except Exception as e:
+        log(f"❌ Không thể mở trang LuatVietnam: {e}")
+        return
+        
+    for page_idx in range(1, 3):
+        if _shutdown:
+            break
+        log(f"📄 LuatVietnam — Trang {page_idx}...")
+        
+        posts = await page.evaluate("""
+        () => {
+            const items = [];
+            const divs = document.querySelectorAll('div.post-doc');
+            divs.forEach((d, idx) => {
+                const title_a = d.querySelector('h2.doc-title a') || d.querySelector('a');
+                if (title_a) {
+                    items.push({
+                        title: title_a.textContent.trim(),
+                        href: title_a.getAttribute('href'),
+                        index: idx
+                    });
+                }
+            });
+            return items;
+        }
+        """)
+        
+        if not posts:
+            log(f"⚠️ Không tìm thấy văn bản nào ở trang {page_idx}")
+            break
+            
+        existing_count = 0
+        for item in posts:
+            if _shutdown:
+                break
+            title = item["title"]
+            href = item["href"]
+            if not href or href.startswith("javascript"):
+                continue
+                
+            so_hieu = extract_so_hieu(title)
+            if doc_exists_by_title_or_so(title, so_hieu):
+                existing_count += 1
+                stats["skipped"] += 1
+                continue
+                
+            detail_url = f"https://luatvietnam.vn{href}"
+            log(f"   ✨ VB LuatVietnam mới: {so_hieu or 'N/A'} — {title[:70]}...")
+            
+            meta, content_html = await crawl_luatvietnam_detail(page, detail_url)
+            await page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            await page.wait_for_timeout(3000)
+            
+            if meta is None or not content_html:
+                stats["errors"] += 1
+                continue
+                
+            final_title = meta.get("title") or title
+            final_so_hieu = meta.get("so_hieu") or so_hieu
+            ngay_bh = meta.get("ngay_bh") or ""
+            loai_vb = meta.get("loai_vb") or "Quyết định"
+            co_quan = meta.get("co_quan") or ""
+            tinh_trang = meta.get("tinh_trang") or "Còn hiệu lực"
+            ngay_hieu_luc = meta.get("ngay_hieu_luc") or ""
+            
+            doc_id = save_document(
+                final_title, final_so_hieu, ngay_bh, loai_vb,
+                co_quan, tinh_trang, ngay_hieu_luc, content_html
+            )
+            
+            index_document_incrementally(doc_id, final_title, final_so_hieu, loai_vb, content_html)
+            stats["new_docs"] += 1
+            log(f"   ✅ ID {doc_id} ({final_so_hieu}) đồng bộ thành công")
+            
+        if existing_count == len(posts) and len(posts) > 0:
+            log("📌 Tất cả văn bản LuatVietnam trên trang này đã tồn tại. Dừng.")
+            break
+            
+        if page_idx < 2:
+            next_url = f"https://luatvietnam.vn/van-ban-moi.html?PageSize=20&PageIndex={page_idx + 1}"
+            await page.goto(next_url, wait_until="domcontentloaded", timeout=30000)
+            await page.wait_for_timeout(4000)
+
+
+async def sync_phapluat_source(page, context, stats):
+    url = "https://phapluat.gov.vn/he-thong-van-ban-phap-luat"
+    log(f"🔍 Mở trang danh sách PhapLuat: {url}")
+    try:
+        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        await page.wait_for_timeout(6000)
+    except Exception as e:
+        log(f"❌ Không thể mở trang PhapLuat: {e}")
+        return
+        
+    for page_idx in range(1, 3):
+        if _shutdown:
+            break
+        log(f"📄 PhapLuat — Trang {page_idx}...")
+        
+        cards = await page.evaluate("""
+        () => {
+            const items = [];
+            const els = document.querySelectorAll('div[class*="cursor-pointer"]');
+            let card_idx = 0;
+            for (let el of els) {
+                const text = el.textContent.trim();
+                if (text.includes('Quyết định') || text.includes('Nghị định') || text.includes('Thông tư')) {
+                    let card_parent = el.closest('.flex-1');
+                    let ngay_bh = '';
+                    let ngay_hieu_luc = '';
+                    let tinh_trang = 'Còn hiệu lực';
+                    
+                    if (card_parent) {
+                        const grid = card_parent.querySelector('div[class*="grid-cols-[5rem_1fr]"]');
+                        if (grid) {
+                            const spans = grid.querySelectorAll('span');
+                            for (let j = 0; j < spans.length - 1; j += 2) {
+                                const lbl = spans[j].textContent.trim();
+                                const val = spans[j+1].textContent.trim();
+                                if (lbl.includes('Ban hành')) ngay_bh = val;
+                                else if (lbl.includes('Áp dụng')) ngay_hieu_luc = val;
+                                else if (lbl.includes('Hiệu lực')) tinh_trang = val;
+                            }
+                        }
+                    }
+                    
+                    items.push({
+                        title: text,
+                        index: card_idx,
+                        ngay_bh: ngay_bh,
+                        ngay_hieu_luc: ngay_hieu_luc,
+                        tinh_trang: tinh_trang
+                    });
+                    card_idx++;
+                }
+            }
+            return items;
+        }
+        """)
+        
+        if not cards:
+            log(f"⚠️ Không tìm thấy văn bản nào ở trang {page_idx}")
+            break
+            
+        existing_count = 0
+        for item in cards:
+            if _shutdown:
+                break
+            title = item["title"]
+            so_hieu = extract_so_hieu(title)
+            
+            if doc_exists_by_title_or_so(title, so_hieu):
+                existing_count += 1
+                stats["skipped"] += 1
+                continue
+                
+            log(f"   ✨ VB PhapLuat mới: {so_hieu or 'N/A'} — {title[:70]}...")
+            
+            meta, content_html = await crawl_phapluat_detail(page, context, item["index"])
+            if meta is None or not content_html:
+                stats["errors"] += 1
+                continue
+                
+            final_title = meta.get("title") or title
+            final_so_hieu = meta.get("so_hieu") or so_hieu
+            ngay_bh = meta.get("ngay_bh") or item["ngay_bh"]
+            loai_vb = meta.get("loai_vb") or "Quyết định"
+            co_quan = meta.get("co_quan") or ""
+            tinh_trang = meta.get("tinh_trang") or item["tinh_trang"]
+            ngay_hieu_luc = meta.get("ngay_hieu_luc") or item["ngay_hieu_luc"]
+            
+            doc_id = save_document(
+                final_title, final_so_hieu, ngay_bh, loai_vb,
+                co_quan, tinh_trang, ngay_hieu_luc, content_html
+            )
 async def run_sync():
     global _shutdown
 
@@ -298,7 +619,7 @@ async def run_sync():
 
     total_before = get_total_docs()
     log("=" * 60)
-    log("🚀 ĐỒNG BỘ VĂN BẢN MỚI TỪ VBPL.VN (v2026)")
+    log("🚀 ĐỒNG BỘ VB MỚI TỪ CÁC NGUỒN (VBPL, LUATVIETNAM, PHAPLUAT.GOV.VN)")
     log(f"📊 Tổng VB hiện tại: {total_before:,}")
     log(f"⚙️  Max pages: {MAX_PAGES}, Proxy: {PROXY or 'none'}, Headless: {HEADLESS}")
     log("=" * 60)
@@ -338,145 +659,135 @@ async def run_sync():
 
         page = await context.new_page()
 
-        # Navigate to list page
-        log(f"🔍 Mở trang danh sách: {LIST_URL}")
+        # Nguồn 1: vbpl.vn
+        log("\n--- BẮT ĐẦU ĐỒNG BỘ NGUỒN 1: VBPL.VN ---")
         try:
+            log(f"🔍 Mở trang danh sách: {LIST_URL}")
             await page.goto(LIST_URL, wait_until="domcontentloaded", timeout=30000)
-            # Wait for DocumentCard to render
             try:
-                await page.wait_for_selector('[class*="documentCard"], [class*="DocumentCard"]',
-                                              timeout=15000)
+                await page.wait_for_selector('[class*="documentCard"], [class*="DocumentCard"]', timeout=15000)
                 log("✅ Trang list đã load, tìm thấy DocumentCards")
             except:
                 await page.wait_for_timeout(8000)
                 log("⚠️ Chờ thêm 8s cho JS render...")
-        except Exception as e:
-            log(f"❌ Không thể mở trang list: {str(e)[:80]}")
-            stats["status"] = "error"
-            stats["errors"] += 1
-            write_progress(stats)
-            await browser.close()
-            return
-
-        for page_idx in range(1, MAX_PAGES + 1):
-            if _shutdown:
-                break
-
-            log(f"📄 Xử lý trang {page_idx}/{MAX_PAGES}...")
-            stats["pages_scanned"] = page_idx
-
-            # Extract documents from current page (with retry for skeleton loading)
-            items = []
-            for _ in range(8):
-                items = await extract_list_items(page)
-                if items:
-                    break
-                await page.wait_for_timeout(2000)
-
-            if not items:
-                log(f"⚠️ Không tìm thấy VB nào trên trang {page_idx}. Dừng.")
-                break
-
-            log(f"   📊 Tìm thấy {len(items)} VB")
-
-            existing_count = 0
-
-            for item in items:
+                
+            for page_idx in range(1, MAX_PAGES + 1):
                 if _shutdown:
                     break
-
-                title = item["title"]
-                so_hieu = extract_so_hieu(title)
-
-                if doc_exists_by_title_or_so(title, so_hieu):
-                    existing_count += 1
-                    stats["skipped"] += 1
-                    continue
-
-                log(f"   ✨ VB mới: {so_hieu or 'N/A'} — {title[:70]}...")
-
-                # Click vào card để vào detail
-                detail_url = await navigate_to_detail(page, item["index"])
-
-                if not detail_url:
-                    stats["errors"] += 1
-                    # Go back to list
-                    await page.goto(LIST_URL, wait_until="domcontentloaded", timeout=20000)
-                    await page.wait_for_timeout(5000)
-                    continue
-
-                meta, content_html = await extract_detail_content(page)
-
-                if meta is None:
-                    stats["errors"] += 1
+                log(f"📄 Xử lý trang {page_idx}/{MAX_PAGES}...")
+                stats["pages_scanned"] = page_idx
+                
+                items = []
+                for _ in range(8):
+                    items = await extract_list_items(page)
+                    if items:
+                        break
+                    await page.wait_for_timeout(2000)
+                    
+                if not items:
+                    log(f"⚠️ Không tìm thấy VB nào trên trang {page_idx}. Dừng.")
+                    break
+                    
+                log(f"   📊 Tìm thấy {len(items)} VB")
+                existing_count = 0
+                
+                for item in items:
+                    if _shutdown:
+                        break
+                    title = item["title"]
+                    so_hieu = extract_so_hieu(title)
+                    
+                    if doc_exists_by_title_or_so(title, so_hieu):
+                        existing_count += 1
+                        stats["skipped"] += 1
+                        continue
+                        
+                    log(f"   ✨ VB mới: {so_hieu or 'N/A'} — {title[:70]}...")
+                    detail_url = await navigate_to_detail(page, item["index"])
+                    
+                    if not detail_url:
+                        stats["errors"] += 1
+                        await page.goto(LIST_URL, wait_until="domcontentloaded", timeout=20000)
+                        await page.wait_for_timeout(5000)
+                        continue
+                        
+                    meta, content_html = await extract_detail_content(page)
+                    if meta is None:
+                        stats["errors"] += 1
+                        await page.go_back()
+                        await page.wait_for_timeout(3000)
+                        continue
+                        
+                    final_title = meta.get("title") or title
+                    final_so_hieu = meta.get("so_hieu") or so_hieu
+                    ngay_bh = meta.get("ngay_bh") or item.get("ngay_bh", "")
+                    loai_vb = meta.get("loai_vb") or "Văn bản pháp luật"
+                    co_quan = meta.get("co_quan") or ""
+                    tinh_trang = meta.get("tinh_trang") or item.get("tinh_trang", "Còn hiệu lực")
+                    ngay_hieu_luc = meta.get("ngay_hieu_luc") or ""
+                    
+                    doc_id = save_document(
+                        final_title, final_so_hieu, ngay_bh, loai_vb,
+                        co_quan, tinh_trang, ngay_hieu_luc, content_html
+                    )
+                    
+                    index_document_incrementally(doc_id, final_title, final_so_hieu, loai_vb, content_html)
+                    stats["new_docs"] += 1
+                    
+                    stats["recent"] = ([{
+                        "id": doc_id,
+                        "title": final_title[:60],
+                        "so_hieu": final_so_hieu,
+                        "time": time.strftime("%H:%M:%S"),
+                        "has_content": bool(content_html),
+                    }] + stats["recent"])[:20]
+                    write_progress(stats)
+                    
                     await page.go_back()
                     await page.wait_for_timeout(3000)
-                    continue
-
-                # Merge metadata
-                final_title = meta.get("title") or title
-                final_so_hieu = meta.get("so_hieu") or so_hieu
-                ngay_bh = meta.get("ngay_bh") or item.get("ngay_bh", "")
-                loai_vb = meta.get("loai_vb") or "Văn bản pháp luật"
-                co_quan = meta.get("co_quan") or ""
-                tinh_trang = meta.get("tinh_trang") or item.get("tinh_trang", "Còn hiệu lực")
-                ngay_hieu_luc = meta.get("ngay_hieu_luc") or ""
-
-                doc_id = save_document(
-                    final_title, final_so_hieu, ngay_bh, loai_vb,
-                    co_quan, tinh_trang, ngay_hieu_luc, content_html
-                )
-
-                # Đồng bộ chỉ mục tìm kiếm và đồ thị tri thức gia tăng
-                index_document_incrementally(doc_id, final_title, final_so_hieu, loai_vb, content_html)
-
-                stats["new_docs"] += 1
-                stats["recent"] = ([{
-                    "id": doc_id,
-                    "title": final_title[:60],
-                    "so_hieu": final_so_hieu,
-                    "time": time.strftime("%H:%M:%S"),
-                    "has_content": bool(content_html),
-                }] + stats["recent"])[:20]
-
-                log(f"   ✅ ID {doc_id} ({final_so_hieu}) | content: {'✅' if content_html else '❌'}")
-
-                write_progress(stats)
-
-                # Go back to list page
-                await page.go_back()
-                await page.wait_for_timeout(3000)
-
-            # Tất cả VB đã có → dừng
-            if existing_count == len(items) and len(items) > 0:
-                log(f"📌 Tất cả {len(items)} VB trên trang {page_idx} đã có trong DB. Dừng.")
-                break
-
-            write_progress(stats)
-
-            # Click next page
-            if page_idx < MAX_PAGES:
-                log(f"   ⏭️ Trang tiếp...")
-                has_next = await page.evaluate("""
-                () => {
-                    const btns = document.querySelectorAll('button, a, li');
-                    for (const b of btns) {
-                        const t = b.textContent.trim();
-                        const label = b.getAttribute('aria-label') || '';
-                        if ((t === '>' || t === '›' || t === 'Sau' || t === 'Next' ||
-                             label.toLowerCase().includes('next')) &&
-                            !b.disabled && b.offsetParent !== null) {
-                            b.click();
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-                """)
-                if not has_next:
-                    log("⚠️ Không tìm thấy nút trang tiếp. Dừng.")
+                    
+                if existing_count == len(items) and len(items) > 0:
+                    log(f"📌 Tất cả {len(items)} VB trên trang {page_idx} đã có trong DB. Dừng.")
                     break
-                await page.wait_for_timeout(5000)
+                    
+                if page_idx < MAX_PAGES:
+                    has_next = await page.evaluate("""
+                    () => {
+                        const btns = document.querySelectorAll('button, a, li');
+                        for (const b of btns) {
+                            const t = b.textContent.trim();
+                            const label = b.getAttribute('aria-label') || '';
+                            if ((t === '>' || t === '›' || t === 'Sau' || t === 'Next' ||
+                                 label.toLowerCase().includes('next')) &&
+                                !b.disabled && b.offsetParent !== null) {
+                                b.click();
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                    """)
+                    if not has_next:
+                        break
+                    await page.wait_for_timeout(5000)
+        except Exception as e:
+            log(f"❌ Lỗi đồng bộ nguồn VBPL: {e}")
+
+        # Nguồn 2: luatvietnam.vn
+        if not _shutdown:
+            log("\n--- BẮT ĐẦU ĐỒNG BỘ NGUỒN 2: LUATVIETNAM.VN ---")
+            try:
+                await sync_luatvietnam_source(page, stats)
+            except Exception as e:
+                log(f"❌ Lỗi đồng bộ nguồn LuatVietnam: {e}")
+
+        # Nguồn 3: phapluat.gov.vn
+        if not _shutdown:
+            log("\n--- BẮT ĐẦU ĐỒNG BỘ NGUỒN 3: PHAPLUAT.GOV.VN ---")
+            try:
+                await sync_phapluat_source(page, context, stats)
+            except Exception as e:
+                log(f"❌ Lỗi đồng bộ nguồn PhapLuat: {e}")
 
         await browser.close()
 
@@ -514,19 +825,25 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
         
         log(f"   ⚡ Bắt đầu đồng bộ chỉ mục gia tăng cho văn bản ID: {doc_id}...")
         
+        # Clean watermarks/copyright lines before chunking
+        cleaned_html = remove_watermarks(content_html)
+        
         # 1. Cắt văn bản thành các chunks
-        chunks = parse_html_to_chunks(content_html)
+        chunks = parse_html_to_chunks(cleaned_html)
         if not chunks:
             return
             
         # 2. Xây dựng đồ thị tri thức (Knowledge Graph)
-        soup = BeautifulSoup(content_html, "html.parser")
+        soup = BeautifulSoup(cleaned_html, "html.parser")
         text = soup.get_text()
         LightGraphManager.index_document_graph(doc_id, title, so_ky_hieu, text)
         
         # 3. Kết nối CSDL chính để lưu các chunks
         conn = sqlite3.connect(DB_NAME, timeout=30)
         cursor = conn.cursor()
+        
+        # Xóa các chunks cũ của văn bản này để tránh trùng lặp trong SQLite và FTS index
+        cursor.execute("DELETE FROM document_chunks WHERE doc_id = ?", (doc_id,))
         
         chunks_data = []
         for c in chunks:
@@ -588,9 +905,54 @@ def index_document_incrementally(doc_id, title, so_ky_hieu, loai_van_ban, conten
                     index.add_with_ids(xb, ids)
                     faiss.write_index(index, idx_file)
                     log(f"   ⚡ Đã cập nhật gia tăng {len(chunks_data)} vectors vào FAISS index: {idx_file}")
+                    del index
+                    gc.collect()
                 except Exception as ex:
                     log(f"   ⚠️ Lỗi cập nhật gia tăng file index {idx_file}: {ex}")
                     
+        # 7. Cập nhật Zvec Collection
+        try:
+            schema = zvec.CollectionSchema(
+                name="zvec_laws",
+                vectors=[
+                    zvec.VectorSchema("dense_vector", zvec.DataType.VECTOR_FP32, 1024)
+                ],
+                fields=[
+                    zvec.FieldSchema("doc_id", zvec.DataType.INT64),
+                    zvec.FieldSchema("so_ky_hieu", zvec.DataType.STRING),
+                    zvec.FieldSchema("loai_van_ban", zvec.DataType.STRING),
+                    zvec.FieldSchema("tinh_trang_hieu_luc", zvec.DataType.STRING),
+                    zvec.FieldSchema("chunk_text", zvec.DataType.STRING)
+                ]
+            )
+            try:
+                collection = zvec.open(path=ZVEC_DB_PATH)
+            except Exception:
+                collection = zvec.create_and_open(path=ZVEC_DB_PATH, schema=schema)
+                
+            zvec_docs = []
+            for (chunk_uid, chunk_with_meta), emb in zip(chunks_data, embeddings):
+                zvec_docs.append(zvec.Doc(
+                    id=str(chunk_uid),
+                    vectors={"dense_vector": emb.tolist()},
+                    fields={
+                        "doc_id": doc_id,
+                        "so_ky_hieu": so_ky_hieu or "",
+                        "loai_van_ban": loai_van_ban or "",
+                        "tinh_trang_hieu_luc": "Còn hiệu lực",
+                        "chunk_text": chunk_with_meta
+                    }
+                ))
+            if zvec_docs:
+                batch_size = 1000
+                for idx_batch in range(0, len(zvec_docs), batch_size):
+                    batch = zvec_docs[idx_batch:idx_batch + batch_size]
+                    collection.insert(batch)
+                collection.flush()
+                log(f"   ⚡ Đã cập nhật gia tăng {len(zvec_docs)} vectors vào Zvec collection tại {ZVEC_DB_PATH}")
+        except Exception as ez:
+            log(f"   ⚠️ Lỗi cập nhật gia tăng Zvec: {ez}")
+            
     except Exception as e:
         log(f"   ⚠️ Lỗi đồng bộ index gia tăng cho ID {doc_id}: {e}")
 

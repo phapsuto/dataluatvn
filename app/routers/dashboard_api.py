@@ -244,6 +244,9 @@ async def dashboard_crawler_start(request: Request):
     proxy = body.get("proxy", "").strip()
 
     script = os.path.join(_PROJECT_ROOT, "fill_missing_content.py")
+    if not os.path.exists(script):
+        script = os.path.join(_PROJECT_ROOT, "scripts", "fill_missing_content.py")
+        
     cmd = [sys.executable, script]
     if limit and limit > 0:
         cmd.append(str(limit))
@@ -307,6 +310,9 @@ async def dashboard_sync_start(request: Request):
     proxy = body.get("proxy", "").strip()
 
     script = os.path.join(_PROJECT_ROOT, "sync_new_laws.py")
+    if not os.path.exists(script):
+        script = os.path.join(_PROJECT_ROOT, "scripts", "sync_new_laws.py")
+        
     if os.path.exists(script):
         env = os.environ.copy()
         env["SYNC_PAGES"] = str(pages)
@@ -406,6 +412,8 @@ def dashboard_rebuild_fts():
 @router.post("/tools/extract-mods")
 def dashboard_extract_mods():
     script = os.path.join(_PROJECT_ROOT, "extract_modifications.py")
+    if not os.path.exists(script):
+        script = os.path.join(_PROJECT_ROOT, "scripts", "extract_modifications.py")
     if os.path.exists(script):
         subprocess.Popen([sys.executable, script], cwd=_PROJECT_ROOT)
         return {"ok": True, "message": "Extract modifications đã bắt đầu"}
@@ -415,6 +423,8 @@ def dashboard_extract_mods():
 @router.post("/tools/build-crosslinks")
 def dashboard_build_crosslinks():
     script = os.path.join(_PROJECT_ROOT, "build_crosslinks.py")
+    if not os.path.exists(script):
+        script = os.path.join(_PROJECT_ROOT, "scripts", "build_crosslinks.py")
     if os.path.exists(script):
         subprocess.Popen([sys.executable, script], cwd=_PROJECT_ROOT)
         return {"ok": True, "message": "Build crosslinks đã bắt đầu"}

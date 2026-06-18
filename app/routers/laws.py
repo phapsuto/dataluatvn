@@ -605,6 +605,7 @@ def normalize_spelling(text: str) -> str:
 
 _SMART_SEARCH_MODEL = None
 _SMART_SEARCH_INDEX = None
+_SMART_SEARCH_ZVEC_COLLECTION = None
 _SMART_SEARCH_ID_MAP = None
 _SMART_SEARCH_PROVINCES = None
 
@@ -670,24 +671,20 @@ class RemoteFPTEmbedder:
         return np.zeros((len(sentences), self.dimension), dtype=np.float32)
 
 def get_smart_search_resources():
-    global _SMART_SEARCH_MODEL, _SMART_SEARCH_INDEX, _SMART_SEARCH_ID_MAP
+    global _SMART_SEARCH_MODEL, _SMART_SEARCH_INDEX, _SMART_SEARCH_ID_MAP, _SMART_SEARCH_ZVEC_COLLECTION
     import os
-    from app.config import EMBEDDING_MODEL_SOTA, FAISS_INDEX_SOTA
+    from app.config import EMBEDDING_MODEL_SOTA, FAISS_INDEX_SOTA, USE_ZVEC_BACKEND, ZVEC_DB_PATH
     
     # ── EMBEDDING MODEL SELECTION ──
-    # QUAN TRỌNG: Embedding model phải KHỚP với model đã dùng để build FAISS index.
-    # FAISS index hiện tại build bằng bge-m3 (1024-d) → PHẢI dùng bge-m3 để encode query.
-    # Chỉ dùng FPT Vietnamese_Embedding khi EMBEDDING_PROVIDER=fpt VÀ đã rebuild index tương ứng.
-    # LƯU Ý: ACTIVE_LLM_PROVIDER chỉ ảnh hưởng LLM generation, KHÔNG ảnh hưởng embedding.
     from app.config import FPT_CLOUD_API_KEY
     embedding_provider = os.environ.get("EMBEDDING_PROVIDER", "local")  # default: local bge-m3
     if embedding_provider == "fpt" and FPT_CLOUD_API_KEY:
         if _SMART_SEARCH_MODEL is None:
             _SMART_SEARCH_MODEL = RemoteFPTEmbedder(FPT_CLOUD_API_KEY)
             print("🌐 Loaded Remote FPT Embedding Model (Vietnamese_Embedding)")
-            print("⚠️  ĐẢM BẢO: FAISS index đã được rebuild bằng Vietnamese_Embedding!")
+            print("⚠️  ĐẢM BẢO: FAISS/Zvec index đã được rebuild bằng Vietnamese_Embedding!")
     else:
-        # Lazy load sentence-transformers & PyTorch — dùng bge-m3 local (mặc định, khớp FAISS index)
+        # Lazy load sentence-transformers & PyTorch — dùng bge-m3 local
         if _SMART_SEARCH_MODEL is None:
             try:
                 import torch
@@ -699,32 +696,44 @@ def get_smart_search_resources():
             except Exception as e:
                 print(f"⚠️ Không thể load embedding model {EMBEDDING_MODEL_SOTA}: {e}")
 
-            
-    # Lazy load FAISS index
-    if _SMART_SEARCH_INDEX is None:
-        index_path = FAISS_INDEX_SOTA
-        if os.path.exists(index_path):
+    # ── SEARCH BACKEND SELECTION (ZVEC or FAISS) ──
+    if USE_ZVEC_BACKEND:
+        if _SMART_SEARCH_ZVEC_COLLECTION is None:
             try:
-                import faiss
-                import numpy as np
-                _SMART_SEARCH_INDEX = faiss.read_index(index_path)
-                if hasattr(_SMART_SEARCH_INDEX, "id_map"):
-                    id_arr = faiss.vector_to_array(_SMART_SEARCH_INDEX.id_map)
-                    _SMART_SEARCH_ID_MAP = {int(cid): i for i, cid in enumerate(id_arr)}
+                import zvec
+                if os.path.exists(ZVEC_DB_PATH):
+                    _SMART_SEARCH_ZVEC_COLLECTION = zvec.open(path=ZVEC_DB_PATH)
+                    print(f"✅ Loaded Zvec Collection from {ZVEC_DB_PATH}")
                 else:
-                    _SMART_SEARCH_ID_MAP = {}
-                
-                # Cấu hình nprobe cho các loại chỉ mục IVF (Inverted File)
-                if hasattr(_SMART_SEARCH_INDEX, "nprobe"):
-                    nprobe_val = int(os.environ.get("FAISS_NPROBE", "64"))
-                    _SMART_SEARCH_INDEX.nprobe = nprobe_val
-                    print(f"🎯 Chỉ mục FAISS loại IVF được thiết lập nprobe = {nprobe_val}")
+                    print(f"⚠️ Zvec database path not found: {ZVEC_DB_PATH}")
             except Exception as e:
-                print(f"⚠️ Không thể load FAISS index từ {index_path}: {e}")
-        else:
-            print(f"⚠️ Không tìm thấy file index: {index_path}")
-            
-    return _SMART_SEARCH_MODEL, _SMART_SEARCH_INDEX
+                print(f"⚠️ Không thể load Zvec Collection từ {ZVEC_DB_PATH}: {e}")
+        return _SMART_SEARCH_MODEL, _SMART_SEARCH_ZVEC_COLLECTION
+    else:
+        index_path = FAISS_INDEX_SOTA
+        if _SMART_SEARCH_INDEX is None:
+            if os.path.exists(index_path):
+                try:
+                    import faiss
+                    import numpy as np
+                    _SMART_SEARCH_INDEX = faiss.read_index(index_path)
+                    if hasattr(_SMART_SEARCH_INDEX, "id_map"):
+                        id_arr = faiss.vector_to_array(_SMART_SEARCH_INDEX.id_map)
+                        _SMART_SEARCH_ID_MAP = {int(cid): i for i, cid in enumerate(id_arr)}
+                    else:
+                        _SMART_SEARCH_ID_MAP = {}
+                    
+                    # Cấu hình nprobe cho các loại chỉ mục IVF (Inverted File)
+                    if hasattr(_SMART_SEARCH_INDEX, "nprobe"):
+                        nprobe_val = int(os.environ.get("FAISS_NPROBE", "64"))
+                        _SMART_SEARCH_INDEX.nprobe = nprobe_val
+                        print(f"🎯 Chỉ mục FAISS loại IVF được thiết lập nprobe = {nprobe_val}")
+                    print(f"✅ Loaded FAISS index from {index_path}")
+                except Exception as e:
+                    print(f"⚠️ Không thể load FAISS index từ {index_path}: {e}")
+            else:
+                print(f"⚠️ Không tìm thấy file index: {index_path}")
+        return _SMART_SEARCH_MODEL, _SMART_SEARCH_INDEX
 
 _RERANKER_MODEL = None
 _RERANKER_TOKENIZER = None
@@ -1032,14 +1041,13 @@ def smart_search_laws(
             except Exception as e:
                 print(f"⚠️ Lỗi truy vấn FTS5 Chunks: {e}")
 
-    # 3. Chạy Vector Search trên FAISS (Top 150)
+    # 3. Chạy Vector Search (Top 150)
     vector_results = []
-    model, faiss_index = get_smart_search_resources()
+    model, search_backend = get_smart_search_resources()
     
-    if model and faiss_index:
+    if model and search_backend:
         try:
             import numpy as np
-            import faiss
             q_norm = normalize_spelling(q_processed)
             if expanded_terms:
                 q_norm = q_norm + " " + " ".join([normalize_spelling(term) for term in expanded_terms])
@@ -1047,13 +1055,24 @@ def smart_search_laws(
             if query_vector is None:
                 query_vector = model.encode([q_norm], show_progress_bar=False, convert_to_numpy=True)
                 query_vector = query_vector.astype(np.float32)
+                
+            from app.config import USE_ZVEC_BACKEND
+            if USE_ZVEC_BACKEND:
+                import zvec
+                q_vec_list = query_vector[0].tolist()
+                zvec_results = search_backend.query(
+                    queries=zvec.Query(field_name="dense_vector", vector=q_vec_list),
+                    topk=150
+                )
+                for res in zvec_results:
+                    vector_results.append((int(res.id), float(res.score)))
+            else:
+                import faiss
                 faiss.normalize_L2(query_vector)
-            
-            distances, indices = faiss_index.search(query_vector, 150)
-            
-            for score, cid in zip(distances[0], indices[0]):
-                if cid != -1:
-                    vector_results.append((int(cid), float(score)))
+                distances, indices = search_backend.search(query_vector, 150)
+                for score, cid in zip(distances[0], indices[0]):
+                    if cid != -1:
+                        vector_results.append((int(cid), float(score)))
         except Exception as e:
             print(f"⚠️ Lỗi truy vấn Vector Search: {e}")
 

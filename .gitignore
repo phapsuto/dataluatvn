@@ -72,4 +72,9 @@ Thumbs.db
 ai study vnlaw/
 artifacts/
 
+# ─── Local DB & Backup Folders ───
+zvec_laws_db/
+backup_faiss/
+scratch/zvec_test_db/
+
 

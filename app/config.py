@@ -13,6 +13,7 @@ DB_NAME = os.environ.get("DB_PATH", "vietnamese_legal_documents.db")
 CONTENT_DB = os.environ.get("CONTENT_DB_PATH", "content_store.db")
 ADMIN_DB = os.environ.get("ADMIN_DB_PATH", "admin.db")
 MEMORY_DB = os.environ.get("MEMORY_DB_PATH", "user_session_memory.db")
+ZVEC_DB_PATH = os.environ.get("ZVEC_DB_PATH", "zvec_laws_db")
 FPT_CLOUD_API_KEY = os.environ.get("FPT_CLOUD_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 API_PORT = int(os.environ.get("API_PORT", 2004))
@@ -34,6 +35,7 @@ VECTOR_DB_SOTA = os.environ.get("VECTOR_DB_SOTA_PATH", "vector_store.db")
 FAISS_INDEX_SOTA = os.environ.get("FAISS_INDEX_SOTA_PATH", "chunks_faiss_sq8.index")  # SQ8 quantized: 1.5 GB thay vì FP32 5.9 GB → tiết kiệm ~4.5 GB RAM
 EMBEDDING_MODEL_SOTA = os.environ.get("EMBEDDING_MODEL_SOTA", "BAAI/bge-m3")
 RERANKER_MODEL_SOTA = os.environ.get("RERANKER_MODEL_SOTA", "AITeamVN/Vietnamese_Reranker")
+USE_ZVEC_BACKEND = os.environ.get("USE_ZVEC_BACKEND", "true").lower() == "true"
 
 
 # --- Fixed Accounts (Internal Use Only) ---
