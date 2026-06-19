@@ -42,7 +42,7 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.environ.get(
     "TELEGRAM_BOT_TOKEN",
-    "8530018297:AAG0MJIN5M0aT9C9rdx768nyQ-mU6ohAwUs"
+    ""
 )
 
 LUATBOT_API_URL = os.environ.get("LUATBOT_API_URL", "http://localhost:2004")
