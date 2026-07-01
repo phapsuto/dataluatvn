@@ -29,6 +29,7 @@ Quy tắc Clarification (Làm rõ):
 
 Quy tắc Search Query (Rewrite):
 - Chuyển đổi câu hỏi gốc thành chuỗi từ khóa tối ưu cho công cụ tìm kiếm Full-Text Search.
+- QUAN TRỌNG: Nếu có [LỊCH SỬ TRÒ CHUYỆN TRƯỚC ĐÓ], hãy dựa vào đó để điền khuyết các danh từ, chủ ngữ bị thiếu trong câu hỏi hiện tại để tạo ra câu truy vấn đầy đủ ngữ nghĩa nhất.
 - Bỏ các từ vô nghĩa (cho tôi hỏi, theo luật hiện hành, như thế nào, ra sao...).
 - VD: "Cho mình hỏi luật quy định thế nào về mức phạt nồng độ cồn xe máy" -> "mức phạt nồng độ cồn xe máy".
 
@@ -46,10 +47,10 @@ Output Format (JSON strictly):
 }
 """
 
-async def analyze_query(query: str, chat_history_len: int = 0) -> Dict[str, Any]:
+async def analyze_query(query: str, chat_history_text: str = "") -> Dict[str, Any]:
     """
     Phân tích câu hỏi bằng LLM theo mô hình One-Shot.
-    Nếu đang trong luồng hội thoại (chat_history_len > 0), giảm thiểu việc hỏi ngược.
+    Nếu đang trong luồng hội thoại (chat_history_text != ""), tự động nội suy (coreference) ngữ cảnh để rewrite search query.
     """
     # Fast regex path for purely chitchat to save LLM cost
     query_clean = re.sub(r'[^\w\s]', '', query.strip().lower())
@@ -67,8 +68,11 @@ async def analyze_query(query: str, chat_history_len: int = 0) -> Dict[str, Any]
             "clarification_question": None,
             "search_query": query
         }
+        
+    user_prompt = f"Câu hỏi hiện tại: \"{query}\""
+    if chat_history_text:
+        user_prompt = f"{chat_history_text}\n\n{user_prompt}\n(Lưu ý: Hãy kết hợp Lịch sử trò chuyện để rewrite thành search_query đầy đủ ý nghĩa)."
 
-    user_prompt = f"Câu hỏi: \"{query}\"\n(Lịch sử chat: {chat_history_len} tin nhắn trước đó. Bỏ qua clarification nếu đang trong ngữ cảnh chat liên tục)."
     
     try:
         raw_response = await LLMGateway.call_async(
@@ -90,7 +94,7 @@ async def analyze_query(query: str, chat_history_len: int = 0) -> Dict[str, Any]
         data = json.loads(clean_json.strip())
         
         # Override clarification if in middle of chat
-        if chat_history_len > 0:
+        if chat_history_text:
             data["needs_clarification"] = False
             data["clarification_question"] = None
             
