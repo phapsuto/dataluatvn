@@ -153,7 +153,7 @@ def _get_chat_history_text(session_id: str, limit: int = 4) -> str:
         m_conn = get_memory_db()
         m_cursor = m_conn.cursor()
         m_cursor.execute(
-            "SELECT role, content FROM chat_messages WHERE session_id = ? ORDER BY id DESC LIMIT ?", 
+            "SELECT role, content FROM chat_messages WHERE session_id = ? ORDER BY message_id DESC LIMIT ?", 
             (session_id, limit)
         )
         rows = m_cursor.fetchall()
