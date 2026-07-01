@@ -1,0 +1,64 @@
+
+[2026-07-01 13:07:10] 🔍 SEARCH: 'Điều 134 BLHS'
+  1. [Điểm: 98.3415] Hình sự
+  2. [Điểm: 97.8910] Hình sự
+  3. [Điểm: 91.2038] Hình sự
+  4. [Điểm: 90.9482] Hình sự
+  5. [Điểm: 3.3467] Về việc thi hành Bộ luật Hình sự
+--------------------------------------------------
+
+[2026-07-01 13:19:12] 🔍 SEARCH: 'Điều 134 BLHS'
+  1. [Điểm: 98.4255] Hình sự
+  2. [Điểm: 97.9750] Hình sự
+  3. [Điểm: 91.2878] Hình sự
+  4. [Điểm: 91.0322] Hình sự
+  5. [Điểm: 3.3827] Về việc thi hành Bộ luật Hình sự
+--------------------------------------------------
+
+[2026-07-01 13:19:51] 🔍 SEARCH: 'Điều 134 BLHS'
+  1. [Điểm: 98.4255] Hình sự
+  2. [Điểm: 97.9750] Hình sự
+  3. [Điểm: 91.2878] Hình sự
+  4. [Điểm: 91.0322] Hình sự
+  5. [Điểm: 3.3827] Về việc thi hành Bộ luật Hình sự
+--------------------------------------------------
+
+[2026-07-01 13:38:27] 🔍 SEARCH: 'quyền sử dụng tiền tiết kiệm chung của vợ chồng'
+  1. [Điểm: 75.6787] Hôn nhân và gia đình
+  2. [Điểm: 54.7263] Quy định chi tiết một số điều và biện pháp thi hành Luật Hôn nhân và gia đình
+  3. [Điểm: 39.9167] Hôn nhân và gia đình
+  4. [Điểm: 27.0542] Hôn nhân và gia đình
+  5. [Điểm: 26.3382] Hôn nhân và gia đình
+--------------------------------------------------
+
+[2026-07-01 13:40:38] 🔍 SEARCH: 'quyền sử dụng tiền tiết kiệm chung của vợ chồng'
+  1. [Điểm: 75.6787] Hôn nhân và gia đình
+  2. [Điểm: 54.7263] Quy định chi tiết một số điều và biện pháp thi hành Luật Hôn nhân và gia đình
+  3. [Điểm: 39.9167] Hôn nhân và gia đình
+  4. [Điểm: 27.0542] Hôn nhân và gia đình
+  5. [Điểm: 26.3382] Hôn nhân và gia đình
+--------------------------------------------------
+
+[2026-07-01 13:41:36] 🔍 SEARCH: 'Điều 123 BLHS quy định'
+  1. [Điểm: 95.3432] Hình sự
+  2. [Điểm: 88.8063] Hình sự
+  3. [Điểm: 86.6082] Hình sự
+  4. [Điểm: 58.1578] Hình sự
+  5. [Điểm: 3.8848] Quy định về việc tính tổng khối lượng hoặc thể tích chất ma túy tại một số điều của Bộ luật Hình sự năm 2015
+--------------------------------------------------
+
+[2026-07-01 13:43:59] 🔍 SEARCH: 'tội trộm cắp tài sản tội buôn bán hóa đơn nặng hơn'
+  1. [Điểm: 31.2449] Hình sự
+  2. [Điểm: 28.0692] Hình sự
+  3. [Điểm: 27.8335] Hình sự
+  4. [Điểm: 18.6004] Hình sự
+  5. [Điểm: 16.8930] Hình sự
+--------------------------------------------------
+
+[2026-07-01 13:52:17] 🔍 SEARCH: 'gián đồi với tói giết người bỏ chản'
+  1. [Điểm: 1.6443] Giải thích khoản 1 Điều 289 của Bộ luật Hình sự
+  2. [Điểm: 1.0706] Hình sự
+  3. [Điểm: 0.4804] Hình sự
+  4. [Điểm: 0.4250] Hình sự
+  5. [Điểm: 0.4240] Quy định chi tiết một số điều của Luật Thi hành án hình sự về thi hành án đối với pháp nhân thương mại
+--------------------------------------------------

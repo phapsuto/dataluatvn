@@ -1,17 +1,17 @@
 import re
-import requests
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List
+from typing import Optional, List
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException
 from bs4 import BeautifulSoup, NavigableString
 
 from app.dependencies import require_api_key
-from app.database import get_db_connection, get_content_connection, get_memory_db
+from app.database import get_memory_db
 from app.utils.llm_gateway import LLMGateway
-from app.utils.legal_router import route_query
+from app.utils.smart_router import analyze_query
 from app.utils.user_memory import LegalUserMemory
 from app.utils.ultimate_retrieval import ultimate_retrieve
+import asyncio
 from app.utils.flare_retrieval import flare_generate_stream
 
 router = APIRouter(prefix="/assistant", tags=["🤖 Trợ lý ảo - AI Chatbot & RAG"])
@@ -145,6 +145,32 @@ def clean_html(html_str: str) -> str:
     return markdown_text.strip()
 
 
+def _get_chat_history_text(session_id: str, limit: int = 4) -> str:
+    """Helper: Lấy lịch sử chat gần đây từ SQLite."""
+    if not session_id:
+        return ""
+    try:
+        m_conn = get_memory_db()
+        m_cursor = m_conn.cursor()
+        m_cursor.execute(
+            "SELECT role, content FROM chat_messages WHERE session_id = ? ORDER BY id DESC LIMIT ?", 
+            (session_id, limit)
+        )
+        rows = m_cursor.fetchall()
+        m_conn.close()
+        if not rows:
+            return ""
+        rows.reverse()
+        history = "--- LỊCH SỬ TRÒ CHUYỆN TRƯỚC ĐÓ ---\n"
+        for role, content in rows:
+            role_name = "User" if role == "user" else "Assistant"
+            history += f"{role_name}: {content}\n"
+        return history + "\n"
+    except Exception as e:
+        print(f"⚠️ Error reading session message log: {e}")
+        return ""
+
+
 def _save_chat_history(session_id: str, prompt: str, response: str):
     """Helper: Lưu lịch sử hội thoại vào session DB (tránh duplicate code)."""
     if not session_id:
@@ -222,16 +248,41 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     except Exception as e:
         print(f"⚠️ Semantic cache lookup warning: {e}")
 
-    # ── STEP 1: SEMANTIC ROUTING (Tầng 1) ──
-    route_res = route_query(prompt)
-    domain = route_res["domain"]
+    # ── STEP 1 & 2: CONCURRENT ROUTING & MEMORY FETCH (SOTA) ──
+    # Run SmartRouter (LLM) and Memory lookup (DB) in parallel to save latency
+    chat_history_len = 0
+    try:
+        m_conn = get_memory_db()
+        m_cursor = m_conn.cursor()
+        m_cursor.execute("SELECT COUNT(*) FROM chat_messages WHERE session_id = ?", (session_id,))
+        chat_history_len = m_cursor.fetchone()[0]
+        m_conn.close()
+    except Exception:
+        pass
+
+    chat_history_text = _get_chat_history_text(session_id, 4)
+
+    route_task = analyze_query(prompt, chat_history_len)
+    memory_task = asyncio.to_thread(LegalUserMemory.get_relevant_memories, session_id, prompt)
+    
+    route_res, memory_context = await asyncio.gather(route_task, memory_task)
+    
+    print("\n" + "="*50)
+    print(f"🧠 [1. SMART ROUTER] Phân tích query: '{prompt}'")
+    print(f"  ↳ Domain: {route_res.get('domain')}")
+    print(f"  ↳ Có tính pháp lý: {route_res.get('is_legal')}")
+    print(f"  ↳ Trích xuất Metadata: Năm={route_res.get('extracted_year')}, Loại={route_res.get('extracted_doc_type')}, Cơ quan={route_res.get('extracted_issuer')}, Số hiệu={route_res.get('extracted_doc_number')}")
+    print(f"  ↳ Cần làm rõ: {route_res.get('needs_clarification')}")
+    print(f"  ↳ Search Query tối ưu: '{route_res.get('search_query')}'")
+    print("="*50 + "\n")
+    
+    domain = route_res.get("domain", "dan_su")
+    is_legal = route_res.get("is_legal", True)
+    search_query = route_res.get("search_query", prompt)
     
     # A. Nếu là chitchat chào hỏi thông thường
-    if not route_res["is_legal"] and domain == "chitchat":
-        print(f"💬 [Router] Chitchat detected. Replying directly via LLM.")
-        
-        # ── STEP 2: LOAD LONG-TERM MEMORY (Tầng 2) ──
-        memory_context = LegalUserMemory.get_relevant_memories(session_id, prompt)
+    if not is_legal and domain == "chitchat":
+        print("💬 [Router] Chitchat detected. Replying directly via LLM.")
         
         system_prompt = (
             "Bạn là LuatBot - Trợ lý pháp lý AI chuyên về luật Việt Nam.\n"
@@ -240,6 +291,8 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
         )
         if memory_context:
             system_prompt += f"\n\nNgữ cảnh thông tin đã nhớ về người dùng:\n{memory_context}\n(Nếu người dùng hỏi thông tin cá nhân của họ mà khớp với ngữ cảnh trên, hãy trả lời chính xác dựa theo đó)."
+        if chat_history_text:
+            system_prompt += f"\n\n{chat_history_text}"
             
         try:
             tokens = []
@@ -247,13 +300,11 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
                 tokens.append(token)
             ai_reply = clean_context_artifacts(strip_thinking_tags("".join(tokens)))
             
-            # ── STEP 6: SAVE INTERACTION TO MEMORY (Tầng 2) ──
             try:
                 LegalUserMemory.save_interaction(session_id, prompt, ai_reply, [])
             except Exception as e:
                 print(f"⚠️ Warning: Failed to save chitchat user memory interaction: {e}")
                 
-            # ── STEP 7: SAVE TO SESSION CHAT HISTORY DB ──
             _save_chat_history(session_id, prompt, ai_reply)
                     
             return {
@@ -267,8 +318,8 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
             raise HTTPException(status_code=500, detail=f"Lỗi gọi LLM Gateway: {str(e)}")
             
     # B. Nếu là câu hỏi ngoài phạm vi pháp luật VN (out of scope)
-    if domain == "out_of_scope":
-        print(f"🛑 [Router] Out of scope query detected. Refusing politely.")
+    if not is_legal and domain == "out_of_scope":
+        print("🛑 [Router] Out of scope query detected. Refusing politely.")
         reply = (
             "Tôi là LuatBot, trợ lý chuyên giải đáp pháp luật Việt Nam. "
             "Câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Vui lòng đặt câu hỏi liên quan đến luật pháp Việt Nam."
@@ -281,82 +332,57 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
             "search_count": 0
         }
     
-    # ── STEP 1.5: CLARIFICATION DIALOGUE ──
-    # Kiểm tra câu hỏi có mơ hồ không → hỏi gợi mở thay vì trả kết quả kém
-    try:
-        from app.utils.clarification_engine import (
-            needs_clarification, get_smart_clarification
-        )
-        
-        # Đếm history length để skip clarification cho follow-up messages
-        chat_history_len = 0
-        try:
-            m_conn = get_memory_db()
-            m_cursor = m_conn.cursor()
-            m_cursor.execute(
-                "SELECT COUNT(*) FROM chat_messages WHERE session_id = ?",
-                (session_id,)
-            )
-            chat_history_len = m_cursor.fetchone()[0]
-            m_conn.close()
-        except Exception:
-            pass
-        
-        if needs_clarification(prompt, domain, chat_history_len):
-            print(f"🔮 [Clarification] Query mơ hồ, đang tạo câu hỏi gợi mở...")
-            
-            # Tier 2: Gọi DeepSeek (async) với kịch bản domain-specific
-            clarification_text = await get_smart_clarification(prompt, domain)
-            
-            if clarification_text:
-                # Lưu vào history để lượt sau không hỏi lại
-                _save_chat_history(session_id, prompt, clarification_text)
-                
-                return {
-                    "response": clarification_text,
-                    "citations": [],
-                    "domain": domain,
-                    "flare_activated": False,
-                    "search_count": 0
-                }
-    except Exception as e:
-        print(f"⚠️ [Clarification] Lỗi, bỏ qua và chạy RAG bình thường: {e}")
-        
-    # ── STEP 2: LOAD LONG-TERM MEMORY (Tầng 2) ──
-    memory_context = LegalUserMemory.get_relevant_memories(session_id, prompt)
-    
-    # ── STEP 2.5: QUERY REWRITER ──
-    # Tối ưu hóa câu hỏi của người dùng thành từ khóa tìm kiếm tối ưu
-    from app.utils.query_rewriter import rewrite_user_query
-    search_query = await rewrite_user_query(prompt, session_id)
+    # C. Cần làm rõ (Clarification)
+    if route_res.get("needs_clarification") and route_res.get("clarification_question"):
+        print("🔮 [Clarification] Query mơ hồ, LLM Router yêu cầu gợi mở...")
+        clarification_text = route_res["clarification_question"]
+        _save_chat_history(session_id, prompt, clarification_text)
+        return {
+            "response": clarification_text,
+            "citations": [],
+            "domain": domain,
+            "flare_activated": False,
+            "search_count": 0
+        }
     
     # ── STEP 3 & 4: UNIFIED RETRIEVAL PIPELINE ──
-    # FIX TRIỆT ĐỂ: Tất cả legal queries → 1 pipeline duy nhất (ultimate_retrieve)
-    # Pipeline: Exact Match Boost → FTS5 + FAISS Vector → Domain Scoring → Graph Expansion → Vietnamese Cross-Encoder Reranker
-    print(f"🔍 [Retrieval] Full RAG pipeline for: '{search_query}' (Original: '{prompt}') (Domain: {domain}, Filters: {route_res['doc_type_filter']})")
-    passed_vector = route_res.get("query_vector") if prompt == search_query else None
-    formatted_chunks, citation_map = await ultimate_retrieve(
+    # Domain filter (heuristic fallback just in case)
+    DOMAIN_FILTERS = {
+        "lao_dong": ["Lao động", "BHXH", "Bảo hiểm xã hội", "Công đoàn"],
+        "dan_su": ["Dân sự", "Hôn nhân", "Gia đình", "Di chúc", "Thừa kế"],
+        "hinh_su": ["Hình sự", "Tố tụng hình sự", "Tội phạm"],
+        "dat_dai": ["Đất đai", "Nhà ở", "Bất động sản"],
+        "doanh_nghiep": ["Doanh nghiệp", "Đầu tư", "Thương mại"],
+        "hanh_chinh": ["Vi phạm hành chính", "Khiếu nại", "Tố cáo"]
+    }
+    doc_type_filter = DOMAIN_FILTERS.get(domain, [])
+    
+    print(f"🔍 [Retrieval] SOTA pipeline for: '{search_query}' (Original: '{prompt}') (Domain: {domain})")
+    
+    formatted_chunks, citation_map, max_score = await ultimate_retrieve(
         query=search_query,
-        domain_filter=route_res["doc_type_filter"],
+        domain_filter=doc_type_filter,
         top_k=5,
         extracted_year=route_res.get("extracted_year"),
         extracted_doc_type=route_res.get("extracted_doc_type"),
         extracted_issuer=route_res.get("extracted_issuer"),
-        query_vector=passed_vector
+        extracted_doc_number=route_res.get("extracted_doc_number")
     )
     flare_activated = False
     search_count = 1
 
-    # ── STEP 5: FLARE RAG GENERATION (Tầng 5) ──
+    # ── STEP 5: ADAPTIVE FLARE RAG GENERATION (Tầng 5) ──
     final_text = ""
     citations_list = list(citation_map.values())
     
-    # Detect if top result was exact match → skip FLARE draft for speed
-    has_exact_match = any("is_exact_match" not in str(v) for v in citation_map.values()) if not citation_map else False
-    # Simpler: check if query contains a legal symbol that was matched
-    import re as _re
-    _has_legal_ref = bool(_re.search(r'(\b\d+[\w\-\/]*\/[A-Za-zĐđÀ-ỹ0-9\-]+\b|[Đđ]iều\s+\d+)', prompt))
-    force_simple = _has_legal_ref  # Skip FLARE draft when query has explicit legal references
+    # SOTA FIX: Dynamic FLARE trigger based on retrieval confidence
+    # Score > 500 implies Exact Match or very high Title FTS match in the DB.
+    force_simple = max_score > 500
+    if force_simple:
+        print(f"⚡ [Adaptive RAG] High confidence score ({max_score:.1f}) -> Bypassing FLARE drafting.")
+    else:
+        print(f"🧠 [Adaptive RAG] Semantic Match score ({max_score:.1f}) -> Activating FLARE drafting.")
+
     
     if formatted_chunks:
         try:
@@ -364,9 +390,10 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
                 query=prompt,
                 initial_context=formatted_chunks,
                 citation_map=citation_map,
-                domain_filter=route_res["doc_type_filter"],
+                domain_filter=doc_type_filter,
                 custom_model=None,  # Sử dụng model mặc định của FPT provider (Qwen3-32B)
-                force_simple=force_simple
+                force_simple=force_simple,
+                chat_history_text=chat_history_text
             ):
                 ev_type = event.get("type")
                 if ev_type == "token":

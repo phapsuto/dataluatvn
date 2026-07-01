@@ -1,6 +1,4 @@
-import sqlite3
-import os
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 from app.database import get_db_connection
 
 # Constants for legal authority ranking

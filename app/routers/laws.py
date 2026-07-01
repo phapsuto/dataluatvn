@@ -5,8 +5,8 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_HUB_OFFLINE"] = "0"
+os.environ["TRANSFORMERS_OFFLINE"] = "0"
 os.environ["DISABLE_LLM_EXPANSION"] = "1"  # Tắt Query Expansion (để giảm latency)
 # LƯU Ý: Spell correction (preprocess_and_correct_query) dùng biến riêng DISABLE_SPELL_CORRECTION
 # KHÔNG tắt spell correction mặc định để user có lỗi chính tả vẫn được sửa
@@ -15,7 +15,7 @@ import sqlite3
 import io
 import re
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Any
 from docx import Document
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -536,7 +536,7 @@ def chunk_search_laws(
     try:
         cursor.execute(query, (fts_query, limit, offset))
         rows = cursor.fetchall()
-    except Exception as e:
+    except Exception:
         rows = []
         
     conn.close()
@@ -714,6 +714,8 @@ def get_smart_search_resources():
                         time.sleep(0.1)
             else:
                 print(f"⚠️ Zvec database path not found: {ZVEC_DB_PATH}")
+        except ImportError:
+            pass # Ignore if zvec is not installed
         except Exception as e:
             print(f"⚠️ Không thể mở Zvec Collection từ {ZVEC_DB_PATH}: {e}")
         return _SMART_SEARCH_MODEL, coll
@@ -723,7 +725,6 @@ def get_smart_search_resources():
             if os.path.exists(index_path):
                 try:
                     import faiss
-                    import numpy as np
                     _SMART_SEARCH_INDEX = faiss.read_index(index_path)
                     if hasattr(_SMART_SEARCH_INDEX, "id_map"):
                         id_arr = faiss.vector_to_array(_SMART_SEARCH_INDEX.id_map)
@@ -748,7 +749,6 @@ _RERANKER_TOKENIZER = None
 
 def get_vietnamese_reranker():
     global _RERANKER_MODEL, _RERANKER_TOKENIZER
-    import os
     from app.config import RERANKER_MODEL_SOTA
     
     if _RERANKER_MODEL is None:
@@ -766,8 +766,8 @@ def get_vietnamese_reranker():
                 _RERANKER_MODEL = AutoModelForSequenceClassification.from_pretrained(RERANKER_MODEL_SOTA).to(device)
             _RERANKER_MODEL.eval()
             print(f"✅ Loaded Vietnamese Reranker: {RERANKER_MODEL_SOTA} on device: {device.upper()} (float16)")
-        except Exception as e:
-            print(f"⚠️ Không thể load Cross-Encoder Reranker {RERANKER_MODEL_SOTA}: {e}")
+        except Exception:
+            pass # Reranker is optional, ignore to avoid spamming the logs
     return _RERANKER_MODEL, _RERANKER_TOKENIZER
 
 
@@ -1142,7 +1142,7 @@ def smart_search_laws(
 
     # C. Linear Fusion with Dynamic Query Classification Weights
     # Phân loại truy vấn động để chia trọng số FTS5/Vector (Sparse/Dense)
-    has_exact_identifiers = len(extracted_symbols) > 0 or len(numbers_in_q) > 0 or re.search(r'\b(điều|khoản|điểm|số)\s+\d+', q_lower)
+    has_exact_identifiers = len(extracted_symbols) > 0 or re.search(r'\b(điều|khoản|điểm|số|chương|phần)\s+\d+', q_lower)
     
     if has_exact_identifiers:
         # Ưu tiên tìm kiếm từ khóa chính xác tuyệt đối
@@ -1190,7 +1190,7 @@ def smart_search_laws(
     remaining_candidates = sorted_candidates[rerank_limit:]
 
     # D. Chạy Vietnamese Cross-Encoder Reranker
-    if candidates_to_rerank and os.environ.get("DISABLE_RERANKER") != "1":
+    if candidates_to_rerank and os.environ.get("DISABLE_RERANKER") != "1" and os.environ.get("USE_LOCAL_RERANKER", "false").lower() == "true":
         candidate_ids = [item["id"] for item in candidates_to_rerank]
         placeholders = ",".join(["?"] * len(candidate_ids))
         

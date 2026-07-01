@@ -216,7 +216,7 @@ class HybridSearchEngine:
             print(f"   ⚠️ Cache save failed: {e}")
     
     def _load_cache(self):
-        print(f"   📦 Loading BM25 cache...")
+        print("   📦 Loading BM25 cache...")
         start = time.time()
         with open(self.cache_path, "rb") as f:
             cache_data = pickle.load(f)

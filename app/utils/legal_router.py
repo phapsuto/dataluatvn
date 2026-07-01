@@ -1,6 +1,6 @@
 import numpy as np
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 # Define domain mapping, representative utterances, and SQL filter keywords
 UTTERANCES = {

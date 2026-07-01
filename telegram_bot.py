@@ -235,7 +235,7 @@ def call_luatbot_chat(prompt: str, session_id: str = "telegram_default") -> dict
     
     try:
         start = time.time()
-        resp = requests.post(url, json=payload, headers=headers, timeout=30)
+        resp = requests.post(url, json=payload, headers=headers, timeout=120)
         latency = time.time() - start
         
         if resp.status_code == 200:

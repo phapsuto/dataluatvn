@@ -106,7 +106,7 @@ _SUMMARIZE_PATTERNS = [
     r"tóm tắt",
     r"(nội dung chính|ý chính|điểm chính|trọng tâm)",
     r"(tổng quan|khái quát|overview)",
-    r"(quy định gì|nói về gì|đề cập|quy định những gì)",
+    r"(quy định gì|nói về gì|đề cập|quy định những gì|nói gì)",
 ]
 
 _PRACTICAL_PATTERNS = [
@@ -152,30 +152,21 @@ def classify_intent(query: str) -> Tuple[str, str]:
     
     # Check patterns theo thứ tự ưu tiên (specific → general)
     
-    # 1. Classify (rất specific)
-    for pattern in _CLASSIFY_PATTERNS:
-        if re.search(pattern, q_lower):
-            return "classify", PROMPT_CLASSIFY
-    
-    # 2. Scope (rất specific)
-    for pattern in _SCOPE_PATTERNS:
-        if re.search(pattern, q_lower):
-            return "scope", PROMPT_SCOPE
-    
-    # 3. Summarize (specific)
-    for pattern in _SUMMARIZE_PATTERNS:
-        if re.search(pattern, q_lower):
-            return "summarize", PROMPT_SUMMARIZE
-    
-    # 4. Explain simple (specific)
-    for pattern in _EXPLAIN_PATTERNS:
-        if re.search(pattern, q_lower):
-            return "explain_simple", PROMPT_EXPLAIN_SIMPLE
-    
-    # 5. QA Practical (broad — catches most user questions)
-    for pattern in _PRACTICAL_PATTERNS:
-        if re.search(pattern, q_lower):
-            return "qa_practical", PROMPT_QA_PRACTICAL
-    
     # 6. Default: Full analysis (trường hợp không match → phân tích chuyên sâu)
-    return "full_analysis", PROMPT_FULL_ANALYSIS
+    final_type = "full_analysis"
+    final_prompt = PROMPT_FULL_ANALYSIS
+    
+    for qa_type, prompt, patterns in [
+        ("classify", PROMPT_CLASSIFY, _CLASSIFY_PATTERNS),
+        ("scope", PROMPT_SCOPE, _SCOPE_PATTERNS),
+        ("summarize", PROMPT_SUMMARIZE, _SUMMARIZE_PATTERNS),
+        ("explain_simple", PROMPT_EXPLAIN_SIMPLE, _EXPLAIN_PATTERNS),
+        ("qa_practical", PROMPT_QA_PRACTICAL, _PRACTICAL_PATTERNS),
+    ]:
+        if any(re.search(p, q_lower) for p in patterns):
+            final_type = qa_type
+            final_prompt = prompt
+            break
+            
+    GLOBAL_RULE = "\n\nQUY TẮC BỔ SUNG QUAN TRỌNG:\n- Nếu văn bản pháp luật có nhiều phiên bản (Ví dụ: Bộ luật Hình sự 1999, 2015), LUÔN NGẦM ĐỊNH tư vấn theo phiên bản MỚI NHẤT đang có hiệu lực. Tuyệt đối KHÔNG liệt kê dài dòng các phiên bản cũ trừ khi bị yêu cầu đích danh.\n- Trả lời thẳng vào trọng tâm, đi thẳng vào câu hỏi, tránh văn vở dài dòng hoặc xin lỗi."
+    return final_type, final_prompt + GLOBAL_RULE

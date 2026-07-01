@@ -34,7 +34,7 @@ if not FPT_CLOUD_API_KEY and not GEMINI_API_KEY:
 VECTOR_DB_SOTA = os.environ.get("VECTOR_DB_SOTA_PATH", "vector_store.db")
 FAISS_INDEX_SOTA = os.environ.get("FAISS_INDEX_SOTA_PATH", "chunks_faiss_sq8.index")  # SQ8 quantized: 1.5 GB thay vì FP32 5.9 GB → tiết kiệm ~4.5 GB RAM
 EMBEDDING_MODEL_SOTA = os.environ.get("EMBEDDING_MODEL_SOTA", "BAAI/bge-m3")
-RERANKER_MODEL_SOTA = os.environ.get("RERANKER_MODEL_SOTA", "AITeamVN/Vietnamese_Reranker")
+RERANKER_MODEL_SOTA = os.environ.get("RERANKER_MODEL_SOTA", "BAAI/bge-reranker-v2-m3")
 USE_ZVEC_BACKEND = os.environ.get("USE_ZVEC_BACKEND", "true").lower() == "true"
 
 

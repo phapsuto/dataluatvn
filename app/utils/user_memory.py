@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Dict, Any, List
+from typing import List
 
 # Create logs directory if not exists
 os.makedirs("logs", exist_ok=True)
@@ -53,7 +53,6 @@ def get_mem0_instance():
         try:
             from mem0 import Memory
             # Lazy import torch to avoid conflicts on startup
-            import torch
             _MEM0_INSTANCE = Memory.from_config(MEM0_CONFIG)
             logger.info("✅ Mem0 Long-term Memory initialized successfully with Local FAISS + SQLite.")
         except Exception as e:

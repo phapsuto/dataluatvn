@@ -82,7 +82,7 @@ class LLMGateway:
         system_prompt: str, 
         temperature: float = 0.1,
         custom_model: str = None,
-        max_tokens: int = 1024
+        max_tokens: int = 4096
     ) -> AsyncGenerator[str, None]:
         """
         Asynchronously streams completion tokens from the active LLM provider,
@@ -160,4 +160,81 @@ class LLMGateway:
                 print(f"⚠️ Provider '{provider}' failed with error: {e}. Trying fallback...")
                 
         # Raise exception if all fallback options failed
+        raise last_error or RuntimeError("Tất cả các LLM Providers đều gặp lỗi và không thể hoàn thành yêu cầu.")
+
+    @classmethod
+    async def call_async(
+        cls, 
+        messages: List[Dict[str, str]], 
+        system_prompt: str, 
+        temperature: float = 0.1,
+        custom_model: str = None,
+        max_tokens: int = 4096,
+        response_format: Dict[str, str] = None
+    ) -> str:
+        """
+        Asynchronously calls the active LLM provider and returns the full string response.
+        Automatically falls back to alternative providers if failures occur.
+        """
+        payload_messages = [{"role": "system", "content": system_prompt}] + messages
+        
+        providers_to_try = [cls._active_provider]
+        for fb in cls.FALLBACK_CHAIN:
+            if fb not in providers_to_try:
+                providers_to_try.append(fb)
+                
+        last_error = None
+        for provider in providers_to_try:
+            config = cls.PROVIDERS[provider]
+            
+            if provider != "ollama" and not config.get("api_key"):
+                continue
+                
+            model = custom_model if (custom_model and provider == "fpt") else config["model"]
+            api_key = config.get("api_key")
+            api_base = config.get("api_base")
+            
+            start_time = time.time()
+            
+            try:
+                kwargs = {
+                    "model": model,
+                    "messages": payload_messages,
+                    "temperature": temperature,
+                    "stream": False,
+                    "max_tokens": max_tokens
+                }
+                if api_key:
+                    kwargs["api_key"] = api_key
+                if api_base:
+                    kwargs["api_base"] = api_base
+                if response_format:
+                    kwargs["response_format"] = response_format
+                    
+                response = await litellm.acompletion(**kwargs)
+                content = response.choices[0].message.content if response.choices else ""
+                
+                latency = time.time() - start_time
+                log_data = {
+                    "provider": provider,
+                    "model": model,
+                    "latency": f"{latency:.3f}s",
+                    "status": "success"
+                }
+                llm_logger.info(json.dumps(log_data, ensure_ascii=False))
+                return content
+                
+            except Exception as e:
+                latency = time.time() - start_time
+                log_data = {
+                    "provider": provider,
+                    "model": model,
+                    "latency": f"{latency:.3f}s",
+                    "status": "failed",
+                    "error": str(e)
+                }
+                llm_logger.info(json.dumps(log_data, ensure_ascii=False))
+                last_error = e
+                print(f"⚠️ Provider '{provider}' failed in call_async: {e}. Trying fallback...")
+                
         raise last_error or RuntimeError("Tất cả các LLM Providers đều gặp lỗi và không thể hoàn thành yêu cầu.")

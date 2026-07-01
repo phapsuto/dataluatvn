@@ -8,7 +8,6 @@ Bao gồm:
   - /admin/phapdien/*       → CRUD cho Pháp Điển (phapdien_articles)
 """
 
-import os
 import sqlite3
 from datetime import datetime, timezone
 
@@ -16,7 +15,6 @@ from fastapi import APIRouter, Depends, Path, HTTPException, Body
 
 from app.dependencies import require_jwt
 from app.database import get_db_connection, get_content_connection
-from app.config import DB_NAME, CONTENT_DB
 from app.schemas.admin_crud import (
     LawCreate, LawUpdate,
     AnleCreate, AnleUpdate,

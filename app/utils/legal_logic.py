@@ -1,4 +1,3 @@
-import datetime
 from typing import Dict, Any, Optional
 
 def get_document_rank(loai_van_ban: Optional[str], co_quan_ban_hanh: Optional[str], so_ky_hieu: Optional[str]) -> int:

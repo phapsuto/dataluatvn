@@ -6,7 +6,7 @@ import signal
 import sqlite3
 import subprocess
 
-from fastapi import APIRouter, Query, Request, HTTPException
+from fastapi import APIRouter, Query, Request
 
 from app.config import DB_NAME, CONTENT_DB
 from app.database import get_db_connection, get_content_connection

@@ -1,9 +1,7 @@
 import sqlite3
 import re
-import os
-from typing import List, Dict, Any, Tuple, Set
+from typing import List, Tuple, Set
 from app.database import get_db_connection
-from app.utils.llm_gateway import LLMGateway
 
 GRAPH_DB_PATH = "light_graph_store.db"
 

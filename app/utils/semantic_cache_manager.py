@@ -1,5 +1,5 @@
-import os
 import sqlite3
+from typing import Tuple, Optional, Dict
 import json
 import re
 import numpy as np
@@ -126,7 +126,7 @@ class SemanticCacheManager:
             self.faiss_index.add(vectors_np)
             logger.info(f"✅ Loaded {len(self.cache_map)} records from SQLite into FAISS Cache Index (dimension: {self.embedding_dim}).")
 
-    def lookup(self, query: str) -> tuple[bool, str | None, dict | None]:
+    def lookup(self, query: str) -> Tuple[bool, Optional[str], Optional[Dict]]:
         """
         Looks up the query in the semantic cache.
         Returns:

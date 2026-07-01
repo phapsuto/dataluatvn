@@ -1,6 +1,5 @@
 import re
-import sqlite3
-from typing import List, Dict, Any, Set
+from typing import Set
 from app.database import get_db_connection
 from app.routers.laws import normalize_spelling
 

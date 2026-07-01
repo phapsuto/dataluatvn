@@ -1,6 +1,5 @@
 import os
 import re
-import requests
 from typing import List, Dict, Any, Tuple, Optional
 from app.routers.laws import smart_search_laws
 from app.utils.graph_retrieval import graph_expand_results
@@ -45,126 +44,29 @@ async def ultimate_retrieve(
     extracted_year: Optional[int] = None,
     extracted_doc_type: Optional[str] = None,
     extracted_issuer: Optional[str] = None,
+    extracted_doc_number: Optional[str] = None,
     query_vector: Optional[Any] = None
-) -> Tuple[str, Dict[str, Dict[str, Any]]]:
+) -> Tuple[str, Dict[str, Dict[str, Any]], float]:
     """
     Pipeline retrieval: Exact Match → Smart Search (FTS5 + FAISS + RRF) → Graph Expansion → Rerank.
-    Returns formatted chunks string and citation_map dict.
+    Returns formatted chunks string, citation_map dict, and max_score.
     """
     # Normalize query spaces (e.g. "34 / 2011" -> "34/2011")
     query_norm_spaces = re.sub(r'\s*/\s*', '/', query)
     query_norm_spaces = re.sub(r'\s*-\s*', '-', query_norm_spaces)
 
-    # Auto-extract metadata if not explicitly provided (crucial for FLARE active searches)
+    # Fallback tự động trích xuất Metadata (Dành riêng cho luồng tìm kiếm ngầm của FLARE)
     if extracted_year is None:
-        year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})[-/]', query_norm_spaces)
-        if not year_in_symbol_match:
-            year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})[-/][A-ZĐđ]', query)
-        if not year_in_symbol_match:
-            year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})-[A-ZĐđ]', query)
-        if not year_in_symbol_match:
-            year_in_symbol_match = re.search(r'\b\d+/((?:19|20)\d{2})\b', query)
+        year_match = re.search(r'\b(?:19|20)\d{2}\b', query)
+        if year_match:
+            extracted_year = int(year_match.group(0))
             
-        if year_in_symbol_match:
-            extracted_year = int(year_in_symbol_match.group(1))
-        else:
-            if not re.search(r'(nhiệm kỳ|giai đoạn|kế hoạch)\s+\d+', query.lower()):
-                year_word_match = re.search(r'\bnăm\s+((?:19|20)\d{2})\b', query.lower())
-                if year_word_match:
-                    extracted_year = int(year_word_match.group(1))
-                    
     if extracted_doc_type is None:
-        query_lower = query.lower()
-        if "hiến pháp" in query_lower:
-            extracted_doc_type = "Hiến pháp"
-        elif "bộ luật" in query_lower:
-            extracted_doc_type = "Bộ luật"
-        elif "luật" in query_lower:
-            exclude_words = ["pháp luật", "điều luật", "luật sư", "luật pháp", "kỷ luật", "tiền lệ luật"]
-            if not any(ew in query_lower for ew in exclude_words):
-                extracted_doc_type = "Luật"
-        elif "nghị định" in query_lower:
-            extracted_doc_type = "Nghị định"
-        elif "thông tư liên tịch" in query_lower:
-            extracted_doc_type = "Thông tư liên tịch"
-        elif "thông tư" in query_lower:
-            extracted_doc_type = "Thông tư"
-        elif "quyết định" in query_lower:
-            extracted_doc_type = "Quyết định"
-        elif "nghị quyết" in query_lower:
-            extracted_doc_type = "Nghị quyết"
-        elif "pháp lệnh" in query_lower:
-            extracted_doc_type = "Pháp lệnh"
-        elif "chỉ thị" in query_lower:
-            extracted_doc_type = "Chỉ thị"
-
-    if extracted_issuer is None:
-        query_lower = query.lower()
-        
-        # ── Priority: "do X ban hành" pattern (most reliable for D-type queries) ──
-        do_ban_hanh = re.search(r'do\s+(.+?)\s+ban\s+hành', query, re.IGNORECASE)
-        if do_ban_hanh:
-            raw_issuer = do_ban_hanh.group(1).strip()
-            # Chỉ dùng nếu issuer có ít nhất 2 từ (loại bỏ false positive)
-            if len(raw_issuer.split()) >= 2:
-                extracted_issuer = raw_issuer
-        
-        if not extracted_issuer:
-            if "chính phủ" in query_lower:
-                extracted_issuer = "Chính phủ"
-            elif "thủ tướng" in query_lower:
-                extracted_issuer = "Thủ tướng Chính phủ"
-            elif "bộ tài chính" in query_lower:
-                extracted_issuer = "Bộ Tài chính"
-            elif "bộ y tế" in query_lower:
-                extracted_issuer = "Bộ Y tế"
-            elif "bộ công thương" in query_lower:
-                extracted_issuer = "Bộ Công thương"
-            elif "bộ giáo dục" in query_lower or "bộ gd&đt" in query_lower or "bộ gd-đt" in query_lower:
-                extracted_issuer = "Bộ Giáo dục và Đào tạo"
-            elif "bộ lao động" in query_lower or "bộ ldtbxh" in query_lower or "bộ lđtbxh" in query_lower or "thương binh và xã hội" in query_lower:
-                extracted_issuer = "Bộ Lao động - Thương binh và Xã hội"
-            elif "bộ công an" in query_lower:
-                extracted_issuer = "Bộ Công an"
-            elif "bộ quốc phòng" in query_lower:
-                extracted_issuer = "Bộ Quốc phòng"
-            elif "bộ tư pháp" in query_lower:
-                extracted_issuer = "Bộ Tư pháp"
-            elif "bộ xây dựng" in query_lower:
-                extracted_issuer = "Bộ Xây dựng"
-            elif "bộ giao thông" in query_lower or "bộ gtvt" in query_lower:
-                extracted_issuer = "Bộ Giao thông vận tải"
-            elif "bộ kế hoạch" in query_lower or "bộ kh&đt" in query_lower or "bộ kh-đt" in query_lower:
-                extracted_issuer = "Bộ Kế hoạch và Đầu tư"
-            elif "bộ tài nguyên" in query_lower or "bộ tn&mt" in query_lower or "bộ tn-mt" in query_lower:
-                extracted_issuer = "Bộ Tài nguyên và Môi trường"
-            elif "bộ thông tin" in query_lower or "bộ tt&tt" in query_lower or "bộ tt-tt" in query_lower:
-                extracted_issuer = "Bộ Thông tin và Truyền thông"
-            elif "bộ nông nghiệp" in query_lower or "bộ nn&ptnt" in query_lower or "bộ nn-ptnt" in query_lower:
-                extracted_issuer = "Bộ Nông nghiệp và Phát triển nông thôn"
-            elif "quốc hội" in query_lower:
-                extracted_issuer = "Quốc hội"
-            elif "ủy ban thường vụ quốc hội" in query_lower or "ubtvqh" in query_lower:
-                extracted_issuer = "Ủy ban Thường vụ Quốc hội"
-            elif "tòa án nhân dân tối cao" in query_lower or "tandtc" in query_lower:
-                extracted_issuer = "Tòa án nhân dân tối cao"
-        if not extracted_issuer:
-            local_match = re.search(
-                r'((?:ubnd|hđnd|ủy ban nhân dân|hội đồng nhân dân)\s+(?:tỉnh|thành phố|quận|huyện|thị xã)\s+[A-ZĐđÀ-ỹ0-9][a-zđà-ỹ0-9]*(\s+[A-ZĐđÀ-ỹ0-9][a-zđà-ỹ0-9]*)*)',
-                query,
-                flags=re.IGNORECASE
-            )
-            if local_match:
-                full_match = local_match.group(1).strip()
-                full_match = re.sub(r'\s+(?:ban|quy|có|nội|về|thuộc|nằm|trích|đọc)\b.*$', '', full_match, flags=re.IGNORECASE).strip()
-                full_match_lower = full_match.lower()
-                if full_match_lower.startswith("ubnd"):
-                    full_match = "Ủy ban nhân dân" + full_match[4:]
-                elif full_match_lower.startswith("hđnd"):
-                    full_match = "Hội đồng nhân dân" + full_match[4:]
-                extracted_issuer = full_match
-
-    # ── Step 0: EXACT MATCH BOOST ──
+        ql = query.lower()
+        for dt in ["hiến pháp", "bộ luật", "luật", "nghị định", "thông tư", "quyết định", "nghị quyết", "pháp lệnh", "chỉ thị"]:
+            if dt in ql:
+                extracted_doc_type = dt.capitalize()
+                break
     # Nếu query chứa số hiệu VB cụ thể → fetch trực tiếp từ DB và inject vào pool
     exact_chunks = []
     # Chuẩn hóa query trước khi extract symbol: loại bỏ prefix, space thừa, dấu chấm cuối
@@ -179,6 +81,10 @@ async def ultimate_retrieve(
         r'(\b\d+[\w\-\/]*\/[A-Za-zĐđÀ-ỹ0-9\-]+\b|\b\d+-[A-Za-zĐđÀ-ỹ]{2,}\b)',
         query_for_symbol
     )
+    # Use LLM extracted doc number if available, else fallback to regex
+    if extracted_doc_number:
+        so_ky_hieu_match = type('obj', (object,), {'group': lambda self, x=0: extracted_doc_number})()
+        
     dieu_match = re.search(r'[Đđ]iều\s+(\d+)', query)
     
     if so_ky_hieu_match:
@@ -318,20 +224,54 @@ async def ultimate_retrieve(
                             LIMIT 5
                         """, (doc_id, f"Điều {dieu_num}%"))
                     else:
-                        cursor.execute("""
-                            SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.chunk_with_meta, c.token_estimate,
-                                   d.title as document_title, d.so_ky_hieu as document_so_ky_hieu, d.loai_van_ban as document_loai_van_ban,
-                                   d.co_quan_ban_hanh as document_co_quan_ban_hanh, d.tinh_trang_hieu_luc as document_tinh_trang_hieu_luc,
-                                   d.ngay_ban_hanh as document_ngay_ban_hanh
-                            FROM document_chunks c
-                            JOIN documents d ON c.doc_id = d.id
-                            WHERE c.doc_id = ?
-                            AND c.chunk_type = 'dieu'
-                            ORDER BY c.chunk_index
-                            LIMIT 5
-                        """, (doc_id,))
+                        import string
+                        # Loại bỏ số hiệu để lấy ra ý chính của câu hỏi
+                        core_query = query.replace(so_hieu, "").replace(so_hieu.replace("/", "-"), "")
+                        # Loại bỏ các từ khóa nhiễu
+                        for kw in ["theo", "cho hỏi", "quy định", "nghị định", "luật", "thông tư", "điều", "khoản", "của"]:
+                            core_query = re.sub(rf'\b{kw}\b', '', core_query, flags=re.IGNORECASE)
+                        
+                        core_words = [w for w in core_query.split() if len(w) > 1 and w not in string.punctuation]
+                        fetched = []
+                        
+                        if len(core_words) >= 1:
+                            # Dùng OR để BM25 tính điểm linh hoạt, tránh bị miss nếu query quá khắt khe
+                            fts_query = " OR ".join([f'"{w}"' for w in core_words])
+                            try:
+                                cursor.execute("""
+                                    SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.chunk_with_meta, c.token_estimate,
+                                           d.title as document_title, d.so_ky_hieu as document_so_ky_hieu, d.loai_van_ban as document_loai_van_ban,
+                                           d.co_quan_ban_hanh as document_co_quan_ban_hanh, d.tinh_trang_hieu_luc as document_tinh_trang_hieu_luc,
+                                           d.ngay_ban_hanh as document_ngay_ban_hanh
+                                    FROM document_chunks_fts f
+                                    JOIN document_chunks c ON f.id = c.id
+                                    JOIN documents d ON c.doc_id = d.id
+                                    WHERE f.document_chunks_fts MATCH ?
+                                    AND c.doc_id = ?
+                                    ORDER BY rank
+                                    LIMIT 5
+                                """, (fts_query, doc_id))
+                                fetched = cursor.fetchall()
+                            except Exception as fts_e:
+                                print(f"⚠️ FTS query failed in exact match: {fts_e}")
+                        
+                        # Fallback nếu câu hỏi không có từ khóa (hoặc FTS không ra), lấy 5 chunk đầu
+                        if not fetched:
+                            cursor.execute("""
+                                SELECT c.id, c.doc_id, c.chunk_index, c.chunk_type, c.chunk_header, c.chunk_text, c.chunk_with_meta, c.token_estimate,
+                                       d.title as document_title, d.so_ky_hieu as document_so_ky_hieu, d.loai_van_ban as document_loai_van_ban,
+                                       d.co_quan_ban_hanh as document_co_quan_ban_hanh, d.tinh_trang_hieu_luc as document_tinh_trang_hieu_luc,
+                                       d.ngay_ban_hanh as document_ngay_ban_hanh
+                                FROM document_chunks c
+                                JOIN documents d ON c.doc_id = d.id
+                                WHERE c.doc_id = ?
+                                AND c.chunk_type = 'dieu'
+                                ORDER BY c.chunk_index
+                                LIMIT 5
+                            """, (doc_id,))
+                            fetched = cursor.fetchall()
                     
-                    for row in cursor.fetchall():
+                    for row in fetched:
                         item = dict(row)
                         # Propagate doc-level locality score into chunk score
                         item["score"] = 1000.0 + doc_score  # Higher score for locality-matched docs
@@ -944,7 +884,7 @@ async def ultimate_retrieve(
     use_fpt_reranker = (
         not disable_reranker
         and os.environ.get("USE_FPT_RERANKER", "true").lower() == "true"
-        and os.environ.get("ACTIVE_LLM_PROVIDER") == "fpt"
+        and bool(os.environ.get("FPT_CLOUD_API_KEY"))
     )
     use_local_reranker = (
         not disable_reranker
@@ -988,6 +928,21 @@ async def ultimate_retrieve(
             return (1 if x.get("is_exact_match") else 0, x.get("score", 0.0), parse_db_date(date_str))
         final_chunks = sorted(final_chunks, key=final_sort_key, reverse=True)
         
+        # Ghi log câu search và điểm số vào file txt
+        try:
+            with open("rag_search_log.txt", "a", encoding="utf-8") as log_file:
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                log_file.write(f"\n[{timestamp}] 🔍 SEARCH: '{query}'\n")
+                for i, chunk in enumerate(final_chunks[:5]):
+                    title = chunk.get("document_title") or "Không có tiêu đề"
+                    score = chunk.get("score", 0.0)
+                    log_file.write(f"  {i+1}. [Điểm: {score:.4f}] {title}\n")
+                log_file.write("-" * 50 + "\n")
+        except Exception as e:
+            print(f"⚠️ Không thể ghi file log: {e}")
+        
+        
     # 5. Format results with Citation anchors [Cx]
     formatted_parts = []
     citation_map = {}
@@ -1006,6 +961,7 @@ async def ultimate_retrieve(
         doc_title = item.get("document_title") or "Văn bản"
         so_ky_hieu = item.get("document_so_ky_hieu") or "N/A"
         
+        
         part = (
             f"[{cid_label}] [{doc_title} - Số hiệu: {so_ky_hieu} - {header}]\n"
             f"{item['chunk_text']}"
@@ -1013,4 +969,7 @@ async def ultimate_retrieve(
         formatted_parts.append(part)
         
     formatted_chunks = "\n\n====================\n\n".join(formatted_parts)
-    return formatted_chunks, citation_map
+    
+    max_score = max([c.get("score", 0.0) for c in final_chunks]) if final_chunks else 0.0
+    
+    return formatted_chunks, citation_map, max_score

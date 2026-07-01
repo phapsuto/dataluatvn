@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Path, Query, HTTPException
 
 from app.dependencies import require_api_key
 from app.database import get_db_connection
-from app.utils.legal_logic import get_document_rank, compare_hierarchy
+from app.utils.legal_logic import compare_hierarchy
 
 router = APIRouter(prefix="/laws", tags=["🔗 Cây phả hệ & Chồng chéo luật"])
 

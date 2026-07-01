@@ -13,7 +13,7 @@ Hỗ trợ đầy đủ tiếng Việt: có dấu, không dấu, viết tắt, n
 import json
 import re
 import os
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 from functools import lru_cache
 
 
@@ -396,7 +396,7 @@ async def get_smart_clarification(query: str, domain: str) -> Optional[str]:
         
         # LLM trả "PROCEED" → query đủ rõ
         if result.upper().startswith("PROCEED"):
-            print(f"🔮 [Clarification T2] DeepSeek → PROCEED (đi thẳng RAG)")
+            print("🔮 [Clarification T2] DeepSeek → PROCEED (đi thẳng RAG)")
             return None
         
         print(f"🔮 [Clarification T2] DeepSeek → câu hỏi gợi mở ({len(result)} chars)")

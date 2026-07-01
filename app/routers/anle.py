@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, Path, HTTPException
 from app.dependencies import require_api_key
 from app.database import get_db_connection
 from app.schemas.laws import CategoryItem
-from app.schemas.anle import AnleBrief, AnleDetail, PaginatedAnleResponse
+from app.schemas.anle import AnleDetail, PaginatedAnleResponse
 
 router = APIRouter(prefix="/anle", tags=["⚖️ Án Lệ"])
 

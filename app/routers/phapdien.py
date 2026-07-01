@@ -8,7 +8,7 @@ from app.dependencies import require_api_key
 from app.database import get_db_connection
 from app.schemas.laws import CategoryItem
 from app.schemas.phapdien import (
-    PhapdienArticleBrief, PhapdienArticleDetail,
+    PhapdienArticleDetail,
     PaginatedPhapdienResponse, GlossaryItem,
 )
 
