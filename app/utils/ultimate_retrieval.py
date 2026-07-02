@@ -755,12 +755,17 @@ async def ultimate_retrieve(
             "top_n": n
         }
         
+        try:
+            import httpx
+            import asyncio
+        except ImportError:
+            print("⚠️ httpx not installed. Bypassing FPT Reranker.")
+            return []
+        
         sem = get_fpt_rerank_semaphore()
         async with sem:
             for attempt in range(3):
                 try:
-                    import httpx
-                    import asyncio
                     async with httpx.AsyncClient() as client:
                         response = await client.post(url, json=payload, headers=headers, timeout=10.0)
                         if response.status_code == 200:
@@ -954,7 +959,9 @@ async def ultimate_retrieve(
             "title": item["document_title"],
             "so_ky_hieu": item["document_so_ky_hieu"],
             "loai_van_ban": item["document_loai_van_ban"],
-            "tinh_trang_hieu_luc": item["document_tinh_trang_hieu_luc"]
+            "tinh_trang_hieu_luc": item["document_tinh_trang_hieu_luc"],
+            "dieu_khoan": item.get("chunk_header") or f"Điều khoản {item.get('chunk_index', 0)}",
+            "noi_dung": (item.get("chunk_text") or "")[:500]
         }
         
         header = item.get("chunk_header") or f"Điều khoản {item.get('chunk_index', 0)}"
