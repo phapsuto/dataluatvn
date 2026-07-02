@@ -1,6 +1,6 @@
-# LuatBot API - Trợ lý Pháp lý AI Việt Nam (RAG 7 Tầng)
+# Linh AI API - Trợ lý Pháp lý AI Việt Nam (RAG 7 Tầng)
 
-LuatBot là hệ thống Trợ lý Pháp lý Trí tuệ Nhân tạo tiên tiến nhất dành riêng cho Luật pháp Việt Nam. Hệ thống sử dụng kiến trúc **RAG (Retrieval-Augmented Generation) 7 Tầng SOTA** để đảm bảo độ chính xác tuyệt đối, giảm thiểu ảo giác (hallucination) và trích dẫn chuẩn xác từng Điều khoản.
+Linh là hệ thống Trợ lý Pháp lý Trí tuệ Nhân tạo tiên tiến nhất dành riêng cho Luật pháp Việt Nam. Hệ thống sử dụng kiến trúc **RAG (Retrieval-Augmented Generation) 7 Tầng SOTA** để đảm bảo độ chính xác tuyệt đối, giảm thiểu ảo giác (hallucination) và trích dẫn chuẩn xác từng Điều khoản. Đi kèm là Persona cô gái "Linh" thân thiện, mang lại trải nghiệm giao tiếp tự nhiên và gần gũi.
 
 ## 🌟 Tính năng nổi bật
 
@@ -13,11 +13,16 @@ LuatBot là hệ thống Trợ lý Pháp lý Trí tuệ Nhân tạo tiên tiến
    - Tầng 6: **P-Cite Citation Lock** ép LLM trích dẫn nguyên văn, chống "chế" luật.
    - Tầng 7: **Semantic Cache** (RAG Gen 3) phản hồi tức thì dưới 1s cho các câu hỏi trùng lặp.
 
-2. **Đa nền tảng (Omni-channel)**:
+2. **Đa nền tảng (Omni-channel) & Real-time**:
    - Cung cấp RESTful API (FastAPI) tốc độ cao.
+   - Hỗ trợ **Server-Sent Events (SSE)** Streaming API (`/assistant/chat-stream`) giúp hiển thị chữ theo thời gian thực (Typing effect).
    - Tích hợp trực tiếp **Telegram Bot** (`telegram_bot.py`) để tư vấn pháp luật tức thời.
 
-3. **Tối ưu hóa Tài nguyên (Resource Efficiency)**:
+3. **Trí nhớ thông minh (Contextual Memory)**:
+   - **Query Rewriting (Lớp 1)**: Tự động đọc lịch sử trò chuyện ngắn hạn để viết lại câu hỏi đầy đủ chủ ngữ/ngữ cảnh trước khi đưa vào máy tìm kiếm.
+   - **Profile Injection (Lớp 2)**: Tự động học thuộc thông tin người dùng (Độ tuổi, Nghề nghiệp...) từ quá khứ và bơm thẳng vào ngữ cảnh phân tích pháp lý (Ví dụ: Biết User là sinh viên để tư vấn quyền lợi hoàn toàn chính xác theo ngữ cảnh cá nhân).
+
+4. **Tối ưu hóa Tài nguyên (Resource Efficiency)**:
    - Chạy mượt mà trên máy chủ VPS RAM 10GB với cơ chế Auto-Fallback sang SQLite Memory khi thiếu RAM đồ họa.
    - Lọc nhiễu thông minh, xử lý mượt mà hơn 153,000 văn bản pháp luật, bản án và án lệ.
 
@@ -82,7 +87,7 @@ pm2 save
 ## 🛠️ Cấu trúc Source Code
 
 - `server.py`: Điểm khởi chạy của FastAPI Server.
-- `telegram_bot.py`: Source code của Bot Telegram tích hợp LuatBot API.
+- `telegram_bot.py`: Source code của Bot Telegram tích hợp Linh AI API.
 - `app/routers/`: Chứa các endpoint API (Chatbot, Tìm kiếm Luật, Phân tích Án lệ...).
 - `app/utils/`: Chứa toàn bộ "trái tim" của hệ thống RAG (Retrieval, Reranker, FLARE, Memory, Smart Router...).
 - `users_memory.db`: Database lưu trữ lịch sử hội thoại cá nhân hóa của người dùng (Fallback mode).

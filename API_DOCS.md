@@ -1,6 +1,6 @@
-# 📚 Tài Liệu API - dataluatvn (LuatBot Ultimate)
+# 📚 Tài Liệu API - dataluatvn (Linh - Trợ lý Pháp lý AI Ultimate)
 
-Tài liệu này cung cấp đặc tả kỹ thuật chi tiết của tất cả các API Endpoint thuộc hệ thống Dữ liệu Pháp luật Việt Nam và AI Chatbot RAG 7 Tầng.
+Tài liệu này cung cấp đặc tả kỹ thuật chi tiết của tất cả các API Endpoint thuộc hệ thống Dữ liệu Pháp luật Việt Nam và AI Chatbot RAG 7 Tầng (Persona "Linh").
 
 ---
 
@@ -60,7 +60,35 @@ Gửi câu hỏi pháp luật tự nhiên của người dùng, lõi RAG 7 tần
   }
   ```
 
-### 1.2 Xem trạng thái các nhà cung cấp LLM
+### 1.2 Gửi câu hỏi dạng Streaming (SSE) - MỚI 🚀
+Gửi câu hỏi và nhận câu trả lời dạng luồng (Server-Sent Events) giúp hiển thị từng từ theo thời gian thực (typing effect), tối ưu trải nghiệm người dùng tương tự ChatGPT. Tích hợp Trí nhớ dài hạn và ngữ cảnh ngắn hạn vào Router.
+
+- **Endpoint:** `POST /assistant/chat-stream`
+- **Xác thực:** Yêu cầu API Key
+- **Content-Type:** `application/json`
+- **Body Request:**
+  ```json
+  {
+    "prompt": "Quy định về việc sa thải nhân viên khi tự ý nghỉ việc 5 ngày?",
+    "session_id": "session_user_99"
+  }
+  ```
+- **Response (Server-Sent Events `text/event-stream`):**
+  - **`event: token`**: Chứa từng mảnh văn bản (text chunk).
+    ```json
+    data: {"content": "Theo "}
+    data: {"content": "quy định "}
+    ```
+  - **`event: citations`**: Gửi khi AI đã hoàn tất việc trả lời, chứa danh sách trích dẫn.
+    ```json
+    data: {"citations": [{"id": 38920, "title": "Bộ luật Lao động năm 2019"}], "domain": "lao_dong", "flare_activated": false, "search_count": 1}
+    ```
+  - **`event: done`**: Tín hiệu kết thúc stream.
+    ```json
+    data: {}
+    ```
+
+### 1.3 Xem trạng thái các nhà cung cấp LLM
 Lấy thông tin mô hình hiện tại đang được sử dụng chính, cấu hình chuỗi dự phòng (fallback) và danh sách các nhà cung cấp LLM được cấu hình trên server.
 
 - **Endpoint:** `GET /assistant/providers`
@@ -79,7 +107,7 @@ Lấy thông tin mô hình hiện tại đang được sử dụng chính, cấu
   }
   ```
 
-### 1.3 Đổi LLM Provider tức thời (Runtime Hot-Swap)
+### 1.4 Đổi LLM Provider tức thời (Runtime Hot-Swap)
 Chuyển đổi mô hình LLM chính của chatbot ngay lập tức mà không cần khởi động lại máy chủ API.
 
 - **Endpoint:** `POST /assistant/switch-provider`
@@ -99,7 +127,7 @@ Chuyển đổi mô hình LLM chính của chatbot ngay lập tức mà không c
   }
   ```
 
-### 1.4 Xem hồ sơ ghi nhớ người dùng (Long-term Memory Profile)
+### 1.5 Xem hồ sơ ghi nhớ người dùng (Long-term Memory Profile)
 Xem các thông tin chi tiết mà bộ nhớ dài hạn Mem0 đã học và lưu trữ về người dùng qua các phiên chat (VD: ngành nghề, vị trí địa lý, chủ đề luật quan tâm).
 
 - **Endpoint:** `GET /assistant/user-profile/{user_id}`

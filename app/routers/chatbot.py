@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from typing import Optional, List
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+import json
 from bs4 import BeautifulSoup, NavigableString
 
 from app.dependencies import require_api_key
@@ -250,22 +252,15 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
 
     # ── STEP 1 & 2: CONCURRENT ROUTING & MEMORY FETCH (SOTA) ──
     # Run SmartRouter (LLM) and Memory lookup (DB) in parallel to save latency
-    chat_history_len = 0
-    try:
-        m_conn = get_memory_db()
-        m_cursor = m_conn.cursor()
-        m_cursor.execute("SELECT COUNT(*) FROM chat_messages WHERE session_id = ?", (session_id,))
-        chat_history_len = m_cursor.fetchone()[0]
-        m_conn.close()
-    except Exception:
-        pass
-
     chat_history_text = _get_chat_history_text(session_id, 4)
 
-    route_task = analyze_query(prompt, chat_history_len)
+    route_task = analyze_query(prompt, chat_history_text)
     memory_task = asyncio.to_thread(LegalUserMemory.get_relevant_memories, session_id, prompt)
     
     route_res, memory_context = await asyncio.gather(route_task, memory_task)
+    
+    if memory_context:
+        chat_history_text = f"--- THÔNG TIN CÁ NHÂN NGƯỜI DÙNG ---\n{memory_context}\n\n" + chat_history_text
     
     print("\n" + "="*50)
     print(f"🧠 [1. SMART ROUTER] Phân tích query: '{prompt}'")
@@ -285,7 +280,8 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
         print("💬 [Router] Chitchat detected. Replying directly via LLM.")
         
         system_prompt = (
-            "Bạn là LuatBot - Trợ lý pháp lý AI chuyên về luật Việt Nam.\n"
+            "Bạn là Linh — cô gái Việt Nam trẻ trung, thân thiện, chuyên tư vấn pháp luật.\n"
+            "PHONG CÁCH: Xưng \"mình\"/\"Linh\", gọi \"bạn\", giọng ấm áp tự nhiên, thỉnh thoảng dùng emoji.\n"
             "Hãy trả lời người dùng một cách thân thiện, lịch sự, ngắn gọn và "
             "nhắc nhở rằng bạn sẵn sàng hỗ trợ các câu hỏi liên quan đến pháp luật Việt Nam."
         )
@@ -321,8 +317,8 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     if not is_legal and domain == "out_of_scope":
         print("🛑 [Router] Out of scope query detected. Refusing politely.")
         reply = (
-            "Tôi là LuatBot, trợ lý chuyên giải đáp pháp luật Việt Nam. "
-            "Câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Vui lòng đặt câu hỏi liên quan đến luật pháp Việt Nam."
+            "Mình là Linh, chuyên hỗ trợ về pháp luật Việt Nam thôi nè 😊 "
+            "Câu hỏi này nằm ngoài phạm vi mình có thể giúp bạn. Bạn hỏi mình về luật pháp Việt Nam nhé!"
         )
         return {
             "response": reply,
@@ -451,6 +447,252 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
         "flare_activated": flare_activated,
         "search_count": search_count
     }
+
+
+@router.post("/chat-stream", summary="Hỏi đáp pháp luật tích hợp RAG 7 Tầng (SSE Streaming)")
+async def chat_with_assistant_stream(req: ChatRequest, _key=Depends(require_api_key)):
+    """
+    Streaming API: Trả về response dạng Server-Sent Events (SSE).
+    """
+    async def _stream_chat_sse():
+        prompt = req.prompt.strip()
+        session_id = req.session_id or "default_user"
+        
+        # ── TẦNG SEMANTIC CACHE (RAG Gen 3) ──
+        try:
+            from app.utils.semantic_cache_manager import get_cache_manager
+            cache_mgr = get_cache_manager()
+            is_hit, cached_response, cached_citations = cache_mgr.lookup(prompt)
+            if is_hit:
+                print(f"🎯 [Semantic Cache] HIT for query: '{prompt}'")
+                
+                # Save history to session chat db
+                _save_chat_history(session_id, prompt, cached_response)
+                
+                # Convert citation_map to list of citations
+                citations_list = list(cached_citations.values()) if isinstance(cached_citations, dict) else (cached_citations or [])
+                
+                yield f"event: token\ndata: {json.dumps({'content': cached_response}, ensure_ascii=False)}\n\n"
+                
+                citations_data = {
+                    "citations": citations_list,
+                    "domain": "cached",
+                    "flare_activated": False,
+                    "search_count": 0
+                }
+                yield f"event: citations\ndata: {json.dumps(citations_data, ensure_ascii=False)}\n\n"
+                yield "event: done\ndata: {}\n\n"
+                return
+        except Exception as e:
+            print(f"⚠️ Semantic cache lookup warning: {e}")
+
+        # ── STEP 1 & 2: CONCURRENT ROUTING & MEMORY FETCH (SOTA) ──
+        chat_history_text = _get_chat_history_text(session_id, 4)
+
+        route_task = analyze_query(prompt, chat_history_text)
+        memory_task = asyncio.to_thread(LegalUserMemory.get_relevant_memories, session_id, prompt)
+        
+        route_res, memory_context = await asyncio.gather(route_task, memory_task)
+        
+        if memory_context:
+            chat_history_text = f"--- THÔNG TIN CÁ NHÂN NGƯỜI DÙNG ---\n{memory_context}\n\n" + chat_history_text
+        
+        print("\n" + "="*50)
+        print(f"🧠 [1. SMART ROUTER] Phân tích query stream: '{prompt}'")
+        print(f"  ↳ Domain: {route_res.get('domain')}")
+        print("="*50 + "\n")
+        
+        domain = route_res.get("domain", "dan_su")
+        is_legal = route_res.get("is_legal", True)
+        search_query = route_res.get("search_query", prompt)
+        
+        # A. Nếu là chitchat chào hỏi thông thường
+        if not is_legal and domain == "chitchat":
+            print("💬 [Router] Chitchat detected. Replying directly via LLM.")
+            
+            system_prompt = (
+                "Bạn là Linh — cô gái Việt Nam trẻ trung, thân thiện, chuyên tư vấn pháp luật.\n"
+                "PHONG CÁCH: Xưng \"mình\"/\"Linh\", gọi \"bạn\", giọng ấm áp tự nhiên, thỉnh thoảng dùng emoji.\n"
+                "Hãy trả lời người dùng một cách thân thiện, lịch sự, ngắn gọn và "
+                "nhắc nhở rằng bạn sẵn sàng hỗ trợ các câu hỏi liên quan đến pháp luật Việt Nam."
+            )
+            if memory_context:
+                system_prompt += f"\n\nNgữ cảnh thông tin đã nhớ về người dùng:\n{memory_context}\n(Nếu người dùng hỏi thông tin cá nhân của họ mà khớp với ngữ cảnh trên, hãy trả lời chính xác dựa theo đó)."
+            if chat_history_text:
+                system_prompt += f"\n\n{chat_history_text}"
+                
+            try:
+                tokens = []
+                async for token in LLMGateway.call_stream([{"role": "user", "content": prompt}], system_prompt):
+                    tokens.append(token)
+                    yield f"event: token\ndata: {json.dumps({'content': token}, ensure_ascii=False)}\n\n"
+                    
+                ai_reply = clean_context_artifacts(strip_thinking_tags("".join(tokens)))
+                
+                try:
+                    LegalUserMemory.save_interaction(session_id, prompt, ai_reply, [])
+                except Exception as e:
+                    print(f"⚠️ Warning: Failed to save chitchat user memory interaction: {e}")
+                    
+                _save_chat_history(session_id, prompt, ai_reply)
+                        
+                citations_data = {
+                    "citations": [],
+                    "domain": "chitchat",
+                    "flare_activated": False,
+                    "search_count": 0
+                }
+                yield f"event: citations\ndata: {json.dumps(citations_data, ensure_ascii=False)}\n\n"
+                yield "event: done\ndata: {}\n\n"
+                return
+            except Exception as e:
+                yield f"event: error\ndata: {json.dumps({'detail': f'Lỗi gọi LLM Gateway: {str(e)}'}, ensure_ascii=False)}\n\n"
+                return
+                
+        # B. Nếu là câu hỏi ngoài phạm vi pháp luật VN (out of scope)
+        if not is_legal and domain == "out_of_scope":
+            print("🛑 [Router] Out of scope query detected. Refusing politely.")
+            reply = (
+                "Mình là Linh, chuyên hỗ trợ về pháp luật Việt Nam thôi nè 😊 "
+                "Câu hỏi này nằm ngoài phạm vi mình có thể giúp bạn. Bạn hỏi mình về luật pháp Việt Nam nhé!"
+            )
+            yield f"event: token\ndata: {json.dumps({'content': reply}, ensure_ascii=False)}\n\n"
+            citations_data = {
+                "citations": [],
+                "domain": "out_of_scope",
+                "flare_activated": False,
+                "search_count": 0
+            }
+            yield f"event: citations\ndata: {json.dumps(citations_data, ensure_ascii=False)}\n\n"
+            yield "event: done\ndata: {}\n\n"
+            return
+        
+        # C. Cần làm rõ (Clarification)
+        if route_res.get("needs_clarification") and route_res.get("clarification_question"):
+            print("🔮 [Clarification] Query mơ hồ, LLM Router yêu cầu gợi mở...")
+            clarification_text = route_res["clarification_question"]
+            _save_chat_history(session_id, prompt, clarification_text)
+            yield f"event: token\ndata: {json.dumps({'content': clarification_text}, ensure_ascii=False)}\n\n"
+            citations_data = {
+                "citations": [],
+                "domain": domain,
+                "flare_activated": False,
+                "search_count": 0
+            }
+            yield f"event: citations\ndata: {json.dumps(citations_data, ensure_ascii=False)}\n\n"
+            yield "event: done\ndata: {}\n\n"
+            return
+        
+        # ── STEP 3 & 4: UNIFIED RETRIEVAL PIPELINE ──
+        DOMAIN_FILTERS = {
+            "lao_dong": ["Lao động", "BHXH", "Bảo hiểm xã hội", "Công đoàn"],
+            "dan_su": ["Dân sự", "Hôn nhân", "Gia đình", "Di chúc", "Thừa kế"],
+            "hinh_su": ["Hình sự", "Tố tụng hình sự", "Tội phạm"],
+            "dat_dai": ["Đất đai", "Nhà ở", "Bất động sản"],
+            "doanh_nghiep": ["Doanh nghiệp", "Đầu tư", "Thương mại"],
+            "hanh_chinh": ["Vi phạm hành chính", "Khiếu nại", "Tố cáo"]
+        }
+        doc_type_filter = DOMAIN_FILTERS.get(domain, [])
+        
+        print(f"🔍 [Retrieval] SOTA pipeline for: '{search_query}' (Original: '{prompt}') (Domain: {domain})")
+        
+        formatted_chunks, citation_map, max_score = await ultimate_retrieve(
+            query=search_query,
+            domain_filter=doc_type_filter,
+            top_k=5,
+            extracted_year=route_res.get("extracted_year"),
+            extracted_doc_type=route_res.get("extracted_doc_type"),
+            extracted_issuer=route_res.get("extracted_issuer"),
+            extracted_doc_number=route_res.get("extracted_doc_number")
+        )
+        flare_activated = False
+        search_count = 1
+
+        # ── STEP 5: ADAPTIVE FLARE RAG GENERATION (Tầng 5) ──
+        final_text = ""
+        citations_list = list(citation_map.values())
+        
+        force_simple = max_score > 500
+        if force_simple:
+            print(f"⚡ [Adaptive RAG] High confidence score ({max_score:.1f}) -> Bypassing FLARE drafting.")
+        else:
+            print(f"🧠 [Adaptive RAG] Semantic Match score ({max_score:.1f}) -> Activating FLARE drafting.")
+
+        if formatted_chunks:
+            try:
+                async for event in flare_generate_stream(
+                    query=prompt,
+                    initial_context=formatted_chunks,
+                    citation_map=citation_map,
+                    domain_filter=doc_type_filter,
+                    custom_model=None,
+                    force_simple=force_simple,
+                    chat_history_text=chat_history_text
+                ):
+                    ev_type = event.get("type")
+                    if ev_type == "token":
+                        final_text += event["content"]
+                        yield f"event: token\ndata: {json.dumps({'content': event['content']}, ensure_ascii=False)}\n\n"
+                    elif ev_type == "status":
+                        flare_activated = event["flare_activated"]
+                        search_count = event["search_count"]
+                        citations_list = list(event["citation_map"].values())
+            except Exception as ex:
+                yield f"event: error\ndata: {json.dumps({'detail': f'Lỗi RAG Generation: {str(ex)}'}, ensure_ascii=False)}\n\n"
+                return
+        else:
+            final_text = "Không tìm thấy tài liệu pháp lý liên quan phù hợp để trả lời câu hỏi của bạn."
+            yield f"event: token\ndata: {json.dumps({'content': final_text}, ensure_ascii=False)}\n\n"
+
+        # ── STRIP THINKING TAGS & CONTEXT ARTIFACTS ──
+        final_text = clean_context_artifacts(strip_thinking_tags(final_text))
+
+        # ── CẬP NHẬT SEMANTIC CACHE (RAG Gen 3) ──
+        failure_patterns = [
+            "không tìm thấy tài liệu",
+            "chưa tìm thấy quy định",
+            "không có thông tin",
+            "ngoài phạm vi",
+            "không tìm thấy",
+            "chưa tìm thấy",
+            "không có dữ liệu",
+            "không tồn tại trong",
+        ]
+        should_cache = (
+            final_text 
+            and domain not in ["chitchat", "out_of_scope"] 
+            and all(p not in final_text.lower() for p in failure_patterns)
+        )
+        if should_cache:
+            try:
+                from app.utils.semantic_cache_manager import get_cache_manager
+                cache_mgr = get_cache_manager()
+                cache_mgr.update(prompt, final_text, citation_map)
+            except Exception as e:
+                print(f"⚠️ Failed to update semantic cache: {e}")
+
+        # ── STEP 6: SAVE INTERACTION TO MEMORY (Tầng 2) ──
+        try:
+            LegalUserMemory.save_interaction(session_id, prompt, final_text, citations_list)
+        except Exception as e:
+            print(f"⚠️ Warning: Failed to save user memory interaction: {e}")
+            
+        # ── STEP 7: SAVE TO SESSION CHAT HISTORY DB ──
+        _save_chat_history(session_id, prompt, final_text)
+
+        citations_data = {
+            "citations": citations_list,
+            "domain": domain,
+            "flare_activated": flare_activated,
+            "search_count": search_count
+        }
+        yield f"event: citations\ndata: {json.dumps(citations_data, ensure_ascii=False)}\n\n"
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(_stream_chat_sse(), media_type="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no"
+    })
 
 
 @router.get("/providers", summary="Lấy trạng thái các LLM providers")
