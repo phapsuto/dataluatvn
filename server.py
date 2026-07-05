@@ -24,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import DB_NAME, API_PORT, DESCRIPTION, TAGS_METADATA
 from app.database import init_admin_db, init_memory_db
-from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage, assistant_memory, chatbot
+from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage, assistant_memory, chatbot, document_chat
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -127,6 +127,7 @@ app.include_router(admin_crud.router)
 app.include_router(lineage.router)
 app.include_router(assistant_memory.router)
 app.include_router(chatbot.router)
+app.include_router(document_chat.router)
 
 
 # ╔══════════════════════════════════════════════════════════════╗

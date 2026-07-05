@@ -62,3 +62,67 @@
   4. [Điểm: 0.4250] Hình sự
   5. [Điểm: 0.4240] Quy định chi tiết một số điều của Luật Thi hành án hình sự về thi hành án đối với pháp nhân thương mại
 --------------------------------------------------
+
+[2026-07-02 11:33:58] 🔍 SEARCH: 'B thấy chị H đeo hai nhẫn vàng ở ngón tay nên B dùnggậy đánh vào sau gáy của chị H làm chị H ngất, sau đó B lấy hai chiếc nhẫnvàng của chị H. Vậy B đã phạm tội gì?'
+  1. [Điểm: 0.2873] Tần số vô tuyến điện
+  2. [Điểm: 0.2873] Tiêu chuẩn và quy chuẩn kỹ thuật
+  3. [Điểm: 0.2742] Luật Dược sửa đổi 2024
+  4. [Điểm: 0.2673] Sửa đổi, bổ sung một số đều của Nghị định số 127/2007/NĐ-CP ngày 01 tháng 8 năm 2007 của Chính phủ quy định chi tiết thi hành một số điều Luật tiêu chuẩn và quy chuẩn kỹ thuật.
+  5. [Điểm: 0.2673] Quy định chi tiết thi hành một số điều của Luật Tiêu chuẩn và Quy chuẩn kỹ thuật
+--------------------------------------------------
+
+[2026-07-02 11:54:49] 🔍 SEARCH: 'Điều 128 Bộ luật Hình sự'
+  1. [Điểm: 99.3120] Hình sự
+  2. [Điểm: 98.9272] Hình sự
+  3. [Điểm: 98.7640] Hình sự
+  4. [Điểm: 30.3880] Hình sự
+  5. [Điểm: 17.5883] Hình sự
+--------------------------------------------------
+
+[2026-07-02 11:56:30] 🔍 SEARCH: 'độ tuổi đi làm thêm tại quán bar'
+  1. [Điểm: 42.3987] Lao động
+  2. [Điểm: 27.8333] Quy định xử phạt vi phạm hành chính trong lĩnh vực lao động, bảo hiểm xã hội, người lao động Việt Nam đi làm việc ở nước ngoài theo hợp đồng
+  3. [Điểm: 8.5144] Quy định xử phạt vi phạm hành chính trong lĩnh vực lao động, bảo hiểm xã hội, đưa người lao động Việt Nam đi làm việc ở nước ngoài theo hợp đồng
+  4. [Điểm: 8.5138] Quy định xử phạt vi phạm hành chính trong lĩnh vực lao động, bảo hiểm xã hội, đưa người lao động Việt Nam đi làm việc ở nước ngoài theo hợp đồng
+  5. [Điểm: 8.2767] Quy định xử phạt vi phạm hành chính trong lĩnh vực lao động, bảo hiểm xã hội, người lao động Việt Nam đi làm việc ở nước ngoài theo hợp đồng
+--------------------------------------------------
+
+[2026-07-02 12:00:38] 🔍 SEARCH: 'sinh viên chưa ra trường thành lập công ty kinh doanh vật liệu xây dựng'
+  1. [Điểm: 62.5908] Về việc thành lập Công ty Vật liệu xây dựng, đơn vị thành viên của Tổng Công ty Xây dựng công nghiệp Việt Nam
+  2. [Điểm: 57.8283] Về việc thành lập Công ty Vật liệu xây dựng, đơn vị thành viên của Tổng Công ty Xây dựng công nghiệp Việt Nam
+  3. [Điểm: 41.2314] Về việc thành lập Công ty Vật liệu xây dựng, đơn vị thành viên của Tổng Công ty Xây dựng công nghiệp Việt Nam
+  4. [Điểm: 23.7253] Ban hành Quy định về quản lý vật liệu xây dựng trên địa bàn tỉnh Thái Nguyên
+  5. [Điểm: 23.5166] Về việc thành lập Công ty Xây lắp và Vật liệu xây dựng số 5, đơn vị thành viên của Tổng Công ty Xây dựng công nghiệp Việt Nam
+--------------------------------------------------
+
+[2026-07-03 15:37:27] 🔍 SEARCH: 'so sánh luật đất đai 2024 và 2013 quyền sử dụng đất'
+  1. [Điểm: 32.8027] Đất đai
+  2. [Điểm: 17.0059] Đất đai
+  3. [Điểm: 11.5724] Đất đai
+  4. [Điểm: 8.6075] Đất đai
+  5. [Điểm: 7.0931] Đất đai
+--------------------------------------------------
+
+[2026-07-03 15:37:52] 🔍 SEARCH: 'quy định thời hiệu khởi kiện vụ án dân sự BLTTDS 2015'
+  1. [Điểm: 99.5398] Dân sự
+  2. [Điểm: 98.8453] Dân sự
+  3. [Điểm: 97.5627] Hướng dẫn thi hành một số quy định trong phần thứ nhất “Những quy định chung” của Bộ luật tố tụng dân sự đã được sửa đổi, bổ sung theo Luật sửa đổi, bổ sung một số điều của Bộ luật tố tụng dân sự
+  4. [Điểm: 96.5319] Hướng dẫn thi hành một số quy định trong phần thứ nhất “Những quy định chung” của Bộ luật tố tụng dân sự đã được sửa đổi, bổ sung theo Luật sửa đổi, bổ sung một số điều của Bộ luật tố tụng dân sự
+  5. [Điểm: 95.5436] Hướng dẫn thi hành một số quy định trong phần thứ nhất “Những quy định chung” của Bộ luật tố tụng dân sự đã được sửa đổi, bổ sung theo Luật sửa đổi, bổ sung một số điều của Bộ luật tố tụng dân sự
+--------------------------------------------------
+
+[2026-07-03 16:51:19] 🔍 SEARCH: 'bà Nguyệt tuyên bố chết có m'
+  1. [Điểm: 4.4726] Tố tụng dân sự
+  2. [Điểm: 4.3411] Tố tụng dân sự
+  3. [Điểm: 4.2130] Dân sự
+  4. [Điểm: 4.1509] Tố tụng dân sự
+  5. [Điểm: 3.5210] Dân sự
+--------------------------------------------------
+
+[2026-07-04 14:35:31] 🔍 SEARCH: 'so sánh luật đất đai 2024 và 2013 quyền sử dụng đất'
+  1. [Điểm: 32.8025] Đất đai
+  2. [Điểm: 17.0059] Đất đai
+  3. [Điểm: 11.5725] Đất đai
+  4. [Điểm: 8.6075] Đất đai
+  5. [Điểm: 7.0931] Đất đai
+--------------------------------------------------
