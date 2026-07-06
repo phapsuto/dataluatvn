@@ -48,42 +48,51 @@ def parse_pdf(file_bytes: bytes, progress_callback=None) -> str:
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
         page_results = [None] * total_pages
-        tasks = []
+        scanned_pages = []
         completed = 0
         
         for i, page in enumerate(doc):
             page_text = page.get_text().strip()
             if len(page_text) < 50:
-                # Likely a scanned page, try OCR
-                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2)) # 2x zoom for better OCR
-                img_bytes = pix.tobytes("png")
-                b64_img = base64.b64encode(img_bytes).decode("utf-8")
-                tasks.append((i, b64_img))
+                scanned_pages.append(i)
             else:
                 page_results[i] = page_text + "\n\n"
                 completed += 1
                 if progress_callback:
                     progress_callback(completed, total_pages)
         
-        # Run OCR concurrently
-        if tasks:
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                future_to_idx = {executor.submit(_fpt_ocr_image_base64, b64): idx for idx, b64 in tasks}
-                for future in as_completed(future_to_idx):
-                    idx = future_to_idx[future]
-                    try:
-                        ocr_text = future.result()
-                        if not ocr_text.strip():
-                            page_results[idx] = "\n\n[LỖI: TRANG NÀY KHÔNG NHẬN DIỆN ĐƯỢC CHỮ]\n\n"
-                        else:
-                            page_results[idx] = ocr_text + "\n\n"
-                    except Exception as e:
-                        print(f"[OCR Task Error] {e}")
-                        page_results[idx] = "\n\n[LỖI: QUÁ TRÌNH OCR TRANG NÀY BỊ THẤT BẠI]\n\n"
-                    
-                    completed += 1
-                    if progress_callback:
-                        progress_callback(completed, total_pages)
+        # Run OCR in batches to avoid OOM for large documents
+        BATCH_SIZE = 5
+        if scanned_pages:
+            for batch_start in range(0, len(scanned_pages), BATCH_SIZE):
+                batch_indices = scanned_pages[batch_start:batch_start + BATCH_SIZE]
+                tasks = []
+                
+                # Generate images only for the current batch
+                for i in batch_indices:
+                    pix = doc[i].get_pixmap(matrix=fitz.Matrix(2, 2))
+                    img_bytes = pix.tobytes("png")
+                    b64_img = base64.b64encode(img_bytes).decode("utf-8")
+                    tasks.append((i, b64_img))
+                
+                # Process the batch concurrently
+                with ThreadPoolExecutor(max_workers=BATCH_SIZE) as executor:
+                    future_to_idx = {executor.submit(_fpt_ocr_image_base64, b64): idx for idx, b64 in tasks}
+                    for future in as_completed(future_to_idx):
+                        idx = future_to_idx[future]
+                        try:
+                            ocr_text = future.result()
+                            if not ocr_text.strip():
+                                page_results[idx] = "\n\n[LỖI: TRANG NÀY KHÔNG NHẬN DIỆN ĐƯỢC CHỮ]\n\n"
+                            else:
+                                page_results[idx] = ocr_text + "\n\n"
+                        except Exception as e:
+                            print(f"[OCR Task Error] {e}")
+                            page_results[idx] = "\n\n[LỖI: QUÁ TRÌNH OCR TRANG NÀY BỊ THẤT BẠI]\n\n"
+                        
+                        completed += 1
+                        if progress_callback:
+                            progress_callback(completed, total_pages)
                         
         text = "".join(filter(None, page_results))
     except Exception as e:
