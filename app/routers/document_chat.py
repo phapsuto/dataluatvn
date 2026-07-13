@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse, FileResponse
 from pydantic import BaseModel
 import json
 import uuid
+import threading
 
 # Import the new store instead of the memory one
 from app.utils.document_store import (
@@ -21,12 +22,14 @@ from app.utils.document_store import (
     create_processing_source,
     add_source_chunks,
     update_source_progress,
+    update_source_summary,
     create_mindmap,
     get_mindmaps,
     get_mindmap,
     update_mindmap,
     delete_mindmap,
-    NOTEBOOK_DB
+    NOTEBOOK_DB,
+    get_db_conn
 )
 import sqlite3
 from app.utils.llm_gateway import LLMGateway
@@ -81,6 +84,12 @@ async def api_delete_notebook(notebook_id: str):
         raise HTTPException(status_code=404, detail="Notebook not found")
     return {"status": "success"}
 
+@router.delete("/notebooks/{notebook_id}/messages")
+async def api_delete_notebook_messages(notebook_id: str):
+    from app.utils.document_store import clear_notebook_messages
+    clear_notebook_messages(notebook_id)
+    return {"status": "success"}
+
 # --- Sources CRUD & Upload ---
 
 @router.post("/upload")
@@ -98,16 +107,47 @@ async def upload_document(request: Request):
         raise HTTPException(status_code=400, detail=res["error"])
     return res
 
+# Semaphore to limit concurrent file processing (prevent embed_texts OOM with 10+ files)
+_file_processing_semaphore = threading.Semaphore(3)
+
 def process_file_background(notebook_id: str, source_id: str, filename: str, file_bytes: bytes):
-    try:
-        def progress_callback(processed, total):
-            update_source_progress(source_id, "processing", processed, total)
+    with _file_processing_semaphore:
+        try:
+            def progress_callback(processed, total):
+                update_source_progress(source_id, "processing", processed, total)
+                
+            text = parse_file(filename, file_bytes, progress_callback)
+            result = add_source_chunks(notebook_id, source_id, text)
             
-        text = parse_file(filename, file_bytes, progress_callback)
-        add_source_chunks(notebook_id, source_id, text)
-    except Exception as e:
-        update_source_progress(source_id, "error")
-        print(f"[Background Task Error] {e}")
+            # Auto-generate summary after successful processing
+            if result.get("status") == "success" and text.strip():
+                try:
+                    import asyncio
+                    summary_text = text[:8000]  # First ~8K chars for summary
+                    summary_prompt = (
+                        "Tóm tắt tài liệu sau đây trong 2-3 câu ngắn gọn bằng tiếng Việt. "
+                        "Nêu rõ loại tài liệu (ví dụ: bản cáo trạng, quyết định, biên bản...) và nội dung chính. "
+                        "CHỈ TRẢ VỀ TÓM TẮT, không giải thích thêm."
+                    )
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    summary = loop.run_until_complete(
+                        LLMGateway.call_async(
+                            messages=[{"role": "user", "content": summary_text}],
+                            system_prompt=summary_prompt,
+                            temperature=0.1,
+                            max_tokens=300
+                        )
+                    )
+                    loop.close()
+                    if summary and len(summary.strip()) > 10:
+                        update_source_summary(source_id, summary.strip())
+                        print(f"[Auto-Summary] {filename}: {summary.strip()[:80]}...")
+                except Exception as e:
+                    print(f"[Auto-Summary] Skipped for {filename}: {e}")
+        except Exception as e:
+            update_source_progress(source_id, "error")
+            print(f"[Background Task Error] {e}")
 
 @router.post("/upload-file")
 async def upload_file(
@@ -181,8 +221,7 @@ async def doc_chat_stream(request: Request):
     prompt_text = req.get("prompt")
     selected_source_ids = req.get("selected_source_ids", None)
     
-    # 1. Fetch chat history
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn(NOTEBOOK_DB)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT role, content FROM notebook_messages WHERE notebook_id = ? ORDER BY created_at ASC", (notebook_id,))
@@ -222,7 +261,35 @@ async def doc_chat_stream(request: Request):
             
             
     # 3. Tra cứu FAISS tài liệu với Standalone Query
-    docs = search_notebook_docs(notebook_id, search_query, top_k=20)
+    docs = search_notebook_docs(notebook_id, search_query, top_k=30)
+    
+    # 3.0 Multi-Query RAG — Nếu câu hỏi phức tạp, tạo sub-queries để tìm thêm
+    if len(search_query) > 40 and len(docs) < 15:
+        try:
+            decompose_prompt = (
+                "Phân tách câu hỏi phức tạp sau thành 2-3 câu hỏi con đơn giản hơn để tìm kiếm trong tài liệu.\n"
+                "CHỈ TRẢ VỀ các câu hỏi con, mỗi câu trên 1 dòng. KHÔNG giải thích.\n"
+                f"Câu hỏi: {search_query}"
+            )
+            sub_queries_text = await LLMGateway.call_async(
+                messages=[{"role": "user", "content": decompose_prompt}],
+                system_prompt="Bạn phân tách câu hỏi. Trả về mỗi câu hỏi con trên 1 dòng.",
+                temperature=0.0,
+                max_tokens=300
+            )
+            sub_queries = [q.strip().lstrip('- ').lstrip('0123456789.) ') for q in sub_queries_text.strip().split('\n') if q.strip() and len(q.strip()) > 5]
+            
+            if sub_queries and len(sub_queries) >= 2:
+                existing_texts = {d['text'][:200] for d in docs}
+                for sq in sub_queries[:3]:
+                    sub_docs = search_notebook_docs(notebook_id, sq, top_k=10)
+                    for sd in sub_docs:
+                        if sd['text'][:200] not in existing_texts:
+                            docs.append(sd)
+                            existing_texts.add(sd['text'][:200])
+                print(f"[Multi-Query] Decomposed into {len(sub_queries)} sub-queries, total docs: {len(docs)}")
+        except Exception as e:
+            print(f"[Multi-Query] Skipped: {e}")
     
     if selected_source_ids is not None:
         docs = [d for d in docs if d['source_id'] in selected_source_ids]
@@ -233,19 +300,19 @@ async def doc_chat_stream(request: Request):
             from app.config import FPT_CLOUD_API_KEY
             if FPT_CLOUD_API_KEY:
                 import httpx
-                rerank_passages = [d['text'][:2000] for d in docs[:20]]
+                rerank_passages = [d['text'][:2000] for d in docs[:30]]
                 rerank_payload = {
                     "model": "bge-reranker-v2-m3",
                     "query": search_query,
                     "documents": rerank_passages,
-                    "top_n": min(8, len(rerank_passages))
+                    "top_n": min(15, len(rerank_passages))
                 }
                 async with httpx.AsyncClient() as client:
                     rerank_res = await client.post(
                         "https://mkp-api.fptcloud.com/v1/rerank",
                         json=rerank_payload,
                         headers={"Authorization": f"Bearer {FPT_CLOUD_API_KEY}", "Content-Type": "application/json"},
-                        timeout=8.0
+                        timeout=10.0
                     )
                     if rerank_res.status_code == 200:
                         rerank_data = rerank_res.json()
@@ -265,22 +332,30 @@ async def doc_chat_stream(request: Request):
             print(f"[Notebook Rerank] Skipped: {e}")
     
     # 3.2. Score threshold — loại bỏ chunks hoàn toàn không liên quan
-    # FAISS IP scores cho Vietnamese Embedding thường nằm trong khoảng 0.05 - 0.5
-    # Reranker scores nằm trong khoảng 0.0 - 1.0
     SCORE_THRESHOLD = 0.01
     docs = [d for d in docs if d.get('score', 0) >= SCORE_THRESHOLD]
     
-    docs = docs[:5]  # Chỉ lấy 5 đoạn trích phù hợp nhất sau khi lọc + rerank
+    docs = docs[:15]  # Lấy 15 đoạn trích phù hợp nhất (gấp 3x so với trước)
     
     has_relevant_docs = len(docs) > 0
     doc_context = "\n\n".join([f"--- Đoạn trích {i+1} (Từ file: {d.get('filename', 'Unknown')}, Đoạn {d.get('chunk_index', 0) + 1}) ---\n{d['text']}" for i, d in enumerate(docs)])
     
-    # 4. Sinh prompt cho LLM
-    system_prompt = "Bạn là Trợ lý AI Viện Kiểm sát (NoteBook AI). Dựa vào các đoạn trích từ hồ sơ vụ án do Kiểm sát viên cung cấp dưới đây, hãy trả lời câu hỏi một cách chính xác, ngắn gọn và khách quan. CHỈ SỬ DỤNG thông tin từ hồ sơ được cung cấp. Nếu bạn sử dụng thông tin từ đoạn trích nào, BẮT BUỘC phải trích dẫn nguồn ở cuối câu bằng cấu trúc [Tên file] (ví dụ: [Đề-cương.pdf]). TUYỆT ĐỐI KHÔNG LẶP LẠI CÂU TRẢ LỜI."
+    # 4. Sinh prompt cho LLM — cho phép trả lời DÀI và CHI TIẾT
+    system_prompt = (
+        "Bạn là Trợ lý AI Viện Kiểm sát (NoteBook AI) — chuyên gia phân tích hồ sơ vụ án.\n"
+        "Dựa vào các đoạn trích từ hồ sơ vụ án do Kiểm sát viên cung cấp, hãy trả lời câu hỏi:\n\n"
+        "QUY TẮC BẮT BUỘC:\n"
+        "1. CHỈ SỬ DỤNG thông tin từ hồ sơ được cung cấp. KHÔNG BỊA thông tin.\n"
+        "2. Trả lời CHI TIẾT, ĐẦY ĐỦ và TOÀN DIỆN — phân tích sâu khi câu hỏi yêu cầu.\n"
+        "3. Sử dụng Markdown format: tiêu đề (##), bullet points, bảng, in đậm cho thông tin quan trọng.\n"
+        "4. BẮT BUỘC trích dẫn nguồn cụ thể: [Tên file, Đoạn X] sau mỗi thông tin.\n"
+        "5. Nếu câu hỏi yêu cầu so sánh, tổng hợp, phân tích → trả lời DÀI với nhiều phần.\n"
+        "6. TUYỆT ĐỐI KHÔNG LẶP LẠI nội dung đã trả lời.\n"
+    )
     if has_relevant_docs:
-        system_prompt += f"\n\n[HỒ SƠ VỤ ÁN TỪ NOTEBOOK]\n{doc_context}"
+        system_prompt += f"\n[HỒ SƠ VỤ ÁN TỪ NOTEBOOK — {len(docs)} đoạn trích]\n{doc_context}"
     else:
-        system_prompt += "\n\n[LƯU Ý] Không tìm thấy đoạn tài liệu nào đủ liên quan đến câu hỏi trong NoteBook này. Hãy trả lời rằng bạn không tìm thấy thông tin phù hợp trong tài liệu đã tải lên. KHÔNG ĐƯỢC BỊA thông tin."
+        system_prompt += "\n[LƯU Ý] Không tìm thấy đoạn tài liệu nào đủ liên quan đến câu hỏi trong NoteBook này. Hãy trả lời rằng bạn không tìm thấy thông tin phù hợp trong tài liệu đã tải lên. KHÔNG ĐƯỢC BỊA thông tin."
         
     messages.append({"role": "user", "content": prompt_text})
     
@@ -305,17 +380,17 @@ async def doc_chat_stream(request: Request):
     user_msg_id = f"msg_{uuid.uuid4().hex[:12]}"
     add_notebook_message(notebook_id, user_msg_id, "user", prompt_text)
     
-    # 3. Stream
+    # 5. Stream — gửi cả chunk và accumulated để frontend không mất text
     async def event_generator():
         full_response = ""
         try:
-            async for chunk in LLMGateway.call_stream(messages=messages, system_prompt=system_prompt):
+            async for chunk in LLMGateway.call_stream(messages=messages, system_prompt=system_prompt, max_tokens=16384):
                 full_response += chunk
-                yield f"data: {json.dumps({'text': chunk, 'citations': citations}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'chunk': chunk, 'accumulated': full_response, 'citations': citations}, ensure_ascii=False)}\n\n"
         except Exception as e:
-            err_msg = f"\\n\\n[Lỗi AI]: {str(e)}"
+            err_msg = f"\n\n[Lỗi AI]: {str(e)}"
             full_response += err_msg
-            yield f"data: {json.dumps({'text': err_msg})}\n\n"
+            yield f"data: {json.dumps({'chunk': err_msg, 'accumulated': full_response})}\n\n"
             
         # Save assistant message
         if full_response:
@@ -401,8 +476,7 @@ async def generate_mindmap(request: Request):
     """
     import re
     import asyncio
-    import sqlite3 as _sqlite3
-    from app.utils.document_store import NOTEBOOK_DB
+    from app.utils.document_store import NOTEBOOK_DB, get_db_conn
 
     req = await request.json()
     notebook_id = req.get("notebook_id")
@@ -413,7 +487,7 @@ async def generate_mindmap(request: Request):
         raise HTTPException(status_code=400, detail="Missing notebook_id")
 
     # 1. Fetch ALL chunks from SQLite (no limit)
-    conn = _sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn(NOTEBOOK_DB)
     c = conn.cursor()
 
     if selected_source_ids:

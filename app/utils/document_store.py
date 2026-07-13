@@ -4,6 +4,7 @@ import faiss
 import numpy as np
 from typing import List, Dict, Any, Optional
 import json
+import threading
 from datetime import datetime
 
 # Setup paths
@@ -15,8 +16,29 @@ UPLOADS_DIR = os.path.join(DATA_DIR, "notebooks_uploads")
 os.makedirs(FAISS_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
+# --- Connection & Lock Helpers ---
+DB_TIMEOUT = 30  # seconds
+
+def get_db_conn(db_path: str = None) -> sqlite3.Connection:
+    """Create a SQLite connection with WAL mode and timeout for concurrent access."""
+    conn = sqlite3.connect(db_path or NOTEBOOK_DB, timeout=DB_TIMEOUT)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")  # 30s busy timeout
+    return conn
+
+# Per-notebook FAISS file locks to prevent concurrent read/write corruption
+_faiss_locks: Dict[str, threading.Lock] = {}
+_faiss_locks_guard = threading.Lock()  # guard for _faiss_locks dict itself
+
+def get_faiss_lock(notebook_id: str) -> threading.Lock:
+    """Get or create a threading.Lock for a specific notebook's FAISS index."""
+    with _faiss_locks_guard:
+        if notebook_id not in _faiss_locks:
+            _faiss_locks[notebook_id] = threading.Lock()
+        return _faiss_locks[notebook_id]
+
 def init_notebook_db():
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     # Notebooks
     c.execute('''
@@ -95,6 +117,10 @@ def init_notebook_db():
         c.execute("ALTER TABLE notebook_messages ADD COLUMN citations TEXT")
     except sqlite3.OperationalError:
         pass
+    try:
+        c.execute("ALTER TABLE notebook_sources ADD COLUMN summary TEXT")
+    except sqlite3.OperationalError:
+        pass
         
     conn.commit()
     conn.close()
@@ -126,22 +152,127 @@ def save_faiss(notebook_id: str, index: faiss.Index):
     path = get_faiss_path(notebook_id)
     faiss.write_index(index, path)
 
-def chunk_text(text: str, chunk_size: int = 1500, overlap: int = 300) -> List[str]:
-    paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+import re
+
+# Regex patterns for legal document structure detection
+_HEADING_PATTERNS = re.compile(
+    r'^(?:'
+    r'(?:PHẦN|CHƯƠNG|MỤC|TIỂU MỤC)\s+[IVXLCDM\d]+'
+    r'|Điều\s+\d+'
+    r'|(?:^|\n)\s*(?:[IVXLCDM]+|\d+)\.\s+[A-ZÀ-Ỹ]'
+    r'|^\s*(?:Khoản|Mục|Phần)\s+\d+'
+    r'|^\s*[A-ZÀ-Ỹ][A-ZÀ-Ỹ\s]{5,}$'
+    r')',
+    re.MULTILINE | re.UNICODE
+)
+
+def _is_heading(line: str) -> bool:
+    """Check if a line is a legal document heading."""
+    stripped = line.strip()
+    if not stripped or len(stripped) > 200:
+        return False
+    return bool(_HEADING_PATTERNS.match(stripped))
+
+def _split_sentences(text: str) -> List[str]:
+    """Split text into sentences, respecting Vietnamese punctuation."""
+    # Split on sentence boundaries but keep the delimiter
+    parts = re.split(r'(?<=[.!?;])\s+', text)
+    return [p for p in parts if p.strip()]
+
+def chunk_text(text: str, chunk_size: int = 2500, overlap: int = 500) -> List[str]:
+    """Smart chunking that respects document structure.
+    
+    Strategy:
+    1. Split by headings first (Điều, Chương, Mục, etc.)
+    2. If a section is too long, split by paragraphs
+    3. Never cut in the middle of a sentence
+    4. Overlap preserves context between chunks
+    """
+    if not text or not text.strip():
+        return [text] if text else []
+    
+    # Step 1: Split into structural sections by headings
+    lines = text.split('\n')
+    sections = []
+    current_section = []
+    
+    for line in lines:
+        if _is_heading(line) and current_section:
+            sections.append('\n'.join(current_section))
+            current_section = [line]
+        else:
+            current_section.append(line)
+    if current_section:
+        sections.append('\n'.join(current_section))
+    
+    # Step 2: Process each section into chunks
     chunks = []
     current_chunk = ""
     
-    for p in paragraphs:
-        if len(current_chunk) + len(p) > chunk_size and current_chunk:
-            chunks.append(current_chunk.strip())
-            # Simple overlap
-            current_chunk = current_chunk[-overlap:] + "\n\n" + p
-        else:
-            current_chunk += ("\n\n" if current_chunk else "") + p
+    for section in sections:
+        section = section.strip()
+        if not section:
+            continue
             
-    if current_chunk:
-        chunks.append(current_chunk.strip())
+        # If adding this section fits in current chunk
+        if len(current_chunk) + len(section) + 2 <= chunk_size:
+            current_chunk += ("\n\n" if current_chunk else "") + section
+            continue
         
+        # If current chunk is non-empty, save it first
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+            # Keep overlap from end of last chunk
+            overlap_text = current_chunk[-overlap:] if len(current_chunk) > overlap else current_chunk
+            current_chunk = overlap_text
+        
+        # If section itself fits in a chunk, add it
+        if len(section) <= chunk_size:
+            current_chunk += ("\n\n" if current_chunk else "") + section
+            continue
+        
+        # Section too long — split by paragraphs, then sentences
+        paragraphs = [p.strip() for p in section.split('\n\n') if p.strip()]
+        for para in paragraphs:
+            if len(current_chunk) + len(para) + 2 <= chunk_size:
+                current_chunk += ("\n\n" if current_chunk else "") + para
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                    overlap_text = current_chunk[-overlap:] if len(current_chunk) > overlap else current_chunk
+                    current_chunk = overlap_text
+                
+                # If paragraph itself too long, split by sentences
+                if len(para) > chunk_size:
+                    sentences = _split_sentences(para)
+                    for sent in sentences:
+                        if len(current_chunk) + len(sent) + 1 <= chunk_size:
+                            current_chunk += (" " if current_chunk else "") + sent
+                        else:
+                            if current_chunk:
+                                chunks.append(current_chunk.strip())
+                                overlap_text = current_chunk[-overlap:] if len(current_chunk) > overlap else current_chunk
+                                current_chunk = overlap_text
+                            current_chunk += (" " if current_chunk else "") + sent
+                else:
+                    current_chunk += ("\n\n" if current_chunk else "") + para
+    
+    if current_chunk and current_chunk.strip():
+        chunks.append(current_chunk.strip())
+    
+    # Deduplicate near-identical chunks (from overlap)
+    if len(chunks) > 1:
+        deduped = [chunks[0]]
+        for c in chunks[1:]:
+            # If chunk is >80% overlap with previous, skip
+            if len(c) > 0 and len(deduped[-1]) > 0:
+                overlap_ratio = len(set(c.split()) & set(deduped[-1].split())) / max(len(set(c.split())), 1)
+                if overlap_ratio < 0.8:
+                    deduped.append(c)
+            else:
+                deduped.append(c)
+        chunks = deduped
+    
     return chunks or [text]
 
 def embed_texts(texts: List[str]) -> np.ndarray:
@@ -160,7 +291,7 @@ def embed_texts(texts: List[str]) -> np.ndarray:
 # --- CRUD Notebooks ---
 
 def create_notebook(notebook_id: str, title: str, description: str = None, case_number: str = None, user_id: str = "default") -> dict:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     now = datetime.utcnow().isoformat()
     c.execute(
@@ -172,7 +303,7 @@ def create_notebook(notebook_id: str, title: str, description: str = None, case_
     return get_notebook(notebook_id)
 
 def get_notebook(notebook_id: str) -> Optional[dict]:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT * FROM notebooks WHERE id = ?", (notebook_id,))
@@ -210,10 +341,13 @@ def get_notebook(notebook_id: str) -> Optional[dict]:
     return res
 
 def list_notebooks(user_id: str = "default") -> List[dict]:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute("SELECT id FROM notebooks WHERE user_id = ? ORDER BY updated_at DESC", (user_id,))
+    if user_id == "__all__":
+        c.execute("SELECT id FROM notebooks ORDER BY updated_at DESC")
+    else:
+        c.execute("SELECT id FROM notebooks WHERE user_id = ? ORDER BY updated_at DESC", (user_id,))
     rows = c.fetchall()
     conn.close()
     
@@ -225,9 +359,9 @@ def list_notebooks(user_id: str = "default") -> List[dict]:
     return notebooks
 
 def delete_notebook(notebook_id: str) -> bool:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
-    # Due to ON DELETE CASCADE, sources and chunks will be deleted
+    conn.execute("PRAGMA foreign_keys=ON")  # Ensure CASCADE works
     c.execute("DELETE FROM notebooks WHERE id = ?", (notebook_id,))
     deleted = c.rowcount > 0
     conn.commit()
@@ -240,7 +374,7 @@ def delete_notebook(notebook_id: str) -> bool:
     return deleted
 
 def update_notebook(notebook_id: str, updates: dict) -> Optional[dict]:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     
     fields = []
@@ -272,7 +406,7 @@ def create_processing_source(notebook_id: str, source_id: str, filename: str, fi
     if not get_notebook(notebook_id):
         create_notebook(notebook_id, "Untitled Notebook")
         
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     now = datetime.utcnow().isoformat()
     
@@ -284,7 +418,7 @@ def create_processing_source(notebook_id: str, source_id: str, filename: str, fi
     conn.close()
 
 def update_source_progress(source_id: str, status: str, processed_pages: int = 0, total_pages: int = 0, chunk_count: int = 0):
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     
     if chunk_count > 0:
@@ -300,6 +434,14 @@ def update_source_progress(source_id: str, status: str, processed_pages: int = 0
     conn.commit()
     conn.close()
 
+def update_source_summary(source_id: str, summary: str):
+    """Update the auto-generated summary for a source."""
+    conn = get_db_conn()
+    c = conn.cursor()
+    c.execute("UPDATE notebook_sources SET summary = ? WHERE id = ?", (summary, source_id))
+    conn.commit()
+    conn.close()
+
 def add_source_chunks(notebook_id: str, source_id: str, text: str) -> dict:
     chunks = chunk_text(text)
     if not chunks:
@@ -308,7 +450,7 @@ def add_source_chunks(notebook_id: str, source_id: str, text: str) -> dict:
         
     embeddings = embed_texts(chunks)
     
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     
     inserted_ids = []
@@ -322,11 +464,12 @@ def add_source_chunks(notebook_id: str, source_id: str, text: str) -> dict:
     conn.commit()
     conn.close()
     
-    # FAISS
-    index = load_or_create_faiss(notebook_id, dim=embeddings.shape[1])
-    ids_array = np.array(inserted_ids, dtype=np.int64)
-    index.add_with_ids(embeddings, ids_array)
-    save_faiss(notebook_id, index)
+    # FAISS — use lock to prevent concurrent write corruption
+    with get_faiss_lock(notebook_id):
+        index = load_or_create_faiss(notebook_id, dim=embeddings.shape[1])
+        ids_array = np.array(inserted_ids, dtype=np.int64)
+        index.add_with_ids(embeddings, ids_array)
+        save_faiss(notebook_id, index)
     
     # Update status to completed
     update_source_progress(source_id, "completed", processed_pages=0, total_pages=0, chunk_count=len(chunks))
@@ -347,7 +490,7 @@ def add_source_text(notebook_id: str, source_id: str, text: str, filename: str =
         
     embeddings = embed_texts(chunks)
     
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     now = datetime.utcnow().isoformat()
     
@@ -367,11 +510,12 @@ def add_source_text(notebook_id: str, source_id: str, text: str, filename: str =
     conn.commit()
     conn.close()
     
-    # FAISS
-    index = load_or_create_faiss(notebook_id, dim=embeddings.shape[1])
-    ids_array = np.array(inserted_ids, dtype=np.int64)
-    index.add_with_ids(embeddings, ids_array)
-    save_faiss(notebook_id, index)
+    # FAISS — use lock to prevent concurrent write corruption
+    with get_faiss_lock(notebook_id):
+        index = load_or_create_faiss(notebook_id, dim=embeddings.shape[1])
+        ids_array = np.array(inserted_ids, dtype=np.int64)
+        index.add_with_ids(embeddings, ids_array)
+        save_faiss(notebook_id, index)
     
     # Update notebook timestamp
     update_notebook(notebook_id, {})
@@ -379,7 +523,7 @@ def add_source_text(notebook_id: str, source_id: str, text: str, filename: str =
     return {"status": "success", "source_id": source_id, "chunks": len(chunks)}
 
 def list_sources(notebook_id: str) -> List[dict]:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT * FROM notebook_sources WHERE notebook_id = ? ORDER BY created_at DESC", (notebook_id,))
@@ -388,7 +532,7 @@ def list_sources(notebook_id: str) -> List[dict]:
     return [dict(r) for r in rows]
 
 def get_source_text(source_id: str) -> str:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     c.execute("SELECT text FROM notebook_chunks WHERE source_id = ? ORDER BY chunk_index ASC", (source_id,))
     rows = c.fetchall()
@@ -419,21 +563,32 @@ def delete_source(notebook_id: str, source_id: str) -> bool:
     if not deleted:
         return False
         
-    # Remove directly from FAISS without re-embedding
+    # Remove directly from FAISS without re-embedding — use lock
     if chunk_ids:
-        path = get_faiss_path(notebook_id)
-        if os.path.exists(path):
-            index = faiss.read_index(path)
-            ids_array = np.array(chunk_ids, dtype=np.int64)
-            index.remove_ids(ids_array)
-            faiss.write_index(index, path)
+        with get_faiss_lock(notebook_id):
+            path = get_faiss_path(notebook_id)
+            if os.path.exists(path):
+                index = faiss.read_index(path)
+                ids_array = np.array(chunk_ids, dtype=np.int64)
+                index.remove_ids(ids_array)
+                faiss.write_index(index, path)
+    
+    # Cleanup physical uploaded file
+    upload_dir = os.path.join(UPLOADS_DIR, notebook_id)
+    if os.path.exists(upload_dir):
+        for fname in os.listdir(upload_dir):
+            if fname.startswith(f"{source_id}_"):
+                try:
+                    os.remove(os.path.join(upload_dir, fname))
+                except OSError:
+                    pass
         
     update_notebook(notebook_id, {})
     return True
 
 # --- Messages ---
 def add_notebook_message(notebook_id: str, message_id: str, role: str, content: str, citations: list = None):
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     now = datetime.utcnow().isoformat()
     citations_str = json.dumps(citations, ensure_ascii=False) if citations else None
@@ -444,64 +599,164 @@ def add_notebook_message(notebook_id: str, message_id: str, role: str, content: 
     conn.commit()
     conn.close()
 
+def clear_notebook_messages(notebook_id: str):
+    conn = get_db_conn()
+    c = conn.cursor()
+    c.execute("DELETE FROM notebook_messages WHERE notebook_id = ?", (notebook_id,))
+    conn.commit()
+    conn.close()
+
+
 # --- FAISS Search ---
 
 def search_notebook_docs(notebook_id: str, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-    path = get_faiss_path(notebook_id)
-    if not os.path.exists(path):
-        return []
-        
-    index = faiss.read_index(path)
-    if index.ntotal == 0:
-        return []
-        
-    query_emb = embed_texts([query])
-    distances, indices = index.search(query_emb, min(top_k, index.ntotal))
+    """Hybrid search: FAISS vector + BM25 keyword, merged via Reciprocal Rank Fusion.
+    Also expands results with adjacent chunks for full context."""
     
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    path = get_faiss_path(notebook_id)
+    
+    # Load all chunks for this notebook (needed for BM25)
+    conn = get_db_conn()
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    
-    valid_ids = [int(i) for i in indices[0] if i != -1]
-    if not valid_ids:
-        conn.close()
-        return []
-        
-    placeholders = ",".join(["?"] * len(valid_ids))
-    c.execute(f"""
+    c.execute("""
         SELECT c.id, c.text, c.chunk_index, c.source_id, s.filename as filename 
         FROM notebook_chunks c
         JOIN notebook_sources s ON c.source_id = s.id
-        WHERE c.id IN ({placeholders})
-        AND c.notebook_id = ?
-    """, valid_ids + [notebook_id])
-    
-    rows = c.fetchall()
+        WHERE c.notebook_id = ?
+        ORDER BY c.source_id, c.chunk_index
+    """, (notebook_id,))
+    all_chunks = [dict(r) for r in c.fetchall()]
     conn.close()
     
-    # Map back to dict for fast lookup and preserving faiss order
-    chunk_map = {r["id"]: dict(r) for r in rows}
+    if not all_chunks:
+        return []
     
-    results = []
-    for dist, idx in zip(distances[0], indices[0]):
-        idx_int = int(idx)
-        if idx_int != -1 and idx_int in chunk_map:
-            chunk = chunk_map[idx_int]
-            score = float(dist)
-            results.append({
-                "text": chunk["text"],
-                "source_id": chunk["source_id"],
-                "filename": chunk["filename"],
-                "chunk_index": chunk.get("chunk_index", 0),
-                "score": score
-            })
+    chunk_map = {ch["id"]: ch for ch in all_chunks}
+    
+    # === 1. FAISS Vector Search ===
+    faiss_ranked = {}  # chunk_id -> rank (0-indexed)
+    if os.path.exists(path):
+        index = faiss.read_index(path)
+        if index.ntotal > 0:
+            query_emb = embed_texts([query])
+            n_search = min(top_k * 2, index.ntotal)
+            distances, indices = index.search(query_emb, n_search)
             
-    return results
+            rank = 0
+            for dist, idx in zip(distances[0], indices[0]):
+                idx_int = int(idx)
+                if idx_int != -1 and idx_int in chunk_map:
+                    faiss_ranked[idx_int] = rank
+                    chunk_map[idx_int]["faiss_score"] = float(dist)
+                    rank += 1
+    
+    # === 2. BM25 Keyword Search ===
+    bm25_ranked = {}  # chunk_id -> rank (0-indexed)
+    try:
+        from rank_bm25 import BM25Okapi
+        
+        # Tokenize: simple whitespace + lowercase for Vietnamese
+        def tokenize(text: str) -> List[str]:
+            return text.lower().split()
+        
+        corpus = [tokenize(ch["text"]) for ch in all_chunks]
+        bm25 = BM25Okapi(corpus)
+        query_tokens = tokenize(query)
+        bm25_scores = bm25.get_scores(query_tokens)
+        
+        # Get top results by BM25 score
+        scored_indices = sorted(enumerate(bm25_scores), key=lambda x: x[1], reverse=True)
+        for rank, (idx, score) in enumerate(scored_indices[:top_k * 2]):
+            if score > 0:
+                chunk_id = all_chunks[idx]["id"]
+                bm25_ranked[chunk_id] = rank
+                chunk_map[chunk_id]["bm25_score"] = float(score)
+    except Exception as e:
+        print(f"[BM25] Skipped: {e}")
+    
+    # === 3. Reciprocal Rank Fusion (RRF) ===
+    # Merge FAISS and BM25 rankings — k=60 is standard
+    RRF_K = 60
+    all_candidate_ids = set(faiss_ranked.keys()) | set(bm25_ranked.keys())
+    
+    rrf_scores = {}
+    for chunk_id in all_candidate_ids:
+        score = 0.0
+        if chunk_id in faiss_ranked:
+            score += 1.0 / (RRF_K + faiss_ranked[chunk_id])
+        if chunk_id in bm25_ranked:
+            score += 1.0 / (RRF_K + bm25_ranked[chunk_id])
+        rrf_scores[chunk_id] = score
+    
+    # Sort by RRF score descending
+    sorted_ids = sorted(rrf_scores.keys(), key=lambda x: rrf_scores[x], reverse=True)
+    
+    # === 4. Adjacent Chunk Expansion ===
+    # For top matches, also include neighboring chunks for context
+    expanded_ids = set()
+    # Build index for fast neighbor lookup: (source_id, chunk_index) -> chunk_id
+    neighbor_index = {}
+    for ch in all_chunks:
+        neighbor_index[(ch["source_id"], ch["chunk_index"])] = ch["id"]
+    
+    for chunk_id in sorted_ids[:top_k]:
+        expanded_ids.add(chunk_id)
+        ch = chunk_map[chunk_id]
+        sid = ch["source_id"]
+        cidx = ch["chunk_index"]
+        # Add previous and next chunk if they exist
+        prev_key = (sid, cidx - 1)
+        next_key = (sid, cidx + 1)
+        if prev_key in neighbor_index:
+            expanded_ids.add(neighbor_index[prev_key])
+        if next_key in neighbor_index:
+            expanded_ids.add(neighbor_index[next_key])
+    
+    # Build final results, maintaining RRF order for primary matches
+    # Adjacent chunks get a slightly lower score
+    results = []
+    seen = set()
+    
+    for chunk_id in sorted_ids:
+        if chunk_id in expanded_ids and chunk_id not in seen:
+            ch = chunk_map[chunk_id]
+            results.append({
+                "text": ch["text"],
+                "source_id": ch["source_id"],
+                "filename": ch["filename"],
+                "chunk_index": ch.get("chunk_index", 0),
+                "score": rrf_scores.get(chunk_id, 0),
+            })
+            seen.add(chunk_id)
+    
+    # Add adjacent-only chunks (not in top RRF results)
+    for chunk_id in expanded_ids:
+        if chunk_id not in seen:
+            ch = chunk_map[chunk_id]
+            # Give adjacent chunks a base score
+            parent_score = max(
+                rrf_scores.get(neighbor_index.get((ch["source_id"], ch["chunk_index"] - 1), -1), 0),
+                rrf_scores.get(neighbor_index.get((ch["source_id"], ch["chunk_index"] + 1), -1), 0),
+            )
+            results.append({
+                "text": ch["text"],
+                "source_id": ch["source_id"],
+                "filename": ch["filename"],
+                "chunk_index": ch.get("chunk_index", 0),
+                "score": parent_score * 0.7,  # Adjacent chunks get 70% of parent score
+            })
+            seen.add(chunk_id)
+    
+    # Sort final results by score
+    results.sort(key=lambda x: x["score"], reverse=True)
+    
+    return results[:top_k]
 
 # --- Mindmaps ---
 
 def create_mindmap(mindmap_id: str, notebook_id: str, title: str, data: str = "{}") -> dict:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     now = datetime.utcnow().isoformat()
     c.execute(
@@ -513,7 +768,7 @@ def create_mindmap(mindmap_id: str, notebook_id: str, title: str, data: str = "{
     return get_mindmap(mindmap_id)
 
 def get_mindmaps(notebook_id: str) -> List[dict]:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT * FROM mindmaps WHERE notebook_id = ? ORDER BY created_at DESC", (notebook_id,))
@@ -522,7 +777,7 @@ def get_mindmaps(notebook_id: str) -> List[dict]:
     return [dict(r) for r in rows]
 
 def get_mindmap(mindmap_id: str) -> Optional[dict]:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT * FROM mindmaps WHERE id = ?", (mindmap_id,))
@@ -531,7 +786,7 @@ def get_mindmap(mindmap_id: str) -> Optional[dict]:
     return dict(row) if row else None
 
 def update_mindmap(mindmap_id: str, updates: dict) -> Optional[dict]:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     now = datetime.utcnow().isoformat()
     
@@ -550,7 +805,7 @@ def update_mindmap(mindmap_id: str, updates: dict) -> Optional[dict]:
     return get_mindmap(mindmap_id)
 
 def delete_mindmap(mindmap_id: str) -> bool:
-    conn = sqlite3.connect(NOTEBOOK_DB)
+    conn = get_db_conn()
     c = conn.cursor()
     c.execute("DELETE FROM mindmaps WHERE id = ?", (mindmap_id,))
     deleted = c.rowcount > 0

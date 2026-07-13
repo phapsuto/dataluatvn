@@ -817,7 +817,7 @@ def preprocess_and_correct_query(q: str) -> str:
             return clean_q
 
         FPT_URL = "https://mkp-api.fptcloud.com/v1/chat/completions"
-        FPT_MODEL = "Qwen3-32B"
+        FPT_MODEL = os.environ.get("FPT_CLOUD_DEFAULT_MODEL", "gemma-4-31B-it")
         headers = {
             "Authorization": f"Bearer {FPT_CLOUD_API_KEY}",
             "Content-Type": "application/json"

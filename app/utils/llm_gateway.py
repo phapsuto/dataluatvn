@@ -29,7 +29,7 @@ class LLMGateway:
     # Providers configuration
     PROVIDERS = {
         "fpt": {
-            "model": f"custom_openai/{os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'Qwen3-32B')}" if not (os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'Qwen3-32B') or "").startswith("custom_openai/") else os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'Qwen3-32B'),
+            "model": f"custom_openai/{os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'gemma-4-31B-it')}" if not (os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'gemma-4-31B-it') or "").startswith("custom_openai/") else os.environ.get('FPT_CLOUD_DEFAULT_MODEL', 'gemma-4-31B-it'),
             "api_base": "https://mkp-api.fptcloud.com/v1",
             "api_key": os.environ.get("FPT_CLOUD_API_KEY") or "",
         },
