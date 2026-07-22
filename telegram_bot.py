@@ -1041,6 +1041,9 @@ def main():
         print(f"🔄 Khôi phục đồng bộ liên tục với chat_id: {chat_id}")
         start_continuous_polling(chat_id)
         
+    # Ensure clean long polling by clearing webhooks & pending conflicts
+    tg_request("deleteWebhook", {"drop_pending_updates": True})
+
     # Long polling loop
     offset = 0
     error_count = 0
@@ -1049,9 +1052,9 @@ def main():
         try:
             result = tg_request("getUpdates", {
                 "offset": offset,
-                "timeout": 30,
+                "timeout": 15,
                 "allowed_updates": ["message"],
-            }, timeout=35)
+            }, timeout=25.0)
             
             if result.get("ok"):
                 error_count = 0
@@ -1062,17 +1065,25 @@ def main():
                     except Exception as e:
                         logger.error(f"Error processing update: {e}", exc_info=True)
             else:
-                error_count += 1
-                logger.warning(f"getUpdates failed (attempt {error_count})")
-                time.sleep(min(error_count * 2, 30))
+                err_desc = result.get("error", "")
+                if "timeout" in str(err_desc).lower():
+                    # Normal long-polling timeout, continue without sleep
+                    error_count = 0
+                else:
+                    error_count += 1
+                    logger.warning(f"getUpdates failed (attempt {error_count}): {result}")
+                    time.sleep(min(error_count * 2, 10))
                 
         except KeyboardInterrupt:
             print("\n🛑 Bot stopped by user.")
             break
+        except requests.Timeout:
+            # Normal HTTP long-poll timeout, reset error_count and loop immediately
+            error_count = 0
         except Exception as e:
             error_count += 1
             logger.error(f"Polling error: {e}", exc_info=True)
-            time.sleep(min(error_count * 2, 30))
+            time.sleep(min(error_count * 2, 10))
 
 
 if __name__ == "__main__":
