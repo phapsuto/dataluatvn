@@ -340,12 +340,12 @@ def format_chat_response(data: dict) -> str:
     }
     icon = domain_icons.get(domain, "⚖️")
     
-    parts = [f"{icon} *LuatBot*\n"]
+    parts = [f"🌸 *Lan Anh — Trợ lý Pháp lý AI*\n"]
     parts.append(response)
     
     # Citations
     if citations:
-        parts.append("\n\n📎 *Trích dẫn:*")
+        parts.append("\n\n📎 *Trích dẫn pháp lý:*")
         for i, cite in enumerate(citations[:5], 1):
             title = cite.get("title", "N/A")
             so_ky_hieu = cite.get("so_ky_hieu", "")
@@ -394,9 +394,6 @@ def format_search_results(data: dict, query: str) -> str:
         
         parts.append(
             f"*{i}.* {status_emoji} {title}\n"
-            f"   📝 {loai} | {so_ky_hieu}\n"
-            f"   📊 Score: {score:.2f}" if score else
-            f"*{i}.* {status_emoji} {title}\n"
             f"   📝 {loai} | {so_ky_hieu}"
         )
     
@@ -410,17 +407,17 @@ def format_search_results(data: dict, query: str) -> str:
 def handle_start(chat_id: int, user_name: str):
     """Xử lý lệnh /start."""
     welcome = (
-        "⚖️ *Chào mừng đến với LuatBot!*\n\n"
-        f"Xin chào *{user_name}*! Tôi là Trợ lý Pháp lý AI "
-        "chuyên sâu về luật Việt Nam, được trang bị hệ thống RAG 7 Tầng.\n\n"
-        "🔹 *Gõ câu hỏi trực tiếp* — Tôi sẽ trả lời với trích dẫn điều khoản\n"
-        "🔹 `/search [từ khóa]` — Tìm kiếm văn bản pháp luật\n"
-        "🔹 `/status` — Kiểm tra trạng thái server\n"
+        "🌸 *Xin chào! Lan Anh chào bạn nha!*\n\n"
+        f"Lan Anh rất vui được hỗ trợ *{user_name}*! Lan Anh là Trợ lý Pháp lý AI "
+        "thông minh chuyên sâu về Hệ thống Pháp luật Việt Nam (cập nhật mới nhất đến 07/2026).\n\n"
+        "🔹 *Hỏi câu hỏi bất kỳ* — Lan Anh sẽ phân tích 360 độ kèm trích dẫn điều khoản chính xác\n"
+        "🔹 `/search [từ khóa]` — Tra cứu văn bản pháp luật\n"
+        "🔹 `/status` — Kiểm tra trạng thái hệ thống\n"
         "🔹 `/help` — Xem hướng dẫn chi tiết\n\n"
-        "💡 *Ví dụ:*\n"
-        "_Thời gian nghỉ thai sản theo luật lao động?_\n"
-        "_Điều kiện thành lập công ty TNHH?_\n"
-        "_So sánh tội trộm cắp và cướp tài sản?_"
+        "💡 *Bạn có thể thử hỏi Lan Anh các câu hỏi như:*\n"
+        "_• Thời gian thử việc tối đa theo Luật Lao động là bao lâu?_\n"
+        "_• Thủ tục sa thải người lao động đúng quy định pháp luật?_\n"
+        "_• Mua bán hóa đơn giả bị xử lý thế nào?_"
     )
     send_message(chat_id, welcome)
 
