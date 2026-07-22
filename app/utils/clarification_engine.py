@@ -13,7 +13,7 @@ Hỗ trợ đầy đủ tiếng Việt: có dấu, không dấu, viết tắt, n
 import json
 import re
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from functools import lru_cache
 
 
@@ -126,7 +126,7 @@ _SPECIFIC_KEYWORDS = re.compile(
 
 # Loại bỏ từ chào hỏi/thừa đầu câu
 _GREETING_STRIP = re.compile(
-    r'^(chào\s+(bạn|anh|chị|ad|admin|luatbot|bot|linh|mọi người)'
+    r'^(chào\s+(bạn|anh|chị|ad|admin|luatbot|bot|mọi người)'
     r'|xin\s+chào'
     r'|hello|hi|hey'
     r'|cho\s+(mình|tôi|em|tui|t)\s+hỏi'
@@ -158,7 +158,7 @@ def _strip_fillers(text: str) -> str:
 # ── CORE LOGIC ────────────────────────────────────────────────────
 
 # LLM System Prompt cho Tier 2 — BUỘC chạy theo kịch bản dựng sẵn
-_CLARIFICATION_SYSTEM_PROMPT = """Bạn là Linh — trợ lý pháp lý AI chuyên tư vấn luật Việt Nam.
+_CLARIFICATION_SYSTEM_PROMPT = """Bạn là "Lan Anh" — Trợ lý Pháp lý Thông minh, Ấm áp và Chu đáo.
 
 NHIỆM VỤ: Phân tích câu hỏi của người dùng và quyết định:
 - Nếu câu hỏi ĐỦ RÕ RÀNG để tìm kiếm văn bản pháp luật → trả về: PROCEED
@@ -169,7 +169,7 @@ BẮT BUỘC TUÂN THỦ:
 2. KHÔNG tự chế câu hỏi ngoài phạm vi kịch bản.
 3. Câu hỏi phải thân thiện, dùng emoji đánh số (1️⃣ 2️⃣ 3️⃣), gợi ý phương án trong ngoặc.
 4. KHÔNG đưa ra tư vấn pháp lý — chỉ hỏi thu thập dữ kiện.
-5. Kết thúc bằng: "_Thông tin càng chi tiết, Linh sẽ tư vấn càng chính xác nhé!_"
+5. Kết thúc bằng: "_Thông tin càng chi tiết, tôi sẽ tư vấn càng chính xác._"
 
 ĐỊNH DẠNG:
 - Đủ rõ: Chỉ trả về "PROCEED" (không thêm gì)
@@ -306,11 +306,11 @@ def get_clarification_response(query: str, domain: str) -> Optional[str]:
     topic = clean_query.strip().rstrip('?!.')
     print(f"🔮 [Clarification T1] Generic vague: '{clean_query}'")
     return (
-        f"Bạn đang muốn tìm hiểu về **{topic}** theo hướng nào vậy nè?\n\n"
+        f"Anh/chị muốn tìm hiểu về **{topic}** theo hướng nào?\n\n"
         "• Đang gặp **tình huống cụ thể** cần tư vấn?\n"
-        "• Muốn biết **văn bản pháp luật** quy định ra sao?\n"
-        "• Cần hướng dẫn **thủ tục** chi tiết?\n\n"
-        "_Bạn chia sẻ thêm chút thông tin để Linh tư vấn chính xác nhất nhé! 😊_"
+        "• Muốn biết **văn bản pháp luật** quy định?\n"
+        "• Cần hướng dẫn **thủ tục** cần thực hiện?\n\n"
+        "_Vui lòng mô tả tình huống thực tế để tôi tư vấn chính xác nhất._"
     )
 
 
@@ -396,7 +396,7 @@ async def get_smart_clarification(query: str, domain: str) -> Optional[str]:
         
         # LLM trả "PROCEED" → query đủ rõ
         if result.upper().startswith("PROCEED"):
-            print("🔮 [Clarification T2] DeepSeek → PROCEED (đi thẳng RAG)")
+            print(f"🔮 [Clarification T2] DeepSeek → PROCEED (đi thẳng RAG)")
             return None
         
         print(f"🔮 [Clarification T2] DeepSeek → câu hỏi gợi mở ({len(result)} chars)")
@@ -407,11 +407,11 @@ async def get_smart_clarification(query: str, domain: str) -> Optional[str]:
         # Fallback về generic template nếu LLM fail
         topic = clean_query.strip().rstrip('?!.')
         return (
-            f"Bạn đang muốn tìm hiểu về **{topic}** theo hướng nào vậy nè?\n\n"
+            f"Anh/chị muốn tìm hiểu về **{topic}** theo hướng nào?\n\n"
             "• Đang gặp **tình huống cụ thể** cần tư vấn?\n"
-            "• Muốn biết **văn bản pháp luật** quy định ra sao?\n"
-            "• Cần hướng dẫn **thủ tục** chi tiết?\n\n"
-            "_Bạn chia sẻ thêm chút thông tin để Linh tư vấn chính xác nhất nhé! 😊_"
+            "• Muốn biết **văn bản pháp luật** quy định?\n"
+            "• Cần hướng dẫn **thủ tục** cần thực hiện?\n\n"
+            "_Vui lòng mô tả tình huống thực tế để tôi tư vấn chính xác nhất._"
         )
 
 

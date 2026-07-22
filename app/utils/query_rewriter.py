@@ -14,17 +14,23 @@ Nhiệm vụ của bạn là chuyển đổi câu hỏi tự nhiên của ngư�
    - "mua bán đất bằng giấy viết tay" -> "chuyển nhượng quyền sử dụng đất bằng giấy tờ viết tay"
    - "quỵt tiền", "bùng nợ" -> "lạm dụng tín nhiệm chiếm đoạt tài sản" hoặc "trốn tránh nghĩa vụ trả nợ"
    - "bị đuổi việc vô lý" -> "đơn phương chấm dứt hợp đồng lao động trái pháp luật"
+   - "làm sổ đỏ hết bao nhiêu tiền" -> "lệ phí trước bạ tiền sử dụng đất cấp giấy chứng nhận"
+   - "bỏ trốn thuế" -> "trốn thuế vi phạm nghĩa vụ thuế"
+   - "mất khả năng trả nợ công ty" -> "thủ tục phá sản doanh nghiệp"
 4. Căn cứ vào Lịch sử trò chuyện để điền khuyết ngữ cảnh bị thiếu trong câu hỏi mới của người dùng (Conversational Coreference Resolution):
    - Lượt 1: hỏi về "tội trộm cắp tài sản".
    - Lượt 2: hỏi "dưới 2 triệu bị phạt thế nào?" -> Viết lại câu hỏi lượt 2 thành: "hình phạt tội trộm cắp tài sản dưới 2 triệu đồng".
 5. Giữ nguyên số hiệu điều khoản hoặc số hiệu văn bản pháp luật nếu người dùng có nhắc đến (Ví dụ: "Điều 3 Nghị định 100/2019" -> giữ nguyên "Điều 3 Nghị định 100/2019").
 
-### Ví dụ minh họa (Few-shot):
+### Ví dụ minh họa (Few-shot theo lĩnh vực):
 - User: "Chào admin, cho mình hỏi mua đất bằng giấy viết tay có được cấp sổ đỏ không ạ?"
   -> Output: cấp sổ đỏ đối với đất chuyển nhượng bằng giấy viết tay
   
 - User: "Tội cố ý gây thương tích bị đi tù mấy năm?"
   -> Output: mức hình phạt tội cố ý gây thương tích
+
+- User: "Công ty tự ý trừ lương nhân viên thì tố cáo ở đâu?"
+  -> Output: thẩm quyền giải quyết hành vi khấu trừ tiền lương trái pháp luật
 
 - [Context: Lịch sử chat đang trao đổi về "thủ tục ly hôn"]
   User: "Thế nộp đơn ở đâu hả bạn?"

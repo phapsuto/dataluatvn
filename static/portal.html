@@ -762,7 +762,8 @@
     }
 
     .message-content p {
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
+      line-height: 1.6;
     }
 
     .message-content p:last-child {
@@ -777,7 +778,7 @@
     .message-content h1, .message-content h2, .message-content h3, .message-content h4 {
       font-family: var(--font-ui);
       color: var(--primary-dark);
-      margin: 1.2rem 0 0.5rem 0;
+      margin: 1.1rem 0 0.35rem 0;
       line-height: 1.3;
     }
     .message-content h1 { font-size: 1.25rem; }
@@ -785,13 +786,21 @@
     .message-content h3 { font-size: 1.05rem; }
     .message-content h4 { font-size: 0.98rem; }
 
+    .chat-section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin: 1.1rem 0 0.35rem 0 !important;
+      line-height: 1.35;
+    }
+
     /* Markdown List Styles */
     .message-content ul, .message-content ol {
-      margin: 0.5rem 0 0.75rem 0;
-      padding-left: 1.5rem;
+      margin: 0.35rem 0 0.6rem 0;
+      padding-left: 1.4rem;
     }
     .message-content li {
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.3rem;
       line-height: 1.55;
     }
     .message-content li::marker {
@@ -2468,7 +2477,10 @@
 
       tbody.innerHTML = items.map((item, idx) => {
         let badgeClass = 'badge-active';
-        const st = item.tinh_trang_hieu_luc || '';
+        let st = item.tinh_trang_hieu_luc || '';
+        if (st.includes('Cho biết') || st.includes('đang tra cứu') || st.length > 50) {
+          st = 'Còn hiệu lực';
+        }
         if (st.includes('Hết hiệu lực một phần')) badgeClass = 'badge-partially';
         else if (st.includes('Hết hiệu lực')) badgeClass = 'badge-stale';
         else if (st.includes('Chưa có hiệu lực')) badgeClass = 'badge-inactive';
@@ -2485,7 +2497,7 @@
             <td class="col-agency">${item.co_quan_ban_hanh || 'N/A'}</td>
             <td class="col-date">${item.ngay_ban_hanh || 'N/A'}</td>
             <td class="col-title">${fullTitle}</td>
-            <td class="col-status"><span class="badge ${badgeClass}">${item.tinh_trang_hieu_luc || 'Còn hiệu lực'}</span></td>
+            <td class="col-status"><span class="badge ${badgeClass}">${st || 'Còn hiệu lực'}</span></td>
           </tr>
         `;
       }).join('');
@@ -2611,7 +2623,11 @@
       document.getElementById('ov-ngayhethieuluc').innerText = d.ngay_het_hieu_luc || 'Đang cập nhật';
       
       document.getElementById('ov-ngayhieuluc').innerText = d.ngay_co_hieu_luc || d.ngay_ban_hanh || 'Đã biết';
-      document.getElementById('ov-tinhtrang').innerText = d.tinh_trang_hieu_luc || 'Còn hiệu lực';
+      let cleanStatus = d.tinh_trang_hieu_luc || 'Còn hiệu lực';
+      if (cleanStatus.includes('Cho biết') || cleanStatus.includes('đang tra cứu') || cleanStatus.length > 50) {
+        cleanStatus = 'Còn hiệu lực';
+      }
+      document.getElementById('ov-tinhtrang').innerText = cleanStatus;
       document.getElementById('ov-trichyeu').innerText = d.title;
 
       // Update dynamic headers and link texts
@@ -2668,7 +2684,7 @@
       document.getElementById('hl-ngaybanhanh').innerText = d.ngay_ban_hanh || 'N/A';
       document.getElementById('hl-ngayhieuluc').innerText = d.ngay_co_hieu_luc || d.ngay_ban_hanh || 'Đã biết';
       document.getElementById('hl-ngayhethieuluc').innerText = d.ngay_het_hieu_luc || 'Đang cập nhật';
-      document.getElementById('hl-tinhtrang').innerText = d.tinh_trang_hieu_luc || 'Đã biết';
+      document.getElementById('hl-tinhtrang').innerText = cleanStatus;
 
       // Update Related docs (Văn bản liên quan)
       const rels = currentRelationships;
@@ -3144,7 +3160,7 @@
           botHeaderHTML = `
             <div class="message-bot-header">
               <span class="bot-icon">${icon}</span>
-              <span class="bot-name">LuatBot</span>
+              <span class="bot-name">Trợ lý Pháp lý Lan Anh</span>
             </div>
           `;
         }
@@ -3220,7 +3236,10 @@
       if (!text) return '';
       let html = text;
 
-      // 1. Code blocks (```...```) — must be first to prevent inner parsing
+      // 0. Bỏ hoàn toàn phần "Lời chúc từ Lan Anh" (kể cả icon 💖)
+      html = html.replace(/💖?\s*\*?\*?Lời chúc từ Lan Anh[\s\S]*?(?=\n\s*(?:⚠️|\*\*Lưu ý|💬|👉)|$)/gi, '');
+
+      // 1. Code blocks (```...```) — must be first
       html = html.replace(/```([\s\S]*?)```/g, function(match, code) {
         return '<pre><code>' + code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim() + '</code></pre>';
       });
@@ -3228,28 +3247,30 @@
       // 2. Inline code (`...`)
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
-      // 3. Headings (#### → h4, ### → h3, ## → h2, # → h1) with premium icons
-      html = html.replace(/^#### (.*$)/gm, '<h4>🔸 $1</h4>');
-      html = html.replace(/^### (.*$)/gm, '<h3>🔹 $1</h3>');
-      html = html.replace(/^## (.*$)/gm, '<h2>📌 $1</h2>');
-      html = html.replace(/^# (.*$)/gm, '<h1>⚖️ $1</h1>');
+      // 3. Citations format: [C1] -> <sup>[1]</sup>
+      html = html.replace(/\[C(\d+)\]/g, '<sup style="font-weight: bold; color: var(--accent); font-size: 0.75rem; margin-left: 2px;">[$1]</sup>');
 
-      // 4. Bold & Italic
+      // 4. Convert Icon Section Headings (📌 **Title**, ⚖️ **Title**, etc.) -> <h3 class="chat-section-title">
+      html = html.replace(/^(📌|⚖️|🔍|🛠️|⚠️)\s*(?:\*\*)?(.*?)(?:\*\*)?\s*$/gm, '\n\n<h3 class="chat-section-title"><span class="sec-icon">$1</span> $2</h3>\n\n');
+
+      // 5. Standard Markdown Headings
+      html = html.replace(/^#### (.*$)/gm, '\n\n<h4>🔸 $1</h4>\n\n');
+      html = html.replace(/^### (.*$)/gm, '\n\n<h3>🔹 $1</h3>\n\n');
+      html = html.replace(/^## (.*$)/gm, '\n\n<h2>📌 $1</h2>\n\n');
+      html = html.replace(/^# (.*$)/gm, '\n\n<h1>⚖️ $1</h1>\n\n');
+
+      // 6. Bold & Italic
       html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
 
-      // 4.5. Citations format: [C1] -> <sup>[1]</sup> (in bold and accent color)
-      html = html.replace(/\[C(\d+)\]/g, '<sup style="font-weight: bold; color: var(--accent); font-size: 0.75rem; margin-left: 2px;">[$1]</sup>');
-
-      // 5. Horizontal rules
+      // 7. Horizontal rules
       html = html.replace(/^---$/gm, '<hr>');
 
-      // 6. Blockquotes
-      html = html.replace(/^> (.*$)/gm, '<blockquote><p>$1</p></blockquote>');
-      // Merge consecutive blockquotes
-      html = html.replace(/<\/blockquote>\n<blockquote>/g, '');
+      // 8. Blockquotes
+      html = html.replace(/^>\s*(.*$)/gm, '<blockquote><p>$1</p></blockquote>');
+      html = html.replace(/<\/blockquote>\s*<blockquote>/g, '<br>');
 
-      // 7. Tables (| col1 | col2 |)
+      // 9. Tables (| col1 | col2 |)
       const tableRegex = /((?:^\|.+\|\s*$\n?)+)/gm;
       html = html.replace(tableRegex, function(tableBlock) {
         const rows = tableBlock.trim().split('\n').filter(r => r.trim());
@@ -3257,9 +3278,7 @@
         
         let table = '<table>';
         rows.forEach((row, idx) => {
-          // Skip separator row (|---|---|)
           if (/^\|[\s\-:|]+\|$/.test(row.trim())) return;
-          
           const cells = row.split('|').filter((c, i, arr) => i > 0 && i < arr.length - 1);
           const tag = idx === 0 ? 'th' : 'td';
           table += '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>';
@@ -3268,32 +3287,31 @@
         return table;
       });
 
-      // 8. Unordered lists (- item or * item)
+      // 10. Unordered & Ordered lists
       html = html.replace(/^(?:[-*]) (.*$)/gm, '<li>$1</li>');
-      html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+      html = html.replace(/((?:<li>.*<\/li>\s*\n?)+)/g, '\n\n<ul>\n$1\n</ul>\n\n');
 
-      // 9. Ordered lists (1. item)
-      html = html.replace(/^\d+\. (.*$)/gm, '<oli>$1</oli>');
-      html = html.replace(/((?:<oli>.*<\/oli>\n?)+)/g, function(match) {
-        return '<ol>' + match.replace(/<\/?oli>/g, function(tag) {
-          return tag.replace('oli', 'li');
-        }) + '</ol>';
+      html = html.replace(/^\d+\.\s+(.*$)/gm, '<oli>$1</oli>');
+      html = html.replace(/((?:<oli>.*<\/oli>\s*\n?)+)/g, function(match) {
+        return '\n\n<ol>\n' + match.replace(/<oli>/g, '<li>').replace(/<\/oli>/g, '</li>') + '\n</ol>\n\n';
       });
 
-      // 10. Paragraphs — wrap remaining loose text lines
-      html = html.split('\n\n').map(block => {
+      // 11. Clean paragraph splitting with double newlines
+      const rawBlocks = html.split(/\n\s*\n/);
+      const parsedBlocks = rawBlocks.map(block => {
         const trimmed = block.trim();
         if (!trimmed) return '';
-        // Don't wrap blocks that are already HTML elements
-        if (/^<(h[1-6]|ul|ol|li|pre|blockquote|table|hr|div|p)/.test(trimmed)) return trimmed;
-        // Wrap in <p>, converting single newlines to <br>
+        if (/^<(h[1-6]|ul|ol|pre|blockquote|table|hr|div)/i.test(trimmed)) {
+          return trimmed;
+        }
         return '<p>' + trimmed.replace(/\n/g, '<br>') + '</p>';
-      }).join('\n');
+      });
 
-      // Cleanup: remove empty paragraphs
-      html = html.replace(/<p>\s*<\/p>/g, '');
-
-      return html;
+      let result = parsedBlocks.filter(Boolean).join('\n');
+      result = result.replace(/<p>\s*<\/p>/g, '');
+      result = result.replace(/<p>(<h[1-6]|<ul|<ol|<blockquote)/gi, '$1');
+      result = result.replace(/(<\/h[1-6]>|<\/ul>|<\/ol>|<\/blockquote>)<\/p>/gi, '$1');
+      return result;
     }
 
     let _isComposing = false;
@@ -3356,7 +3374,7 @@
         <div class="message-bubble assistant-bubble">
           <div class="message-bot-header">
             <span class="bot-icon">⚖️</span>
-            <span class="bot-name">LuatBot</span>
+            <span class="bot-name">Trợ lý Pháp lý Lan Anh</span>
           </div>
           <div class="typing-wave">
             <span></span>

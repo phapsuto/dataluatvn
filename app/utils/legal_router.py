@@ -72,6 +72,70 @@ def get_utterance_embeddings(model) -> Dict[str, np.ndarray]:
             _UTTERANCE_EMBEDDINGS[domain] = embeddings
     return _UTTERANCE_EMBEDDINGS
 
+def extract_5_axes(query: str) -> Dict[str, Any]:
+    """
+    Trích xuất 5 Trục Pháp Lý (5-Axis Framework):
+    1. Đối tượng (Object): Chủ thể, khách thể (người lao động, đất đai, hợp đồng...)
+    2. Hành vi (Action): Động từ pháp lý (sa thải, ly hôn, chuyển nhượng, thu hồi...)
+    3. Tác động (Impact): Hệ quả, quyền, nghĩa vụ (bồi thường, phạt tiền, vô hiệu...)
+    4. Phạm vi (Scope): Địa bàn, loại hình (TP.HCM, doanh nghiệp FDI...)
+    5. Thời điểm (Time Frame): Mốc thời gian xảy ra sự việc / năm áp dụng luật.
+    """
+    q_lower = query.lower().strip()
+    
+    # 1. Action (Hành vi pháp lý)
+    action_keywords = [
+        "sa thải", "đơn phương chấm dứt", "chấm dứt hợp đồng", "ly hôn", "chia thừa kế", 
+        "cấp sổ đỏ", "cấp giấy chứng nhận", "thu hồi đất", "bồi thường", "phạt vi phạm",
+        "khởi tố", "tạm giam", "lừa đảo", "trộm cắp", "thành lập công ty", "phá sản",
+        "khiếu nại", "tố cáo", "xử phạt", "chuyển nhượng", "tách thửa", "cho thuê"
+    ]
+    extracted_action = None
+    for kw in action_keywords:
+        if kw in q_lower:
+            extracted_action = kw
+            break
+            
+    # 2. Object (Đối tượng)
+    object_keywords = [
+        "người lao động", "công nhân", "nhân viên", "người sử dụng lao động", "công ty", 
+        "doanh nghiệp", "đất nông nghiệp", "đất ở", "thửa đất", "sổ đỏ", "nhà ở",
+        "vợ chồng", "con cái", "tài sản", "hợp đồng", "xe máy", "ô tô", "cổ phần"
+    ]
+    extracted_object = None
+    for kw in object_keywords:
+        if kw in q_lower:
+            extracted_object = kw
+            break
+
+    # 3. Impact (Tác động/Hệ quả)
+    impact_keywords = [
+        "bồi thường thiệt hại", "bồi thường", "trợ cấp", "xử phạt", "phạt tiền", 
+        "đi tù", "khung hình phạt", "tước quyền", "vô hiệu", "truy thu", "hoàn thuế"
+    ]
+    extracted_impact = None
+    for kw in impact_keywords:
+        if kw in q_lower:
+            extracted_impact = kw
+            break
+
+    # 4. Scope (Phạm vi)
+    scope_match = re.search(r'(tỉnh|thành phố|tphcm|hà nội|đà nẵng|hải phòng|cần thơ|[A-ZĐđ][a-zđà-ỹ]+(?:\s+[A-ZĐđ][a-zđà-ỹ]+)*)', query)
+    extracted_scope = scope_match.group(0) if scope_match else None
+
+    # 5. Time Frame (Thời điểm)
+    year_match = re.search(r'\b((?:19|20)\d{2})\b', query)
+    extracted_time = int(year_match.group(1)) if year_match else None
+
+    return {
+        "object": extracted_object,
+        "action": extracted_action,
+        "impact": extracted_impact,
+        "scope": extracted_scope,
+        "time_frame": extracted_time
+    }
+
+
 def route_query(query: str) -> Dict[str, Any]:
     """
     Routes a user's natural language query using Cosine Similarity on our local GPU-backed Bi-Encoder.
@@ -80,11 +144,15 @@ def route_query(query: str) -> Dict[str, Any]:
             "domain": str (e.g. "lao_dong", "chitchat"),
             "confidence": float,
             "doc_type_filter": List[str],
-            "is_legal": bool
+            "is_legal": bool,
+            "axes": Dict[str, Any]
         }
     """
     from app.routers.laws import get_smart_search_resources, normalize_spelling
     import faiss
+    
+    # Extract 5 axes
+    axes = extract_5_axes(query)
     
     # Simple regex pre-check for chitchat/memory queries to save computation time and guarantee accuracy
     query_clean = re.sub(r'[^\w\s]', '', query.strip().lower())
@@ -115,7 +183,8 @@ def route_query(query: str) -> Dict[str, Any]:
             "domain": "chitchat",
             "confidence": 1.0,
             "doc_type_filter": [],
-            "is_legal": False
+            "is_legal": False,
+            "axes": axes
         }
         
     model, _ = get_smart_search_resources()
@@ -126,7 +195,8 @@ def route_query(query: str) -> Dict[str, Any]:
             "domain": "dan_su",
             "confidence": 0.5,
             "doc_type_filter": DOMAIN_FILTERS["dan_su"],
-            "is_legal": True
+            "is_legal": True,
+            "axes": axes
         }
         
     # Standardize spelling and encode query
@@ -205,39 +275,31 @@ def route_query(query: str) -> Dict[str, Any]:
         is_legal = True
 
     # Xác định Cấp độ Định tuyến
-    # FIX TRIỆT ĐỂ: Không còn Level 2.
     # Tất cả câu hỏi pháp luật → Level 1 (Full RAG: FTS5 + FAISS Vector + Graph + Vietnamese Reranker)
-    # Level 2 đã bị chứng minh sai 21% trong test 100 câu vì bỏ qua Vector/Graph/Reranker.
     if not is_legal or best_domain in ["chitchat", "out_of_scope"]:
         routing_level = 0  # Non-legal: handled separately in chatbot.py
     else:
         routing_level = 1  # ALL legal queries → Full RAG pipeline
 
     # Bóc tách metadata từ câu hỏi (Year, Doc Type, Issuer)
-    # Bóc tách năm ban hành (Year) cực kỳ cẩn thận
-    year_filter = None
-    query_lower = query.lower()
-    
-    # 1. Trích xuất từ số hiệu văn bản có gạch chéo/gạch nối (ví dụ: /2024/, -2024-, /2024-NĐ)
-    year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})[-/]', query)
-    if not year_in_symbol_match:
-        # Ví dụ: 12/2024/NĐ-CP hoặc 12/2024-NĐ-CP
-        year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})[-/][A-ZĐđ]', query)
-    if not year_in_symbol_match:
-        # Ví dụ: 12/2024-NĐ
-        year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})-[A-ZĐđ]', query)
-    if not year_in_symbol_match:
-        # Ví dụ ở cuối số ký hiệu: 15/2024
-        year_in_symbol_match = re.search(r'\b\d+/((?:19|20)\d{2})\b', query)
-        
-    if year_in_symbol_match:
-        year_filter = int(year_in_symbol_match.group(1))
-    else:
-        # 2. Hoặc xuất hiện dạng "năm 2024" nhưng KHÔNG có "nhiệm kỳ" hay "giai đoạn" đi kèm
-        if not re.search(r'(nhiệm kỳ|giai đoạn|kế hoạch)\s+\d+', query_lower):
-            year_word_match = re.search(r'\bnăm\s+((?:19|20)\d{2})\b', query_lower)
-            if year_word_match:
-                year_filter = int(year_word_match.group(1))
+    year_filter = axes.get("time_frame")
+    if not year_filter:
+        query_lower = query.lower()
+        year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})[-/]', query)
+        if not year_in_symbol_match:
+            year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})[-/][A-ZĐđ]', query)
+        if not year_in_symbol_match:
+            year_in_symbol_match = re.search(r'[-/]((?:19|20)\d{2})-[A-ZĐđ]', query)
+        if not year_in_symbol_match:
+            year_in_symbol_match = re.search(r'\b\d+/((?:19|20)\d{2})\b', query)
+            
+        if year_in_symbol_match:
+            year_filter = int(year_in_symbol_match.group(1))
+        else:
+            if not re.search(r'(nhiệm kỳ|giai đoạn|kế hoạch)\s+\d+', query_lower):
+                year_word_match = re.search(r'\bnăm\s+((?:19|20)\d{2})\b', query_lower)
+                if year_word_match:
+                    year_filter = int(year_word_match.group(1))
 
     doc_type = None
     query_lower = query.lower()
@@ -246,7 +308,6 @@ def route_query(query: str) -> Dict[str, Any]:
     elif "bộ luật" in query_lower:
         doc_type = "Bộ luật"
     elif "luật" in query_lower:
-        # Avoid false positives where "luật" is part of non-document compounds
         exclude_words = ["pháp luật", "điều luật", "luật sư", "luật pháp", "kỷ luật", "tiền lệ luật"]
         if not any(ew in query_lower for ew in exclude_words):
             doc_type = "Luật"
@@ -266,11 +327,9 @@ def route_query(query: str) -> Dict[str, Any]:
         doc_type = "Chỉ thị"
 
     issuer = None
-    # ── Priority: "do X ban hành" pattern (most reliable for D-type queries) ──
     do_ban_hanh = re.search(r'do\s+(.+?)\s+ban\s+hành', query, re.IGNORECASE)
     if do_ban_hanh:
         raw_issuer = do_ban_hanh.group(1).strip()
-        # Chỉ dùng nếu issuer có ít nhất 2 từ (loại bỏ false positive)
         if len(raw_issuer.split()) >= 2:
             issuer = raw_issuer
     
@@ -337,5 +396,6 @@ def route_query(query: str) -> Dict[str, Any]:
         "routing_level": routing_level,
         "extracted_year": year_filter,
         "extracted_doc_type": doc_type,
-        "extracted_issuer": issuer
+        "extracted_issuer": issuer,
+        "axes": axes
     }

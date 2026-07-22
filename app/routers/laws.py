@@ -297,8 +297,8 @@ def search_laws(
     today_str = datetime.now().strftime("%Y-%m-%d")
     where_clauses.append(
         "(d.ngay_ban_hanh IS NULL OR d.ngay_ban_hanh = '' OR "
-        "(length(d.ngay_ban_hanh) = 10 AND "
-        "substr(d.ngay_ban_hanh, 7, 4) || '-' || substr(d.ngay_ban_hanh, 4, 2) || '-' || substr(d.ngay_ban_hanh, 1, 2) <= ?))"
+        "(length(d.ngay_ban_hanh) >= 8 AND d.ngay_ban_hanh LIKE '%/%/%' AND "
+        "substr(d.ngay_ban_hanh, -4) || '-' || printf('%02d', CAST(substr(d.ngay_ban_hanh, instr(d.ngay_ban_hanh, '/') + 1, length(d.ngay_ban_hanh) - 5 - instr(d.ngay_ban_hanh, '/')) AS INTEGER)) || '-' || printf('%02d', CAST(substr(d.ngay_ban_hanh, 1, instr(d.ngay_ban_hanh, '/') - 1) AS INTEGER)) <= ?))"
     )
     params.append(today_str)
 
@@ -418,7 +418,7 @@ def search_laws(
     else:
         order_clause = (
             "CASE WHEN d.tinh_trang_hieu_luc IN ('Hết hiệu lực toàn bộ', 'Hết hiệu lực') THEN 0 ELSE 1 END DESC, "
-            "substr(d.ngay_ban_hanh, 7, 4) DESC, substr(d.ngay_ban_hanh, 4, 2) DESC, substr(d.ngay_ban_hanh, 1, 2) DESC, "
+            "CASE WHEN length(d.ngay_ban_hanh) >= 8 AND d.ngay_ban_hanh LIKE '%/%/%' THEN substr(d.ngay_ban_hanh, -4) || '-' || printf('%02d', CAST(substr(d.ngay_ban_hanh, instr(d.ngay_ban_hanh, '/') + 1, length(d.ngay_ban_hanh) - 5 - instr(d.ngay_ban_hanh, '/')) AS INTEGER)) || '-' || printf('%02d', CAST(substr(d.ngay_ban_hanh, 1, instr(d.ngay_ban_hanh, '/') - 1) AS INTEGER)) ELSE d.ngay_ban_hanh END DESC, "
             "CASE LOWER(d.loai_van_ban) "
             "  WHEN 'hiến pháp' THEN 10 "
             "  WHEN 'bộ luật' THEN 9 "

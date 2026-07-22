@@ -4,6 +4,9 @@ import json
 import logging
 from typing import AsyncGenerator, Dict, Any, List
 import litellm
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure litellm behavior
 litellm.telemetry = False  # Disable telemetry
@@ -24,7 +27,7 @@ if not llm_logger.handlers:
 
 class LLMGateway:
     # Class level state to hold the currently selected provider
-    _active_provider = os.environ.get("ACTIVE_LLM_PROVIDER", "gemini")
+    _active_provider = os.environ.get("ACTIVE_LLM_PROVIDER", "fpt")
     
     # Providers configuration
     PROVIDERS = {
@@ -44,7 +47,7 @@ class LLMGateway:
     }
     
     # Default fallback path
-    FALLBACK_CHAIN = ["gemini", "fpt", "ollama"]
+    FALLBACK_CHAIN = ["fpt", "ollama"]
 
     @classmethod
     def get_status(cls) -> Dict[str, Any]:
@@ -118,7 +121,8 @@ class LLMGateway:
                     "messages": payload_messages,
                     "temperature": temperature,
                     "stream": True,
-                    "max_tokens": max_tokens
+                    "max_tokens": max_tokens,
+                    "request_timeout": 45.0
                 }
                 if api_key:
                     kwargs["api_key"] = api_key
@@ -130,9 +134,11 @@ class LLMGateway:
                 
                 async for chunk in response:
                     delta = chunk.choices[0].delta if chunk.choices else None
-                    if delta and delta.content:
-                        token_count += 1
-                        yield delta.content
+                    if delta:
+                        token = delta.content or getattr(delta, "reasoning_content", None)
+                        if token:
+                            token_count += 1
+                            yield token
                         
                 # Log success usage
                 latency = time.time() - start_time
