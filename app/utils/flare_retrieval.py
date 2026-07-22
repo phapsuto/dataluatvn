@@ -49,7 +49,8 @@ async def flare_generate_stream(
     (explain_simple, summarize, qa_practical, classify, scope, full_analysis).
     """
     word_count = len(query.split())
-    is_simple = force_simple or word_count < 25 or (domain_filter and "chitchat" in domain_filter)
+    # ⚡ Tối ưu tốc độ: Khi đã có initial_context hoặc vế dưới 60 từ -> chạy 1-pass streaming siêu tốc
+    is_simple = force_simple or bool(initial_context) or word_count < 60 or (domain_filter and "chitchat" in domain_filter)
     
     # ── INTENT-BASED PROMPT SELECTION ──
     qa_type, intent_system_prompt = classify_intent(query)

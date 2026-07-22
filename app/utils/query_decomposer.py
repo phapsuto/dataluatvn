@@ -24,8 +24,9 @@ async def decompose_query(query: str, chat_history: Optional[List[Dict[str, str]
     Phân rã câu hỏi người dùng thành danh sách các sub-queries tìm kiếm.
     """
     words = query.strip().split()
-    # Nếu câu hỏi quá ngắn (< 5 từ), không cần phân rã
-    if len(words) < 5:
+    # Nếu câu hỏi không có dấu hiệu phức hợp (nhiều vế/nhiều dấu hỏi) hoặc dưới 30 từ, skip LLM call
+    has_multi_topic = bool(re.search(r'\?.*\?|vừa.*vừa|đồng thời|vừa\s+\w+\s+vừa|ngoài ra|mặt khác', query, re.IGNORECASE))
+    if not has_multi_topic or len(words) < 30:
         return [query]
 
     # Chuẩn bị tin nhắn gửi tới LLM

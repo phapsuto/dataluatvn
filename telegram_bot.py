@@ -89,11 +89,14 @@ def tg_request(method: str, data: dict = None, timeout: float = 30.0) -> dict:
 
 
 def md_to_html(text: str) -> str:
-    """Chuyển đổi Markdown nâng cao sang HTML đẹp mắt cho Telegram."""
+    """Chuyển đổi Markdown nâng cao sang HTML đẹp mắt và đồng bộ 100% với Web cho Telegram."""
     import re
     import html
     
-    # 1. Escape HTML special characters để tránh lỗi cú pháp Telegram
+    if not text:
+        return ""
+        
+    # 1. Escape HTML special characters
     text = html.escape(text, quote=False)
     
     # 2. Tách và bảo lưu các khối code blocks (```)
@@ -111,25 +114,21 @@ def md_to_html(text: str) -> str:
         line = lines[i]
         stripped = line.strip()
         
-        # Tiêu đề H1: # Title -> ⚖️ TITLE (In đậm, viết hoa)
+        # Tiêu đề H1: # Title -> ⚖️ Title
         if stripped.startswith("# "):
-            lines[i] = f"<b>⚖️ {stripped[2:].upper()}</b>"
+            lines[i] = f"<b>⚖️ {stripped[2:]}</b>"
         # Tiêu đề H2: ## Title -> 📌 Title
         elif stripped.startswith("## "):
-            lines[i] = f"\n<b>📌 {stripped[3:]}</b>"
+            lines[i] = f"<b>📌 {stripped[3:]}</b>"
         # Tiêu đề H3: ### Title -> 🔹 Title
         elif stripped.startswith("### "):
-            lines[i] = f"\n<b>🔹 {stripped[4:]}</b>"
+            lines[i] = f"<b>🔹 {stripped[4:]}</b>"
         # Tiêu đề H4: #### Title -> 🔸 Title
         elif stripped.startswith("#### "):
-            lines[i] = f"\n<b>🔸 {stripped[5:]}</b>"
+            lines[i] = f"<b>🔸 {stripped[5:]}</b>"
         # Đường kẻ ngang
         elif stripped == "---":
             lines[i] = "──────────────────"
-        # Danh sách (bullet points)
-        elif stripped.startswith("- ") or stripped.startswith("* ") or stripped.startswith("+ "):
-            content = stripped[2:]
-            lines[i] = f"  • {content}"
             
     text = "\n".join(lines)
     
@@ -316,59 +315,10 @@ def check_rate_limit(user_id: int) -> bool:
 # ══════════════════════════════════════════════════
 
 def format_chat_response(data: dict) -> str:
-    """Format kết quả /assistant/chat thành Markdown đẹp cho Telegram."""
+    """Format kết quả /assistant/chat đồng bộ 100% với Web Portal."""
     if data.get("error"):
-        return f"⚠️ *Lỗi:*\n{data.get('detail', 'Unknown error')}"
-    
-    response = data.get("response", "Không có phản hồi.")
-    domain = data.get("domain", "")
-    citations = data.get("citations", [])
-    flare = data.get("flare_activated", False)
-    latency = data.get("_latency", 0)
-    
-    # Header theo domain
-    domain_icons = {
-        "chitchat": "💬",
-        "lao_dong": "👷",
-        "dan_su": "📋",
-        "hinh_su": "⚖️",
-        "dat_dai": "🏘️",
-        "doanh_nghiep": "🏢",
-        "hanh_chinh": "📜",
-        "cached": "🎯",
-        "out_of_scope": "🛑",
-    }
-    icon = domain_icons.get(domain, "⚖️")
-    
-    parts = [f"🌸 *Lan Anh — Trợ lý Pháp lý AI*\n"]
-    parts.append(response)
-    
-    # Citations
-    if citations:
-        parts.append("\n\n📎 *Trích dẫn pháp lý:*")
-        for i, cite in enumerate(citations[:5], 1):
-            title = cite.get("title", "N/A")
-            so_ky_hieu = cite.get("so_ky_hieu", "")
-            status = cite.get("tinh_trang_hieu_luc", "")
-            status_emoji = "🟢" if "hiệu lực" in (status or "").lower() else "⚪"
-            
-            cite_line = f"{i}. {status_emoji} {title}"
-            if so_ky_hieu:
-                cite_line += f" ({so_ky_hieu})"
-            parts.append(cite_line)
-    
-    # Footer
-    footer_items = []
-    if latency:
-        footer_items.append(f"⏱️{latency}s")
-    if domain and domain not in ["chitchat", "out_of_scope"]:
-        footer_items.append(f"📂{domain}")
-    if flare:
-        footer_items.append("🔄FLARE")
-    if footer_items:
-        parts.append(f"\n_{' · '.join(footer_items)}_")
-    
-    return "\n".join(parts)
+        return f"⚠️ <b>Lỗi:</b> {data.get('detail', 'Unknown error')}"
+    return data.get("response", "Không có phản hồi.")
 
 
 def format_search_results(data: dict, query: str) -> str:
