@@ -74,18 +74,23 @@ logger = logging.getLogger(__name__)
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
 
-def tg_request(method: str, data: dict = None, timeout: float = 30.0) -> dict:
-    """Gọi Telegram Bot API."""
+def tg_request(method: str, data: dict = None, timeout: float = 30.0, max_retries: int = 3) -> dict:
+    """Gọi Telegram Bot API với tự động retry khi gặp lỗi mạng tạm thời."""
     url = f"{TELEGRAM_API}/{method}"
-    try:
-        resp = requests.post(url, json=data, timeout=timeout)
-        result = resp.json()
-        if not result.get("ok"):
-            logger.error(f"Telegram API error: {result}")
-        return result
-    except Exception as e:
-        logger.error(f"Telegram API request failed: {e}")
-        return {"ok": False, "error": str(e)}
+    last_err = None
+    for attempt in range(max_retries):
+        try:
+            resp = requests.post(url, json=data, timeout=timeout)
+            result = resp.json()
+            if not result.get("ok"):
+                logger.error(f"Telegram API error: {result}")
+            return result
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries - 1:
+                time.sleep(1.5)
+    logger.error(f"Telegram API request failed after {max_retries} attempts: {last_err}")
+    return {"ok": False, "error": str(last_err)}
 
 
 def md_to_html(text: str) -> str:
@@ -997,13 +1002,20 @@ def main():
     print("⚖️  LuatBot Telegram — Trợ lý Pháp lý AI")
     print("=" * 60)
     
-    # Kiểm tra kết nối Telegram
-    me = tg_request("getMe")
-    if me.get("ok"):
+    # Kiểm tra kết nối Telegram (Retry tối đa 5 lần)
+    me = None
+    for attempt in range(5):
+        me = tg_request("getMe", timeout=15.0)
+        if me.get("ok"):
+            break
+        print(f"⏳ Thử kết nối Telegram lần {attempt + 1}/5...")
+        time.sleep(3)
+
+    if me and me.get("ok"):
         bot_info = me["result"]
         print(f"✅ Bot: @{bot_info['username']} ({bot_info['first_name']})")
     else:
-        print(f"❌ Không thể kết nối Telegram: {me}")
+        print(f"❌ Không thể kết nối Telegram sau 5 lần thử: {me}")
         sys.exit(1)
     
     # Kiểm tra LuatBot server
