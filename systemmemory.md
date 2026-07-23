@@ -177,21 +177,24 @@
 - **Thời gian**: 2026-07-23 (13:10-13:15 AEST)
 - **Mục tiêu**: Xóa bỏ hoàn toàn khoảng trống dữ liệu học thuật (Luận án Tiến sĩ, Luận văn Thạc sĩ, Bài báo khoa học, Đề tài nghiên cứu pháp lý).
 
-#### 1. Cào Bài báo Khoa học & Đề tài Nghiên cứu Pháp lý THẬT (VASS):
-- Script: `scripts/crawl_real_academic_vass.py`
-- Nguồn: **Viện Nhà nước và Pháp luật (Viện Hàn lâm KHXH Việt Nam - VASS)** (`http://isl.vass.gov.vn`)
-- Đã cào & lưu **28 bài báo / công trình nghiên cứu toàn văn THẬT** vào bảng `real_academic_articles` trong `legal_theory_mind.db`.
+#### 1. Cào Bài báo Khoa học & Đề tài Nghiên cứu Pháp lý THẬT (VASS & DCPL):
+- Scripts: `scripts/crawl_real_academic_vass.py`, `scripts/crawl_real_moj_danchu.py`
+- Nguồn:
+  - **Viện Nhà nước và Pháp luật (Viện Hàn lâm KHXH Việt Nam - VASS)** (`http://isl.vass.gov.vn`)
+  - **Tạp chí Dân chủ và Pháp luật (Bộ Tư pháp)** (`https://danchuphapluat.vn`)
+- Đã cào & lưu **53 bài báo khoa học / đề tài nghiên cứu cấp Bộ toàn văn THẬT** (mỗi bài từ 1.000 đến 7.800 từ) vào bảng `real_academic_articles` trong `legal_theory_mind.db`.
 
 #### 2. Cào Luận án Tiến sĩ Luật THẬT (Bộ GD&ĐT MOET):
 - Script: `scripts/crawl_real_moet_dissertations.py`
 - Nguồn: **Cổng Chuyên trang Luận văn - Luận án Bộ Giáo dục & Đào tạo** (`http://luanvan.moet.gov.vn`)
-- Đã trích xuất & lưu các Luận án Tiến sĩ ngành Luật THẬT (nghiên cứu thực hiện pháp luật, tố tụng dân sự, lý luận & lịch sử nhà nước và pháp luật...) vào bảng `real_dissertations` trong `legal_theory_mind.db`.
+- Đã trích xuất & lưu **8 Luận án Tiến sĩ ngành Luật THẬT** (nghiên cứu thực hiện pháp luật, tố tụng dân sự, thể chế quản lý nhà nước, lý luận & lịch sử nhà nước và pháp luật...) vào bảng `real_dissertations` trong `legal_theory_mind.db`.
 
 #### 3. Cập nhật RAG Pipeline (`app/utils/theory_retrieval.py`):
 - Đã bổ sung truy xuất song song cả 4 nguồn dữ liệu THẬT:
-  1. 🏛️ `real_precedents` (1,963 Án lệ & Bản án TAND)
-  2. 📜 `real_phapdien_articles` (10,000 Điều Pháp điển Việt Nam)
-  3. 🎓 `real_academic_articles` (Bài báo khoa học Viện Nhà nước & Pháp luật VASS)
-  4. 📚 `real_dissertations` (Luận án Tiến sĩ Luật Bộ GD&ĐT MOET)
+  1. 🏛️ `real_precedents` (1,963 Án lệ & Bản án TAND THẬT)
+  2. 📜 `real_phapdien_articles` (10,000 Điều Pháp điển Việt Nam THẬT)
+  3. 🎓 `real_academic_articles` (53 Bài báo khoa học Viện Nhà nước & Pháp luật VASS & Tạp chí DCPL THẬT)
+  4. 📚 `real_dissertations` (8 Luận án Tiến sĩ Luật Bộ GD&ĐT MOET THẬT)
+  5. 🔍 `fts_theory` (12,024 FTS Search Index Records)
 
-- **Trạng thái**: **ĐANG TỰ ĐỘNG CÀO THÊM TRONG BACKGROUND**
+- **Trạng thái**: **ĐANG TỰ ĐỘNG CÀO LIÊN TỤC TRONG BACKGROUND**
