@@ -98,6 +98,27 @@ def build_sft_dataset():
             "metadata": {"type": "practice_skill", "role": role, "title": title}
         })
 
+    # 4. Chuyển đổi Luận án Tiến sĩ Luật & Công trình Viện sĩ (Academic Publications)
+    cursor.execute("SELECT publication_type, title, author, institution, year, abstract_summary, theoretical_contributions, keywords FROM academic_publications")
+    for row in cursor.fetchall():
+        p_type, title, author, inst, year, summary, contrib, kw = row
+        user_prompt = f"Trình bày kết quả nghiên cứu toàn văn và đột phá lý luận của {p_type} '{title}' ({inst}, {year})?"
+        assistant_reply = (
+            f"🎓 **{p_type}**: {title}\n"
+            f"👤 **Tác giả / Nghiên cứu sinh**: {author} ({inst}, {year})\n"
+            f"🔑 **Từ khóa**: {kw}\n\n"
+            f"📖 **Tóm tắt Nội dung Nghiên cứu Toàn văn**:\n{summary}\n\n"
+            f"💡 **Đóng góp Đột phá Lý luận & Giá trị Học thuật**:\n{contrib}"
+        )
+        sft_records.append({
+            "messages": [
+                {"role": "system", "content": SYSTEM_LEGAL_MIND},
+                {"role": "user", "content": user_prompt},
+                {"role": "assistant", "content": assistant_reply}
+            ],
+            "metadata": {"type": "dissertation", "title": title, "institution": inst}
+        })
+
     # Ghi ra tệp JSONL
     with open(OUTPUT_SFT_PATH, "w", encoding="utf-8") as f:
         for rec in sft_records:

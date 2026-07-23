@@ -103,6 +103,24 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
                         "legal_basis": basis,
                         "academy": academy
                     })
+            elif source_table == "academic_publications":
+                cursor.execute("""
+                SELECT publication_type, title, author, institution, year, abstract_summary, theoretical_contributions
+                FROM academic_publications WHERE id = ?
+                """, (source_id,))
+                pub_row = cursor.fetchone()
+                if pub_row:
+                    p_type, p_title, p_author, p_inst, p_year, p_summary, p_contrib = pub_row
+                    results.append({
+                        "type": "academic_publication",
+                        "pub_type": p_type,
+                        "title": p_title,
+                        "author": p_author,
+                        "institution": p_inst,
+                        "year": p_year,
+                        "content": p_summary,
+                        "contributions": p_contrib
+                    })
 
         conn.close()
     except Exception as e:
@@ -117,7 +135,7 @@ def format_theory_context(theory_results: List[Dict[str, Any]]) -> str:
     if not theory_results:
         return ""
 
-    lines = ["🎓 **KHUNG LÝ LUẬN & KỸ NĂNG NGHỀ TƯ PHÁP BỔ TRỢ (LEGAL MIND & PRACTICE CONTEXT):**"]
+    lines = ["🎓 **KHUNG LÝ LUẬN, LUẬN ÁN TIẾN SĨ & KỸ NĂNG NGHỀ TƯ PHÁP BỔ TRỢ (LEGAL MIND CONTEXT):**"]
     for idx, item in enumerate(theory_results, 1):
         if item["type"] == "curriculum_topic":
             lines.append(
@@ -141,6 +159,14 @@ def format_theory_context(theory_results: List[Dict[str, Any]]) -> str:
                 f"\n📋 **Mục: {item['category']}**"
                 f"\n💼 **Hướng dẫn Quy trình Thực hành**: {item['content']}"
                 f"\n📜 **Căn cứ Pháp lý**: {item.get('legal_basis', 'N/A')}"
+            )
+        elif item["type"] == "academic_publication":
+            lines.append(
+                f"\n--- [Luận án Tiến sĩ Viện sĩ {idx} - Cơ sở: {item['institution']} ({item['year']})] ---"
+                f"\n🎓 **Tên Luận án**: {item['title']}"
+                f"\n👤 **Tác giả / NCS**: {item['author']}"
+                f"\n📖 **Nội dung Nghiên cứu Toàn văn**: {item['content']}"
+                f"\n💡 **Đóng góp Đột phá Lý luận**: {item['contributions']}"
             )
 
     return "\n".join(lines)
