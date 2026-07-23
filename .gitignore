@@ -80,3 +80,15 @@ scratch/zvec_test_db/
 
 data/notebooks_uploads/
 rag_search_log.txt
+
+# Fake/synthetic data - NEVER commit these
+data/legal_mind/legal_mind_sft_dataset.jsonl
+models/mac_legal_mind_model/
+scripts/train_on_mac.py
+scripts/train_legal_model.py
+scripts/harvest_*.py
+scripts/deep_harvest_*.py
+scripts/build_sft_dataset.py
+scripts/reset_fake_data.py
+scripts/real_web_crawlers/
+data/legal_theory_mind.db.fake_backup
