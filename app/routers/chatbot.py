@@ -362,6 +362,21 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
             combined_citations.update(cit_map)
             
     formatted_chunks = "\n\n====================\n\n".join(combined_chunks) if combined_chunks else ""
+    
+    # ── STEP 3.5: LEGAL THEORY & ACADEMIC MIND RETRIEVAL (BỘ NÃO LÝ LUẬN) ──
+    try:
+        from app.utils.theory_retrieval import search_legal_theory, format_theory_context
+        theory_results = search_legal_theory(prompt, top_k=3)
+        if theory_results:
+            theory_context = format_theory_context(theory_results)
+            print(f"🧠 [LegalMind] Loaded {len(theory_results)} academic theory contexts for prompt.")
+            if formatted_chunks:
+                formatted_chunks += f"\n\n====================\n\n{theory_context}"
+            else:
+                formatted_chunks = theory_context
+    except Exception as e_theory:
+        print(f"⚠️ [TheoryRetrieval] Warning: {e_theory}")
+
     citation_map = combined_citations
     flare_activated = False
     search_count = len(sub_queries)
