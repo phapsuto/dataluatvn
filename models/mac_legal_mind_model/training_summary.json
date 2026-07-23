@@ -1,8 +1,8 @@
 {
   "status": "SUCCESS",
   "trained_on": "Mac Apple Silicon MPS",
-  "total_samples": 544,
+  "total_samples": 1744,
   "epochs": 3,
-  "final_loss": 1.0298,
-  "timestamp": "2026-07-23 11:05:30"
+  "final_loss": 1.0214,
+  "timestamp": "2026-07-23 11:12:09"
 }
