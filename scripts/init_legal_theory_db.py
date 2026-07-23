@@ -67,7 +67,21 @@ def init_db():
     );
     """)
 
-    # 4. Bảng FTS5 Toàn văn
+    # 4. Bảng Kỹ năng Thực hành 5 Chức danh Tư pháp (Luật sư, KSV, Thẩm phán, Chấp hành viên, Điều tra viên)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS legal_practice_skills (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role_name TEXT NOT NULL,             -- Luật sư, Kiểm sát viên, Thẩm phán, Chấp hành viên, Điều tra viên
+        skill_category TEXT NOT NULL,        -- Bào chữa, Luận tội, Tuyên án, Kê biên, Hỏi cung...
+        skill_title TEXT NOT NULL,           -- Tên kỹ năng thao tác
+        procedural_stage TEXT NOT NULL,      -- Khởi tố, Điều tra, Truy tố, Xét xử, Thi hành án
+        practical_guidelines TEXT NOT NULL,  -- Hướng dẫn quy trình nghiệp vụ thực hành
+        legal_basis TEXT,                    -- Căn cứ pháp lý quy định (BLTTHS, BLTTDS, Luật Luật sư...)
+        source_academy TEXT DEFAULT 'Học viện Tư pháp / Học viện Tòa án / ĐH Kiểm sát / HV Cảnh sát'
+    );
+    """)
+
+    # 5. Bảng FTS5 Toàn văn
     cursor.execute("""
     CREATE VIRTUAL TABLE IF NOT EXISTS fts_theory USING fts5(
         source_table,

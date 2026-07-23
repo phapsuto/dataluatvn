@@ -30,8 +30,9 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
         conn = sqlite3.connect(THEORY_DB_PATH)
         cursor = conn.cursor()
 
-        # Làm sạch query cho FTS5
-        clean_query = query.replace('"', '').replace("'", '').strip()
+        # Làm sạch query tuyệt đối cho SQLite FTS5 (xóa sạch dấu câu ?, !, ., v.v.)
+        import re
+        clean_query = re.sub(r'[^\w\s]', ' ', query).strip()
         words = [w for w in clean_query.split() if len(w) > 1]
         if not words:
             conn.close()
@@ -84,6 +85,24 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
                         "content": stance,
                         "related_articles": articles
                     })
+            elif source_table == "legal_practice_skills":
+                cursor.execute("""
+                SELECT role_name, skill_category, skill_title, procedural_stage, practical_guidelines, legal_basis, source_academy
+                FROM legal_practice_skills WHERE id = ?
+                """, (source_id,))
+                sk_row = cursor.fetchone()
+                if sk_row:
+                    r_name, cat, s_title, stage, guide, basis, academy = sk_row
+                    results.append({
+                        "type": "legal_practice_skill",
+                        "role_name": r_name,
+                        "category": cat,
+                        "title": s_title,
+                        "stage": stage,
+                        "content": guide,
+                        "legal_basis": basis,
+                        "academy": academy
+                    })
 
         conn.close()
     except Exception as e:
@@ -93,16 +112,16 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
 
 def format_theory_context(theory_results: List[Dict[str, Any]]) -> str:
     """
-    Chuyển đổi kết quả tìm kiếm lý luận thành chuỗi Context đẹp cho LLM RAG.
+    Chuyển đổi kết quả tìm kiếm lý luận và kỹ năng thực hành thành chuỗi Context đẹp cho LLM RAG.
     """
     if not theory_results:
         return ""
 
-    lines = ["🎓 **KHUNG LÝ LUẬN & TRIẾT HỌC PHÁP LÝ BỔ TRỢ (LEGAL MIND CONTEXT):**"]
+    lines = ["🎓 **KHUNG LÝ LUẬN & KỸ NĂNG NGHỀ TƯ PHÁP BỔ TRỢ (LEGAL MIND & PRACTICE CONTEXT):**"]
     for idx, item in enumerate(theory_results, 1):
         if item["type"] == "curriculum_topic":
             lines.append(
-                f"\n--- [Lý luận {idx} - Trình độ: {item['degree_level']} ({item['university']})] ---"
+                f"\n--- [Tri thức Học thuật {idx} - Trình độ: {item['degree_level']} ({item['university']})] ---"
                 f"\n📌 **Môn học/Bài giảng**: {item['subject']} - {item['title']}"
                 f"\n💡 **Khái niệm cốt lõi**: {item['concept']}"
                 f"\n🧠 **Khung lý luận chuyên sâu**: {item['content']}"
@@ -114,6 +133,14 @@ def format_theory_context(theory_results: List[Dict[str, Any]]) -> str:
                 f"\n📖 **Định nghĩa**: {item['definition']}"
                 f"\n🔍 **Quan điểm Pháp lý học**: {item['content']}"
                 f"\n📜 **Căn cứ liên quan**: {item.get('related_articles', 'N/A')}"
+            )
+        elif item["type"] == "legal_practice_skill":
+            lines.append(
+                f"\n--- [Kỹ năng Nghề Tư pháp {idx} - Chức danh: {item['role_name']} ({item['academy']})] ---"
+                f"\n🛠️ **Kỹ năng Thao tác**: {item['title']} (Giai đoạn: {item['stage']})"
+                f"\n📋 **Mục: {item['category']}**"
+                f"\n💼 **Hướng dẫn Quy trình Thực hành**: {item['content']}"
+                f"\n📜 **Căn cứ Pháp lý**: {item.get('legal_basis', 'N/A')}"
             )
 
     return "\n".join(lines)

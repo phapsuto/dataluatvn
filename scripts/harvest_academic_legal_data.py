@@ -149,6 +149,55 @@ DOCTRINES_BATCH = [
     }
 ]
 
+# Danh sách Kỹ năng Thực hành 5 Chức danh Tư pháp (Judicial Practice Skills)
+PRACTICE_SKILLS_BATCH = [
+    {
+        "role_name": "Luật sư",
+        "skill_category": "Tham gia Tố tụng Hình sự & Bào chữa",
+        "skill_title": "Kỹ năng Xây dựng Luận cứ Bào chữa cho Bị cáo tại Phiên tòa",
+        "procedural_stage": "Xét xử Sơ thẩm / Phúc thẩm",
+        "practical_guidelines": "Quy trình xây dựng Luận cứ bào chữa: (1) Tóm tắt diễn biến hành vi và quan điểm truy tố của Cáo trạng; (2) Đánh giá chứng cứ buộc tội của Cơ quan điều tra (về tính hợp pháp, tính khách quan và mối liên hệ); (3) Phân tích các tình tiết chưa đủ căn cứ cấu thành tội phạm hoặc tình tiết giảm nhẹ trách nhiệm hình sự (Điều 51 BLHS); (4) Đề xuất mức hình phạt hoặc loại bỏ trách nhiệm hình sự.",
+        "legal_basis": "Luật Luật sư 2006 (sửa đổi 2012); Bộ luật Tố tụng Hình sự 2015 (Điều 73)",
+        "source_academy": "Học viện Tư pháp (Bộ Tư pháp)"
+    },
+    {
+        "role_name": "Kiểm sát viên",
+        "skill_category": "Thực hành Quyền Công tố & Luận tội",
+        "skill_title": "Kỹ năng Lập Cáo trạng và Trình bày Bản Luận tội tại Phiên tòa",
+        "procedural_stage": "Truy tố & Xét xử",
+        "practical_guidelines": "Quy trình thực hành quyền công tố: (1) Nghiên cứu toàn bộ hồ sơ vụ án do CQĐT chuyển sang; (2) Kiểm tra tính hợp pháp của các biên bản lấy lời khai, hỏi cung; (3) Lập Cáo trạng chi tiết khẳng định tội danh và khung hình phạt áp dụng; (4) Trình bày Bản Luận tội tại phiên tòa, theo dõi đối đáp tranh tụng với Luật sư bào chữa.",
+        "legal_basis": "Bộ luật Tố tụng Hình sự 2015 (Điều 243, Điều 321)",
+        "source_academy": "Trường Đại học Kiểm sát Hà Nội (VKSNDTC)"
+    },
+    {
+        "role_name": "Thẩm phán",
+        "skill_category": "Điều hành Phiên tòa & Tuyên án",
+        "skill_title": "Kỹ năng Điều hành Tranh tụng và Soạn thảo Bản án Dân sự / Hình sự",
+        "procedural_stage": "Xét xử & Nghị án",
+        "practical_guidelines": "Quy trình Thẩm phán thực thi: (1) Lập hồ sơ nghiên cứu án, xác định quan hệ tranh chấp và pháp luật áp dụng; (2) Điều hành phiên tòa theo nguyên tắc tranh tụng công khai, lắng nghe bình đẳng giữa Kiểm sát viên, Luật sư và đương sự; (3) Áp dụng quy định pháp luật và Án lệ liên quan; (4) Soạn thảo Bản án gồm 4 phần (Mở đầu, Nội dung vụ án, Nhận định của Tòa án, Quyết định).",
+        "legal_basis": "Nghị quyết 01/2017/NQ-HĐTP; Bộ luật Tố tụng Dân sự 2015; BLTTHS 2015",
+        "source_academy": "Học viện Tòa án (TANDTC)"
+    },
+    {
+        "role_name": "Chấp hành viên",
+        "skill_category": "Cưỡng chế & Thi hành Án Dân sự",
+        "skill_title": "Kỹ năng Xác minh Điều kiện Thi hành án và Kê biên Tài sản",
+        "procedural_stage": "Thi hành án",
+        "practical_guidelines": "Quy trình thi hành án dân sự: (1) Tống đạt quyết định thi hành án cho người phải thi hành án; (2) Tiến hành xác minh tài khoản ngân hàng, quyền sử dụng đất, bất động sản; (3) Ra quyết định cưỡng chế kê biên tài sản nếu người phải thi hành án cố tình không tự nguyện thi hành; (4) Tổ chức ký hợp đồng thẩm định giá và bán đấu giá tài sản kê biên.",
+        "legal_basis": "Luật Thi hành án Dân sự 2008 (sửa đổi 2014)",
+        "source_academy": "Học viện Tư pháp & Tổng cục THADS"
+    },
+    {
+        "role_name": "Điều tra viên",
+        "skill_category": "Điều tra Hình sự & Thu thập Chứng cứ",
+        "skill_title": "Kỹ năng Hỏi cung Bị can và Thu thập, Bảo quản Dấu vết Hiện trường",
+        "procedural_stage": "Điều tra",
+        "practical_guidelines": "Quy trình kỹ năng Điều tra viên: (1) Lập sơ đồ khám nghiệm hiện trường, thu giữ và niêm phong dấu vết vật chứng; (2) Lập kế hoạch hỏi cung bị can, làm rõ mâu thuẫn trong lời khai; (3) Lập Bản Kết luận điều tra đề nghị truy tố chuyển Viện Kiểm sát.",
+        "legal_basis": "Luật Tổ chức Cơ quan Điều tra Hình sự 2015; BLTTHS 2015",
+        "source_academy": "Học viện Cảnh sát Nhân dân (Bộ Công an)"
+    }
+]
+
 def harvest_data():
     if not os.path.exists(DB_PATH):
         logger.error(f"Không tìm thấy DB tại {DB_PATH}. Hãy chạy scripts/init_legal_theory_db.py trước.")
@@ -212,14 +261,41 @@ def harvest_data():
         except sqlite3.IntegrityError:
             pass
 
+    logger.info("⚡ Đang nạp dữ liệu Kỹ năng Thực hành 5 Chức danh Tư pháp...")
+    for sk in PRACTICE_SKILLS_BATCH:
+        cursor.execute("""
+        INSERT INTO legal_practice_skills (role_name, skill_category, skill_title, procedural_stage, practical_guidelines, legal_basis, source_academy)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            sk["role_name"],
+            sk["skill_category"],
+            sk["skill_title"],
+            sk["procedural_stage"],
+            sk["practical_guidelines"],
+            sk["legal_basis"],
+            sk["source_academy"]
+        ))
+        sk_id = cursor.lastrowid
+        cursor.execute("""
+        INSERT INTO fts_theory (source_table, source_id, title, content, category)
+        VALUES ('legal_practice_skills', ?, ?, ?, ?)
+        """, (
+            sk_id,
+            f"{sk['role_name']} - {sk['skill_title']}",
+            f"{sk['skill_category']} {sk['practical_guidelines']}",
+            sk["role_name"]
+        ))
+
     conn.commit()
     
     cursor.execute("SELECT COUNT(*) FROM curriculum_topics")
     total_topics = cursor.fetchone()[0]
     cursor.execute("SELECT COUNT(*) FROM legal_doctrines")
     total_doctrines = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM legal_practice_skills")
+    total_skills = cursor.fetchone()[0]
 
-    logger.info(f"🎉 Hoàn thành nạp dữ liệu! Tổng số Bài giảng/Chuyên đề: {total_topics} | Tổng số Học thuyết: {total_doctrines}")
+    logger.info(f"🎉 Hoàn thành nạp dữ liệu! Giáo trình: {total_topics} | Học thuyết: {total_doctrines} | Kỹ năng Thực hành 5 Chức danh: {total_skills}")
     conn.close()
 
 if __name__ == "__main__":
