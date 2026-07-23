@@ -377,6 +377,21 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     except Exception as e_theory:
         print(f"⚠️ [TheoryRetrieval] Warning: {e_theory}")
 
+    # ── STEP 3.6: PERSONA SWITCHER ENGINE (5 CHỨC DANH TƯ PHÁP) ──
+    try:
+        from app.utils.persona_switcher import detect_persona_switch, get_persona_system_prompt
+        role_key, clean_p = detect_persona_switch(prompt)
+        if role_key and role_key != "default":
+            prompt = clean_p
+            persona_prompt = get_persona_system_prompt(role_key)
+            print(f"🎭 [PersonaSwitch] Activated role '{role_key}' for query.")
+            if formatted_chunks:
+                formatted_chunks = f"{persona_prompt}\n\n====================\n\n" + formatted_chunks
+            else:
+                formatted_chunks = persona_prompt
+    except Exception as e_persona:
+        print(f"⚠️ [PersonaSwitch] Warning: {e_persona}")
+
     citation_map = combined_citations
     flare_activated = False
     search_count = len(sub_queries)

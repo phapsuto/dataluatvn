@@ -918,6 +918,43 @@ def handle_agent_command(chat_id: int, command_text: str):
 # MAIN POLLING LOOP
 # ══════════════════════════════════════════════════
 
+def handle_role_command(chat_id: int, text: str):
+    """Xử lý lệnh /role để đổi vai trò 5 Chức danh Tư pháp."""
+    role_arg = text[5:].strip()
+    if not role_arg:
+        send_message(
+            chat_id,
+            "🎭 *CÚ PHÁP ĐỔI VAI TRÒ CHỨC DANH TƯ PHÁP:*\n\n"
+            "• `/role lawyer` : 👨‍⚖️ Đóng vai Luật sư bào chữa & tư vấn\n"
+            "• `/role prosecutor` : ⚖️ Đóng vai Kiểm sát viên (VKS)\n"
+            "• `/role judge` : 🏛️ Đóng vai Thẩm phán chủ tọa phiên tòa\n"
+            "• `/role enforcement` : 👮‍♂️ Đóng vai Chấp hành viên Thi hành án\n"
+            "• `/role investigator` : 🕵️‍♂️ Đóng vai Điều tra viên Hình sự\n"
+            "• `/role reset` : 🔄 Trở lại vai trò Trợ lý Lan Anh mặc định"
+        )
+        return
+    
+    from app.utils.persona_switcher import JUDICIAL_ROLES
+    arg_lower = role_arg.lower()
+    if arg_lower in ["reset", "off", "default", "normal"]:
+        send_message(chat_id, "🔄 *Đã trở lại vai trò Trợ lý Pháp lý Lan Anh mặc định.*")
+        return
+
+    found_role = None
+    for k, v in JUDICIAL_ROLES.items():
+        if arg_lower == k or arg_lower in [kw.lower() for kw in v["keywords"]]:
+            found_role = v
+            break
+
+    if found_role:
+        send_message(
+            chat_id,
+            f"🎭 *ĐÃ KÍCH HOẠT VAI TRÒ:* {found_role['icon']} *{found_role['title']}*\n\n"
+            f"Mọi câu hỏi tiếp theo sẽ được phân tích dưới góc độ nghiệp vụ chuyên sâu của {found_role['title']}!"
+        )
+    else:
+        send_message(chat_id, f"❌ Không tìm thấy vai trò `{role_arg}`. Gõ `/role` để xem danh sách.")
+
 def process_update(update: dict):
     """Xử lý một update từ Telegram."""
     msg = update.get("message")
@@ -954,6 +991,8 @@ def process_update(update: dict):
         handle_status(chat_id)
     elif text.startswith("/benchmark"):
         handle_benchmark(chat_id)
+    elif text.startswith("/role"):
+        handle_role_command(chat_id, text)
     elif text.startswith("/search"):
         query = text[7:].strip()
         handle_search(chat_id, query)
