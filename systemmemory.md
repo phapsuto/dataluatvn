@@ -173,8 +173,8 @@
 
 ---
 
-### 🟢 BƯỚC 9: BẮT ĐẦU CÀO BỘ DỮ LIỆU HỌC THUẬT & NGHIỆP VỤ THẬT 100%
-- **Thời gian**: 2026-07-23 (13:10-13:15 AEST)
+### 🟢 BƯỚC 9: CÀO BỘ DỮ LIỆU HỌC THUẬT & NGHIỆP VỤ THẬT 100%
+- **Thời gian**: 2026-07-23 (13:10-13:45 AEST)
 - **Mục tiêu**: Xóa bỏ hoàn toàn khoảng trống dữ liệu học thuật (Luận án Tiến sĩ, Luận văn Thạc sĩ, Bài báo khoa học, Đề tài nghiên cứu pháp lý).
 
 #### 1. Cào Bài báo Khoa học & Đề tài Nghiên cứu Pháp lý THẬT (VASS & DCPL):
@@ -182,19 +182,28 @@
 - Nguồn:
   - **Viện Nhà nước và Pháp luật (Viện Hàn lâm KHXH Việt Nam - VASS)** (`http://isl.vass.gov.vn`)
   - **Tạp chí Dân chủ và Pháp luật (Bộ Tư pháp)** (`https://danchuphapluat.vn`)
-- Đã cào & lưu **53 bài báo khoa học / đề tài nghiên cứu cấp Bộ toàn văn THẬT** (mỗi bài từ 1.000 đến 7.800 từ) vào bảng `real_academic_articles` trong `legal_theory_mind.db`.
+- Kết quả sau kiểm toán: **45 bài viết THẬT** (42 từ VASS, 3 từ Tạp chí DCPL)
+  - Bài VASS: chủ yếu là bản tin hoạt động khoa học (tọa đàm, hội thảo, nghiệm thu đề tài), trung bình 2,247 từ/bài
+  - Bài DCPL: 3 bài nghiên cứu dài (5,197–9,689 từ/bài)
+- ⚠️ Đã xóa 15 bản ghi sai (trang danh mục listing pages, không phải bài báo khoa học)
 
-#### 2. Cào Luận án Tiến sĩ Luật THẬT (Bộ GD&ĐT MOET):
-- Script: `scripts/crawl_real_moet_dissertations.py`
-- Nguồn: **Cổng Chuyên trang Luận văn - Luận án Bộ Giáo dục & Đào tạo** (`http://luanvan.moet.gov.vn`)
-- Đã trích xuất & lưu **8 Luận án Tiến sĩ ngành Luật THẬT** (nghiên cứu thực hiện pháp luật, tố tụng dân sự, thể chế quản lý nhà nước, lý luận & lịch sử nhà nước và pháp luật...) vào bảng `real_dissertations` trong `legal_theory_mind.db`.
+#### 2. Luận án Tiến sĩ Luật — ĐÃ XÓA TOÀN BỘ:
+- ❌ Script `scripts/crawl_real_moet_dissertations.py` KHÔNG lấy được toàn văn luận án
+- Lý do: Website `luanvan.moet.gov.vn` lưu trữ luận án dưới dạng file ZIP/RAR tải về, KHÔNG hiển thị toàn văn trên trang web
+- Crawler chỉ trích xuất được metadata (tên, tác giả, menu trang web), KHÔNG phải nội dung luận án
+- Thêm vào đó: 4/8 bản ghi sai ngành (Văn học, Tài chính, Địa lý thay vì Luật)
+- 🚨 **Đã xóa toàn bộ 8 bản ghi giả khỏi `real_dissertations`**
 
-#### 3. Cập nhật RAG Pipeline (`app/utils/theory_retrieval.py`):
-- Đã bổ sung truy xuất song song cả 4 nguồn dữ liệu THẬT:
-  1. 🏛️ `real_precedents` (1,963 Án lệ & Bản án TAND THẬT)
-  2. 📜 `real_phapdien_articles` (10,000 Điều Pháp điển Việt Nam THẬT)
-  3. 🎓 `real_academic_articles` (53 Bài báo khoa học Viện Nhà nước & Pháp luật VASS & Tạp chí DCPL THẬT)
-  4. 📚 `real_dissertations` (8 Luận án Tiến sĩ Luật Bộ GD&ĐT MOET THẬT)
-  5. 🔍 `fts_theory` (12,024 FTS Search Index Records)
+#### 3. Số liệu TRUNG THỰC sau Kiểm toán (`legal_theory_mind.db`):
+  1. 🏛️ `real_precedents`: **1,963 Án lệ & Bản án TAND** (✅ THẬT, toàn văn đầy đủ)
+  2. 📜 `real_phapdien_articles`: **10,000 Điều Pháp điển Việt Nam** (✅ THẬT)
+  3. 📰 `real_academic_articles`: **45 Bài viết khoa học** (✅ THẬT, nhưng chủ yếu là tin hoạt động, không phải bài nghiên cứu full-text)
+  4. 🎓 `real_dissertations`: **0** (🚨 ĐÃ XÓA — cần giải pháp mới)
+  5. 🔍 `fts_theory`: **12,008 FTS Search Index Records**
 
-- **Trạng thái**: **ĐANG TỰ ĐỘNG CÀO LIÊN TỤC TRONG BACKGROUND**
+### ❓ CÒN THIẾU & CẦN LÀM TIẾP:
+- Luận án Tiến sĩ Luật toàn văn: 0% — Cần download file ZIP/RAR từ MOET → giải nén → đọc PDF
+- Luận văn Thạc sĩ toàn văn: 0%
+- Bài báo nghiên cứu khoa học pháp lý chuyên sâu: Cần cào từ Tạp chí Tòa án Nhân dân, Tạp chí Luật học
+- Công văn Giải đáp Nghiệp vụ TAND & Báo cáo Rút kinh nghiệm VKSND: 0%
+
