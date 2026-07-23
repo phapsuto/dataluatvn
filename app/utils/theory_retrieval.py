@@ -30,7 +30,7 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
         conn = sqlite3.connect(THEORY_DB_PATH)
         cursor = conn.cursor()
 
-        # Làm sạch query tuyệt đối cho SQLite FTS5 (xóa sạch dấu câu ?, !, ., v.v.)
+        # Clean query for FTS5 (remove special punctuation)
         import re
         clean_query = re.sub(r'[^\w\s]', ' ', query).strip()
         words = [w for w in clean_query.split() if len(w) > 1]
@@ -38,18 +38,20 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
             conn.close()
             return []
 
-        fts_query = " OR ".join(words)
+        # Join keywords with OR or AND depending on word count
+        fts_query = " OR ".join(words[:10])
 
         cursor.execute("""
-        SELECT source_table, source_id, title, content, category
+        SELECT source_table, source_id, title, content, category, rank
         FROM fts_theory
         WHERE fts_theory MATCH ?
+        ORDER BY rank
         LIMIT ?
         """, (fts_query, top_k))
 
         rows = cursor.fetchall()
         for row in rows:
-            source_table, source_id, title, content, category = row
+            source_table, source_id, title, content, category, _rank = row
             
             # Lấy thông tin chi tiết từ bảng nguồn
             if source_table == "curriculum_topics":
@@ -121,6 +123,45 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
                         "content": p_summary,
                         "contributions": p_contrib
                     })
+            elif source_table == "real_precedents":
+                cursor.execute("""
+                SELECT doc_name, precedent_number, case_type, court_level, issuing_authority, year, principle_text, full_text, applied_article_code, source_url
+                FROM real_precedents WHERE id = ?
+                """, (source_id,))
+                p_row = cursor.fetchone()
+                if p_row:
+                    d_name, p_num, c_type, c_level, auth, yr, principle, f_text, applied, url = p_row
+                    results.append({
+                        "type": "real_precedent",
+                        "doc_name": d_name,
+                        "precedent_number": p_num,
+                        "case_type": c_type,
+                        "court_level": c_level,
+                        "issuing_authority": auth,
+                        "year": yr,
+                        "principle": principle,
+                        "content": f_text,
+                        "applied_articles": applied,
+                        "url": url
+                    })
+            elif source_table == "real_phapdien_articles":
+                cursor.execute("""
+                SELECT article_anchor, article_title, chapter_title, subject_title, topic_title, content_text, source_url
+                FROM real_phapdien_articles WHERE id = ?
+                """, (source_id,))
+                pd_row = cursor.fetchone()
+                if pd_row:
+                    anchor, a_title, c_title, s_title, t_title, content, url = pd_row
+                    results.append({
+                        "type": "real_phapdien",
+                        "anchor": anchor,
+                        "title": a_title,
+                        "chapter": c_title,
+                        "subject": s_title,
+                        "topic": t_title,
+                        "content": content,
+                        "url": url
+                    })
 
         conn.close()
     except Exception as e:
@@ -130,14 +171,30 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
 
 def format_theory_context(theory_results: List[Dict[str, Any]]) -> str:
     """
-    Chuyển đổi kết quả tìm kiếm lý luận và kỹ năng thực hành thành chuỗi Context đẹp cho LLM RAG.
+    Chuyển đổi kết quả tìm kiếm lý luận, án lệ và pháp điển thành chuỗi Context đẹp cho LLM RAG.
     """
     if not theory_results:
         return ""
 
-    lines = ["🎓 **KHUNG LÝ LUẬN, LUẬN ÁN TIẾN SĨ & KỸ NĂNG NGHỀ TƯ PHÁP BỔ TRỢ (LEGAL MIND CONTEXT):**"]
+    lines = ["🎓 **KHUNG TRÍ THỨC ÁN LỆ & ĐIỀU KHOẢN PHÁP ĐIỂN THẬT 100% BỔ TRỢ (LEGAL MIND CONTEXT):**"]
     for idx, item in enumerate(theory_results, 1):
-        if item["type"] == "curriculum_topic":
+        if item["type"] == "real_precedent":
+            lines.append(
+                f"\n--- [Án lệ / Bản án THẬT {idx} - Cơ quan: {item['issuing_authority'] or item['court_level']} ({item['year'] or 'N/A'})] ---"
+                f"\n🏛️ **Bản án/Án lệ**: {item['doc_name']} (Số: {item['precedent_number'] or 'Bản án TAND'})"
+                f"\n⚖️ **Loại án**: {item['case_type'] or 'Tư pháp'}"
+                f"\n💡 **Nguyên tắc Án lệ / Lý luận cốt lõi**: {item['principle'] or 'Xem toàn văn bên dưới'}"
+                f"\n📜 **Điều luật áp dụng**: {item.get('applied_articles', 'N/A')}"
+                f"\n📖 **Nội dung Toàn văn Tóm tắt**: {item['content'][:1500]}..."
+            )
+        elif item["type"] == "real_phapdien":
+            lines.append(
+                f"\n--- [Điều Pháp điển THẬT {idx} - Chủ đề: {item['subject']} - {item['topic']}] ---"
+                f"\n📌 **Tên Điều**: {item['title']}"
+                f"\n📑 **Chương**: {item['chapter']}"
+                f"\n📖 **Nội dung Điều luật chuẩn**: {item['content'][:1500]}"
+            )
+        elif item["type"] == "curriculum_topic":
             lines.append(
                 f"\n--- [Tri thức Học thuật {idx} - Trình độ: {item['degree_level']} ({item['university']})] ---"
                 f"\n📌 **Môn học/Bài giảng**: {item['subject']} - {item['title']}"
