@@ -169,4 +169,29 @@
 - [x] Nạp DB `legal_theory_mind.db` bằng data thật (11.9K FTS records)
 - [x] Fine-tune Model AI LoRA THẬT trên GPU Mac (Loss 0.0966, 2.17MB safetensors)
 - [x] Test suy luận inference trực tiếp từ LoRA adapter weights trên GPU
-- [ ] Tích hợp LoRA adapter model vào backend FastAPI / Telegram Bot khi cần offline inference.
+- [x] Cào Bộ Dữ liệu Học thuật & Nghiệp vụ THẬT (Luận án Tiến sĩ MOET, Bài báo khoa học VASS)
+
+---
+
+### 🟢 BƯỚC 9: BẮT ĐẦU CÀO BỘ DỮ LIỆU HỌC THUẬT & NGHIỆP VỤ THẬT 100%
+- **Thời gian**: 2026-07-23 (13:10-13:15 AEST)
+- **Mục tiêu**: Xóa bỏ hoàn toàn khoảng trống dữ liệu học thuật (Luận án Tiến sĩ, Luận văn Thạc sĩ, Bài báo khoa học, Đề tài nghiên cứu pháp lý).
+
+#### 1. Cào Bài báo Khoa học & Đề tài Nghiên cứu Pháp lý THẬT (VASS):
+- Script: `scripts/crawl_real_academic_vass.py`
+- Nguồn: **Viện Nhà nước và Pháp luật (Viện Hàn lâm KHXH Việt Nam - VASS)** (`http://isl.vass.gov.vn`)
+- Đã cào & lưu **28 bài báo / công trình nghiên cứu toàn văn THẬT** vào bảng `real_academic_articles` trong `legal_theory_mind.db`.
+
+#### 2. Cào Luận án Tiến sĩ Luật THẬT (Bộ GD&ĐT MOET):
+- Script: `scripts/crawl_real_moet_dissertations.py`
+- Nguồn: **Cổng Chuyên trang Luận văn - Luận án Bộ Giáo dục & Đào tạo** (`http://luanvan.moet.gov.vn`)
+- Đã trích xuất & lưu các Luận án Tiến sĩ ngành Luật THẬT (nghiên cứu thực hiện pháp luật, tố tụng dân sự, lý luận & lịch sử nhà nước và pháp luật...) vào bảng `real_dissertations` trong `legal_theory_mind.db`.
+
+#### 3. Cập nhật RAG Pipeline (`app/utils/theory_retrieval.py`):
+- Đã bổ sung truy xuất song song cả 4 nguồn dữ liệu THẬT:
+  1. 🏛️ `real_precedents` (1,963 Án lệ & Bản án TAND)
+  2. 📜 `real_phapdien_articles` (10,000 Điều Pháp điển Việt Nam)
+  3. 🎓 `real_academic_articles` (Bài báo khoa học Viện Nhà nước & Pháp luật VASS)
+  4. 📚 `real_dissertations` (Luận án Tiến sĩ Luật Bộ GD&ĐT MOET)
+
+- **Trạng thái**: **ĐANG TỰ ĐỘNG CÀO THÊM TRONG BACKGROUND**

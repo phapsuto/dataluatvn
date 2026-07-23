@@ -144,22 +144,44 @@ def search_legal_theory(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
                         "applied_articles": applied,
                         "url": url
                     })
-            elif source_table == "real_phapdien_articles":
+            elif source_table == "real_academic_articles":
                 cursor.execute("""
-                SELECT article_anchor, article_title, chapter_title, subject_title, topic_title, content_text, source_url
-                FROM real_phapdien_articles WHERE id = ?
+                SELECT title, category, author, institution, publish_date, summary, full_text, url, word_count
+                FROM real_academic_articles WHERE id = ?
                 """, (source_id,))
-                pd_row = cursor.fetchone()
-                if pd_row:
-                    anchor, a_title, c_title, s_title, t_title, content, url = pd_row
+                art_row = cursor.fetchone()
+                if art_row:
+                    a_title, cat, author, inst, p_date, summary, f_text, url, w_count = art_row
                     results.append({
-                        "type": "real_phapdien",
-                        "anchor": anchor,
+                        "type": "real_academic_article",
                         "title": a_title,
-                        "chapter": c_title,
-                        "subject": s_title,
-                        "topic": t_title,
-                        "content": content,
+                        "category": cat,
+                        "author": author,
+                        "institution": inst,
+                        "date": p_date,
+                        "summary": summary,
+                        "content": f_text,
+                        "url": url,
+                        "word_count": w_count
+                    })
+            elif source_table == "real_dissertations":
+                cursor.execute("""
+                SELECT degree_type, title, author, specialization, institution, publish_year, abstract_summary, full_text, source_url
+                FROM real_dissertations WHERE id = ?
+                """, (source_id,))
+                dis_row = cursor.fetchone()
+                if dis_row:
+                    d_type, d_title, author, spec, inst, p_year, summary, f_text, url = dis_row
+                    results.append({
+                        "type": "real_dissertation",
+                        "degree_type": d_type,
+                        "title": d_title,
+                        "author": author,
+                        "specialization": spec,
+                        "institution": inst,
+                        "year": p_year,
+                        "summary": summary,
+                        "content": f_text,
                         "url": url
                     })
 
@@ -187,12 +209,20 @@ def format_theory_context(theory_results: List[Dict[str, Any]]) -> str:
                 f"\n📜 **Điều luật áp dụng**: {item.get('applied_articles', 'N/A')}"
                 f"\n📖 **Nội dung Toàn văn Tóm tắt**: {item['content'][:1500]}..."
             )
-        elif item["type"] == "real_phapdien":
+        elif item["type"] == "real_academic_article":
             lines.append(
-                f"\n--- [Điều Pháp điển THẬT {idx} - Chủ đề: {item['subject']} - {item['topic']}] ---"
-                f"\n📌 **Tên Điều**: {item['title']}"
-                f"\n📑 **Chương**: {item['chapter']}"
-                f"\n📖 **Nội dung Điều luật chuẩn**: {item['content'][:1500]}"
+                f"\n--- [Bài báo Khoa học Pháp lý VASS THẬT {idx} - Nguồn: {item['institution']}] ---"
+                f"\n🎓 **Tên Bài báo / Đề tài**: {item['title']}"
+                f"\n📂 **Chuyên mục**: {item['category']}"
+                f"\n📖 **Nội dung Toàn văn Nghiên cứu**: {item['content'][:1500]}..."
+            )
+        elif item["type"] == "real_dissertation":
+            lines.append(
+                f"\n--- [{item['degree_type']} MOET THẬT {idx} - Nguồn phát hành: {item['institution']}] ---"
+                f"\n🎓 **Tên Luận án**: {item['title']}"
+                f"\n👤 **Tác giả / NCS**: {item['author']}"
+                f"\n📚 **Chuyên ngành**: {item['specialization']}"
+                f"\n📖 **Nội dung Toàn văn Luận án**: {item['content'][:1500]}..."
             )
         elif item["type"] == "curriculum_topic":
             lines.append(
