@@ -16,18 +16,21 @@ Hệ thống được tích hợp **Mô hình Nhập vai Động (Dynamic Multi-
 ## 🌸 Điểm Nổi Bật Của Trợ Lý Pháp Lý Lan Anh
 
 1. **🎭 Mô Hình Nhập Vai Động (Dynamic Multi-Actor Chain-of-Thought)**:
-   - Không gò bó AI trong "chiếc áo" tư vấn viên đơn thuần. Chatbot tự động nhập vai nội bộ vào góc nhìn của Cơ quan Công an, Thẩm phán, Ngân hàng, Bên vi phạm, Người bị hại... để bóc tách 360 độ rủi ro, trách nhiệm pháp lý và phương án xử lý toàn diện.
+   - Tích hợp giao diện **Persona Selector (5 Trục Vai Trò)** trực tiếp trên Web Portal, cho phép người dùng tùy chọn góc nhìn: **Người Dân (Mặc định)**, **Công an điều tra**, **Thẩm phán**, **Luật sư doanh nghiệp**, **Chuyên viên Pháp lý**.
+   - Phân tích bóc tách 360 độ rủi ro, trách nhiệm pháp lý và phương án xử lý toàn diện tuỳ theo vai trò đã chọn.
+
 2. **💬 Nghệ Thuật Giao Tiếp Thấu Cảm & Danh Xưng Linh Hoạt**:
    - **Xung hô thông minh**: Nhận diện linh hoạt danh xưng của người dùng (*"Anh"*, *"Chị"*, *"Bác/Cô/Chú"*).
-   - **Mặc định gần gũi**: Khi người dùng hỏi trung tính, Lan Anh tự xưng **"Lan Anh"** và gọi người dùng là **"bạn"** (*"Dạ chào bạn nha"*, *"bạn thân mến"*, *"Lan Anh xin giải đáp thắc mắc của bạn..."*).
-   - **Loại bỏ câu chúc sáo rỗng**: Trả lời gãy gọn, đi thẳng vào trọng tâm chuyên môn, loại bỏ hoàn toàn các câu chúc giả tạo.
+   - **Mặc định gần gũi**: Trả lời gãy gọn, đi thẳng vào trọng tâm chuyên môn, loại bỏ hoàn toàn các câu chúc giả tạo, gợi ý tương tác linh hoạt nhờ LLM tự động phỏng đoán ý định.
+
 3. **⚖️ Phân Tích Pháp Lý Chính Xác Tuyệt Đối & Chuyên Sâu**:
+   - Tích hợp Module **Adversarial Reasoning (Lập luận đối kháng)** và **Precedent Matcher (Đối chiếu Án lệ)**, đảm bảo khả năng lập luận pháp lý như một chuyên gia thực thụ.
    - Bóc tách **5 trục pháp lý cốt lõi**: *Đối tượng điều chỉnh, Hành vi vi phạm, Tác động/Hậu quả, Phạm vi áp dụng, Mốc thời điểm áp dụng luật*.
    - Trích dẫn tọa độ pháp lý chính xác: Nêu rõ `[Số hiệu VBQPPL - Điều X, Khoản Y, Điểm Z]` kèm nhãn neo trích dẫn `[Cx]` chống ảo giác tuyệt đối.
-4. **🎨 Trình Bày Chuẩn Đẹp (Visual UX Spec)**:
-   - Phân đoạn Markdown gãy gọn, thiết kế thẻ tiêu đề icon nổi bật (`📌 Vấn đề pháp lý`, `⚖️ Cơ sở pháp lý`, `🔍 Phân tích chi tiết`, `> 💡 KẾT LUẬN NHANH`, `🛠️ Khuyến nghị các bước`, `⚠️ Lưu ý nhỏ`).
-   - Khoảng cách dòng chuẩn mực, loại bỏ 100% lỗi vụn câu hoặc các khoảng trống thừa.
-   - **Gợi ý câu hỏi kế tiếp tự nhiên**: Gỡ bỏ các từ "Góc nhìn" hay ngoặc vuông `[...]` thô cứng, gợi ý bằng câu hỏi mở tương tác trực diện.
+
+4. **📱 Tích Hợp Telegram Bot Độc Lập**:
+   - Bot Telegram (`@LuatBot`) mạnh mẽ, kết nối trực tiếp với Core AI, hỗ trợ tra cứu luật và chat trực tiếp trên điện thoại 24/7.
+   - Định dạng Markdown hoàn hảo, hỗ trợ fallback khi API gặp sự cố.
 
 ---
 
@@ -38,8 +41,7 @@ Hệ thống được tích hợp **Mô hình Nhập vai Động (Dynamic Multi-
 *   ⚡ **Semantic Caching Layer**: Tích hợp bộ nhớ đệm ngữ nghĩa thông minh sử dụng SQLite + FAISS cục bộ. Trả lời tức thời các câu hỏi tương tự chỉ trong **10-180ms**, giảm tải **80% cuộc gọi API LLM**.
 *   🌳 **Đồ Thị Liên Kết Pháp Lý (Lineage Tree)**: Dựng cây phả hệ nguồn luật hướng dọc (căn cứ ban hành, hướng dẫn thi hành) và hướng ngang (sửa đổi, bổ sung, thay thế) qua SQLite LightGraph Store.
 *   ⚖️ **Đối Soát Tranh Chấp Điều 156**: Tự động đối chiếu quy định pháp luật chồng chéo dựa trên quy tắc ưu tiên luật cấp trên và ưu tiên luật mới ban hành (Khoản 2 Điều 156 Luật ban hành VBQPPL 2015).
-*   🤖 **Hỗ Trợ MCP Server (Model Context Protocol)**: Cung cấp cổng STDIO trực tiếp kết nối cơ sở dữ liệu pháp luật với Cursor, Claude Desktop giúp luật sư/lập trình viên tra cứu tức thì.
-*   🔄 **Tự Động Cập Nhật Luật Mới (Tháng 07/2026)**: Tự động đồng bộ các văn bản luật mới ban hành hàng ngày từ `vbpl.vn`, `luatvietnam.vn`, `phapluat.gov.vn` và append gia tăng vào chỉ mục FAISS trên đĩa.
+*   🔄 **Tự Động Cập Nhật Luật Mới (Tháng 07/2026)**: Script crawl linh hoạt từ `vbpl.vn`, `luatvietnam.vn`, tòa án nhân dân tối cao (`crawl_real_court_decisions.py`) và tự động append gia tăng vào chỉ mục FAISS trên đĩa.
 
 ---
 
@@ -47,7 +49,7 @@ Hệ thống được tích hợp **Mô hình Nhập vai Động (Dynamic Multi-
 
 ```mermaid
 graph TD
-    A[User Query] --> B{Semantic Cache Lookup}
+    A[User Query + Selected Persona] --> B{Semantic Cache Lookup}
     B -- Cache Hit >= 0.92 --> C[Return Cached Response - 20ms]
     B -- Cache Miss < 0.92 --> D[User Role Detector & Dynamic Address Match]
     D --> E[Adaptive Legal Intent Router]
@@ -55,11 +57,11 @@ graph TD
     E -- Direct FTS5 Search --> G[SQLite FTS5 Query]
     E -- Complex RAG --> H[Broad Retrieval: BGE-M3 Dense + FTS5 + Graph 1-hop]
     H --> I[Vietnamese Reranker / FlashRank Top 4-5 Chunks]
-    G --> J[Speculative FLARE RAG & P-Cite Citation Lock]
+    G --> J[Speculative FLARE RAG + Precedent Matcher + Adversarial Reasoning]
     I --> J
     J --> K[Lan Anh Master System Prompt & Clean UX Formatter]
     K --> L[Save to Semantic Cache & Memory]
-    L --> M[Return Final Answer & Interactive Follow-ups]
+    L --> M[Return Final Answer]
     F --> M
 ```
 
@@ -70,14 +72,14 @@ graph TD
 ```
 luatvietnam/
 ├── server.py                      # FastAPI API Server — Điểm khởi chạy chính (Port 2004)
+├── telegram_bot.py                # Bot Telegram tích hợp RAG Gen 3 độc lập
 ├── mcp_server.py                  # Cổng kết nối MCP Server cho Claude/Cursor
 ├── status.py                      # Công cụ giám sát tiến độ vector & sức khỏe DB
-├── systemmemory.md                # Nhật ký thực thi & trí nhớ kiến trúc hệ thống
 ├── Dockerfile                     # Cấu hình Docker build
 ├── docker-compose.yml             # Cấu hình khởi chạy Docker Compose
 ├── requirements.txt               # Danh sách thư viện Python
 ├── static/                        # Giao diện Web Portal
-│   └── portal.html                # Web Portal tra cứu & Chatbot Lan Anh (Gemini Style)
+│   └── portal.html                # Web Portal tra cứu, UI Persona Selector (Gemini Style)
 ├── app/                           # Mã nguồn lõi FastAPI
 │   ├── config.py                  # Cấu hình hệ thống & API Keys
 │   ├── database.py                # Kết nối & tối ưu hóa SQLite
@@ -87,23 +89,18 @@ luatvietnam/
 │   │   ├── chatbot.py             # Router Chatbot AI RAG 7 Tầng & Lan Anh Assistant
 │   │   ├── laws.py                # Router tìm kiếm & tra cứu văn bản luật
 │   │   ├── anle.py                # Router Án Lệ & Bản Án
-│   │   ├── phapdien.py            # Router Pháp Điển
-│   │   └── lineage.py             # Router đồ thị & liên kết nguồn luật
 │   └── utils/                     # Tiện ích bổ trợ nghiệp vụ
 │       ├── intent_prompts.py      # Master System Prompt Bé Lan Anh & Visual UX Spec
-│       ├── user_role_detector.py  # Bộ nhận diện danh xưng & sinh câu hỏi gợi ý
-│       ├── query_decomposer.py    # Phân tách câu hỏi phức tạp thành sub-queries
+│       ├── persona_switcher.py    # Quản lý & chuyển đổi prompt 5 Role
+│       ├── adversarial_reasoning.py # Lập luận đối kháng chuyên môn sâu
+│       ├── precedent_matcher.py   # Ghép nối bản án, án lệ liên quan
 │       ├── ultimate_retrieval.py  # Truy xuất lai (BGE-M3 + FTS5 + Reranker + Graph)
-│       ├── flare_retrieval.py     # Triển khai thuật toán FLARE chủ động
 │       └── semantic_cache_manager.py # Quản lý bộ nhớ đệm ngữ nghĩa SQLite + FAISS
 ├── scripts/                       # Kịch bản quản trị & đồng bộ DB
-│   ├── download_all_to_sqlite.py  # Tải CSDL gốc về máy
-│   ├── import_anle.py             # Import dữ liệu Án Lệ
-│   ├── import_phapdien.py         # Import dữ liệu Pháp Điển
 │   ├── build_vector_index.py      # Sinh embeddings & chỉ mục FAISS
+│   ├── crawl_real_court_decisions.py # Crawl án lệ, bản án từ Toà án
 │   └── sync_new_laws.py           # Tự động đồng bộ văn bản luật mới hàng ngày
 └── tests/                         # Bộ kiểm thử Unit Tests chuẩn (pytest)
-    └── test_user_role_detector.py # Unit tests nhận diện danh xưng & sinh gợi ý
 ```
 
 ---
@@ -112,7 +109,7 @@ luatvietnam/
 
 ### 📋 Yêu Cầu Hệ Thống
 *   **Python:** Phiên bản 3.9 trở lên.
-*   **Ổ cứng:** Tối thiểu 50 GB SSD.
+*   **Ổ cứng:** Tối thiểu 50 GB SSD (Do lượng Data khổng lồ).
 *   **GPU (Tùy chọn):** CUDA NVIDIA GPU hoặc Apple Silicon (M1/M2/M3/M4) tăng tốc sinh vector & Reranker.
 
 ### 💻 Các Bước Cài Đặt Chi Tiết
@@ -129,31 +126,26 @@ python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install pytest sentence-transformers faiss-cpu flashrank litellm
+pip install pytest sentence-transformers faiss-cpu flashrank litellm python-telegram-bot
 ```
 
-#### Bước 3: Tải & Khởi tạo CSDL (Nếu xây dựng từ đầu)
-```bash
-python3 scripts/download_all_to_sqlite.py
-python3 scripts/import_anle.py
-python3 scripts/import_phapdien.py
-python3 scripts/split_content_db.py
-python3 scripts/optimize_db.py
-python3 scripts/upgrade_db.py
-python3 scripts/build_crosslinks.py
-```
-
-#### Bước 4: Đồng bộ văn bản luật mới tháng 07/2026
-```bash
-python3 scripts/sync_new_laws.py
-```
-
-#### Bước 5: Khởi chạy API Server & Web Portal
+#### Bước 3: Khởi chạy API Server & Web Portal
 ```bash
 python3 server.py
 ```
 * TRUY CẬP WEB PORTAL: **`http://localhost:2004/portal`**
 * TRUY CẬP SWAGGER API DOCS: **`http://localhost:2004/docs`**
+
+#### Bước 4: Khởi chạy Telegram Bot (Tuỳ chọn)
+Tạo file `.env` và thiết lập token:
+```env
+TELEGRAM_BOT_TOKEN=8727364009:xxxxxxxxxxxxx
+LUATBOT_API_KEY=dlvn_portal_default_key
+```
+Sau đó chạy bot:
+```bash
+python3 telegram_bot.py
+```
 
 ---
 
@@ -167,16 +159,14 @@ url = "http://localhost:2004/assistant/chat"
 headers = {"X-API-Key": "dlvn_portal_default_key"}
 payload = {
     "prompt": "Cho anh hỏi quy định về điều kiện và thủ tục sa thải người lao động?",
-    "session_id": "user_session_001"
+    "session_id": "user_session_001",
+    "persona": "cong_an" # Mặc định là 'nguoi_dan'
 }
 
 response = requests.post(url, json=payload, headers=headers)
 if response.status_code == 200:
     data = response.json()
     print("🌸 Lan Anh Trả Lời:\n", data["response"])
-    print("\n📚 Nguồn trích dẫn:")
-    for cite in data.get("citations", []):
-        print(f"- {cite['title']} (Số hiệu: {cite.get('so_ky_hieu', 'N/A')})")
 ```
 
 ### 2. Cấu hình MCP Server (Cursor / Claude Desktop)
