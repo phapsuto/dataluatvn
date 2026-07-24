@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-07-22T12:44:02.487919",
+  "total_questions": 500,
+  "total_pass": 499,
+  "total_fail": 1,
+  "accuracy_percent": 99.8,
+  "avg_latency_seconds": 8.34,
+  "wall_time_seconds": 1394.12,
+  "concurrency": 3,
+  "domain_stats": {
+    "dat_dai": {
+      "pass": 102,
+      "fail": 0,
+      "avg_score": 0.9902
+    },
+    "hanh_chinh": {
+      "pass": 20,
+      "fail": 0,
+      "avg_score": 0.995
+    },
+    "hinh_su": {
+      "pass": 86,
+      "fail": 0,
+      "avg_score": 0.9895
+    },
+    "lao_dong": {
+      "pass": 80,
+      "fail": 0,
+      "avg_score": 0.995
+    },
+    "hon_nhan": {
+      "pass": 20,
+      "fail": 0,
+      "avg_score": 1.0
+    },
+    "dan_su": {
+      "pass": 77,
+      "fail": 0,
+      "avg_score": 0.8981
+    },
+    "shtt": {
+      "pass": 15,
+      "fail": 0,
+      "avg_score": 0.99
+    },
+    "moi_truong": {
+      "pass": 15,
+      "fail": 0,
+      "avg_score": 1.0
+    },
+    "doanh_nghiep": {
+      "pass": 65,
+      "fail": 0,
+      "avg_score": 0.8938
+    },
+    "thue": {
+      "pass": 19,
+      "fail": 1,
+      "avg_score": 0.9725
+    }
+  },
+  "failed_questions": [
+    {
+      "index": 411,
+      "question": "Phạt trốn thuế theo pháp luật hiện hành?",
+      "domain": "thue",
+      "scores": {
+        "has_response": 1,
+        "adequate_length": 1,
+        "has_citations": 0,
+        "keyword_relevance": 1.0,
+        "has_legal_refs": 0,
+        "not_truncated": 0,
+        "total_score": 0.55
+      },
+      "latency": 28.79,
+      "status": "FAIL"
+    }
+  ]
+}

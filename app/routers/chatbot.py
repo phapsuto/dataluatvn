@@ -396,6 +396,61 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     flare_activated = False
     search_count = len(sub_queries)
 
+    # ── STEP 3.7: IRAC LEGAL REASONING ENGINE (PHƯƠNG PHÁP LUẬN PHÁP LÝ) ──
+    role_key_for_reasoning = None
+    try:
+        role_key_for_reasoning = role_key if role_key and role_key != "default" else None
+    except NameError:
+        pass
+    
+    try:
+        from app.utils.legal_reasoning import build_reasoning_prompt, detect_legal_complexity
+        complexity = detect_legal_complexity(prompt)
+        
+        # Only inject IRAC for moderate+ complexity queries
+        if complexity in ("moderate", "complex", "adversarial"):
+            reasoning_instruction = build_reasoning_prompt(
+                query=prompt,
+                role=role_key_for_reasoning,
+                retrieved_docs=list(citation_map.values()) if citation_map else None,
+                precedents=None  # Will be added in next step
+            )
+            if reasoning_instruction:
+                print(f"🧠 [IRAC] Activated {complexity} reasoning ({len(reasoning_instruction)} chars)")
+                if formatted_chunks:
+                    formatted_chunks = reasoning_instruction + "\n\n====================\n\n" + formatted_chunks
+                else:
+                    formatted_chunks = reasoning_instruction
+    except Exception as e_irac:
+        print(f"⚠️ [IRAC] Warning: {e_irac}")
+
+    # ── STEP 3.8: PRECEDENT MATCHER (ÁP DỤNG ÁN LỆ THÔNG MINH) ──
+    try:
+        from app.utils.precedent_matcher import search_precedents, format_precedent_context
+        precedent_results = search_precedents(prompt, top_k=2)
+        if precedent_results:
+            precedent_context = format_precedent_context(precedent_results, max_chars_per_precedent=1500)
+            print(f"📜 [Precedent] Found {len(precedent_results)} relevant precedents")
+            if formatted_chunks:
+                formatted_chunks += f"\n\n{precedent_context}"
+            else:
+                formatted_chunks = precedent_context
+    except Exception as e_prec:
+        print(f"⚠️ [Precedent] Warning: {e_prec}")
+
+    # ── STEP 3.9: ADVERSARIAL REASONING (TƯ DUY ĐỐI KHÁNG ĐA CHIỀU) ──
+    try:
+        from app.utils.adversarial_reasoning import should_use_adversarial, build_adversarial_instruction
+        if should_use_adversarial(prompt):
+            adv_instruction = build_adversarial_instruction(prompt)
+            print(f"⚔️ [Adversarial] Activated multi-perspective reasoning")
+            if formatted_chunks:
+                formatted_chunks = adv_instruction + "\n\n====================\n\n" + formatted_chunks
+            else:
+                formatted_chunks = adv_instruction
+    except Exception as e_adv:
+        print(f"⚠️ [Adversarial] Warning: {e_adv}")
+
     # ── STEP 5: FLARE RAG GENERATION (Tầng 5) ──
     final_text = ""
     citations_list = list(citation_map.values())
@@ -433,11 +488,7 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     final_text = clean_context_artifacts(strip_thinking_tags(final_text))
 
     # ── TÍCH HỢP GỢI Ý TƯƠNG TÁC KẾ TIẾP CỦA LAN ANH ──
-    if final_text and "Không tìm thấy tài liệu" not in final_text:
-        from app.utils.user_role_detector import generate_lan_anh_followups
-        followups = generate_lan_anh_followups(prompt, domain=domain or "general")
-        if followups and followups.strip() not in final_text:
-            final_text += f"\n{followups}"
+    # Removed hardcoded followups as they were repetitive and statically generated.
 
     # ── CẬP NHẬT SEMANTIC CACHE (RAG Gen 3) ──
     # Không cache các câu trả lời thất bại/trống để tránh đóng băng lỗi

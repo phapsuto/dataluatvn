@@ -1,0 +1,10 @@
+{
+  "status": "SUCCESS",
+  "trained_on": "Apple Silicon GPU (MPS)",
+  "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "total_samples": 500,
+  "epochs": 2,
+  "final_loss": 0.0966,
+  "training_duration_seconds": 210.25,
+  "timestamp": "2026-07-23 13:04:14"
+}

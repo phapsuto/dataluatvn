@@ -1976,6 +1976,14 @@
           <!-- Bottom input bar -->
           <div class="chat-input-container">
             <div class="chat-input-bar">
+              <select id="chat-persona-select" class="persona-select" title="Chọn Vai trò Tư pháp" style="border: none; background: transparent; color: var(--primary); font-weight: 600; font-family: var(--font-ui); outline: none; padding: 0 10px; cursor: pointer; height: 100%;">
+                <option value="default">🌐 Lan Anh</option>
+                <option value="tham_phan">🏛️ Thẩm phán</option>
+                <option value="luat_su">👨‍⚖️ Luật sư</option>
+                <option value="kiem_sat_vien">⚖️ Kiểm sát viên</option>
+                <option value="dieu_tra_vien">🕵️ Điều tra viên</option>
+                <option value="chap_hanh_vien">👮 Chấp hành viên</option>
+              </select>
               <button class="chat-icon-btn" onclick="toast('Tính năng đính kèm tài liệu đang được hoàn thiện và sẽ ra mắt trong phiên bản kế tiếp.', 'info')"><i data-lucide="paperclip"></i></button>
               <textarea id="chat-input" placeholder="Nhập câu hỏi hoặc tình huống pháp lý của bạn..." rows="1" onkeydown="handleChatKeyDown(event)" oninput="adjustTextareaHeight(this)"></textarea>
               <button class="chat-icon-btn" onclick="toast('Tính năng nhập liệu bằng giọng nói (Speech-to-Text) đang được hoàn thiện và sẽ ra mắt trong phiên bản kế tiếp.', 'info')"><i data-lucide="mic"></i></button>
@@ -3334,8 +3342,17 @@
 
     async function sendMessage() {
       const input = document.getElementById('chat-input');
-      const prompt = input.value.trim();
+      let prompt = input.value.trim();
       if (!prompt) return;
+
+      const personaSelect = document.getElementById('chat-persona-select');
+      const personaValue = personaSelect ? personaSelect.value : 'default';
+      const personaName = personaSelect && personaSelect.options[personaSelect.selectedIndex] ? personaSelect.options[personaSelect.selectedIndex].text.replace(/^[^\s]+\s/, '') : '';
+
+      // If a persona is selected, append the invisible keyword so the backend router can detect it
+      if (personaValue !== 'default') {
+        prompt = `Là một ${personaName}, ${prompt}`;
+      }
 
       let session = chatHistory.find(s => s.id === currentSessionId);
       if (!session) {

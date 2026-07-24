@@ -111,11 +111,7 @@ Hãy tổng hợp bài tư vấn pháp lý bài bản 5 phần theo đúng đị
         async for token in LLMGateway.call_stream(messages, PROMPT_LEGAL_CONSULTATION, temperature=0.2, max_tokens=4096):
             yield token
             
-        # Append Lan Anh interactive follow-up perspective block
-        from app.utils.user_role_detector import generate_lan_anh_followups
-        domain = five_axes.get("domain", "general") if isinstance(five_axes, dict) else "general"
-        followups = generate_lan_anh_followups(query, domain=domain)
-        yield followups
+        # Removed hardcoded interactive follow-up perspective block as they were repetitive and statically generated.
 
 class LegalSquadOrchestrator:
     """Bộ điều phối toàn bộ Biệt đội 4 Sub-Agents."""

@@ -1,0 +1,532 @@
+🚀 BẮT ĐẦU BENCHMARK — 500 CÂU HỎI PHÁP LUẬT
+⚡ Chế độ SONG SONG: 3 workers
+⏰ Thời gian bắt đầu: 2026-07-22 12:20:48
+================================================================================
+  [  1/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 51.9s | dat_dai | Quy định mới nhất về bảng giá đất hàng năm?
+  [  2/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 65.7s | hanh_chinh | Thời hiệu xử phạt vi phạm hành chính là bao lâu?
+  [  3/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 77.6s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [  4/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 2.2s | lao_dong | Quy định về cho thuê lại lao động theo Bộ luật Lao
+  [  5/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [  6/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | hon_nhan | Hủy kết hôn trái pháp luật theo quy định?
+  [  7/500] ✅ | Score: 0.90 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động nước ngoài làm việc tại Việt Nam cầ
+  [  8/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [  9/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [ 10/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [ 11/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | dan_su | Tài sản riêng của vợ chồng có bị chia khi ly hôn k
+  [ 12/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Mức phạt vi phạm nhãn hiệu theo Nghị định xử phạt?
+  [ 13/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 14/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Quy định về ngày nghỉ phép năm theo Bộ luật Lao độ
+  [ 15/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 16/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Mức phạt hành vi gây ô nhiễm môi trường?
+  [ 17/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Thủ tục đăng ký nhãn hiệu tại Cục Sở hữu trí tuệ?
+  [ 18/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 19/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 20/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 21/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 22/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 23/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Thủ tục đăng ký biến động khi thay đổi mục đích sử
+  [ 24/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.1s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 25/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 26/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | moi_truong | Quy chuẩn kỹ thuật về nước thải công nghiệp?
+  [ 27/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 28/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Thời hạn bảo hộ quyền tác giả theo Luật SHTT?
+  [ 29/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội xâm phạm bí mật hoặc an toàn thư tín?
+  [ 30/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Thẩm quyền xử phạt vi phạm hành chính của UBND xã?
+  [ 31/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | shtt | Quyền tác giả đối với tác phẩm được tạo trong quan
+  [ 32/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Đất do ông bà để lại nhưng không có di chúc thì ch
+  [ 33/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [ 34/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | dat_dai | Quy định về đất liền kề và lối đi chung theo Bộ lu
+  [ 35/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [ 36/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Quyền thành lập công đoàn cơ sở tại doanh nghiệp?
+  [ 37/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | moi_truong | Giấy phép môi trường theo Luật Bảo vệ môi trường 2
+  [ 38/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Mức phạt nồng độ cồn khi lái xe ô tô?
+  [ 39/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 40/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Thủ tục đăng ký bảo hộ tên thương mại?
+  [ 41/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Thời hạn giải quyết thủ tục hành chính theo quy đị
+  [ 42/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Mức phạt chậm nộp thuế là bao nhiêu phần trăm mỗi 
+  [ 43/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 44/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Chuyển nhượng cổ phần trong công ty cổ phần cần đi
+  [ 45/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.1s | doanh_nghiep | Thủ tục tạm ngừng kinh doanh doanh nghiệp?
+  [ 46/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 47/500] ✅ | Score: 0.90 | Acc: 100.0% | ⏱️ 0.0s | thue | Quy định về xuất hóa đơn điện tử khi bán hàng?
+  [ 48/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Thuế thu nhập cá nhân đối với tiền lương tính thế 
+  [ 49/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Điều kiện kết hôn với người nước ngoài tại Việt Na
+  [ 50/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Tặng cho tài sản có điều kiện theo Bộ luật Dân sự?
+  [ 51/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [ 52/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 53/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Thời gian thử việc tối đa đối với hợp đồng lao độn
+  [ 54/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Thủ tục giải quyết việc nuôi con khi cha mẹ không 
+  [ 55/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 56/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Vốn điều lệ tối thiểu để thành lập doanh nghiệp?
+  [ 57/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội tham ô tài sản bị xử lý hình sự thế nào?
+  [ 58/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [ 59/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Thuế xuất nhập khẩu hàng hóa áp dụng mức nào?
+  [ 60/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 61/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Điều kiện chuyển đổi đất nông nghiệp giữa các hộ g
+  [ 62/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Quy định xử phạt vi phạm về an toàn thực phẩm?
+  [ 63/500] ✅ | Score: 0.75 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Điều kiện được cấp sổ đỏ cho đất không có giấy tờ?
+  [ 64/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Hậu quả pháp lý khi hợp đồng dân sự bị vô hiệu?
+  [ 65/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 66/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Thuế tài nguyên áp dụng cho khai thác khoáng sản t
+  [ 67/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [ 68/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 69/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Quyền thừa kế của con ngoài giá thú theo pháp luật
+  [ 70/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [ 71/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 72/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [ 73/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 74/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [ 75/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Hóa đơn điện tử có bắt buộc cho tất cả doanh nghiệ
+  [ 76/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 77/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Điều kiện để được cấp bằng sáng chế tại Việt Nam?
+  [ 78/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Quy định về đồng phạm trong Bộ luật Hình sự?
+  [ 79/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Quy định về thời hạn sử dụng đất nông nghiệp cho c
+  [ 80/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Quy định về hạn mức giao đất ở tại nông thôn?
+  [ 81/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [ 82/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 83/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [ 84/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [ 85/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [ 86/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Hợp đồng ủy quyền có bắt buộc công chứng không?
+  [ 87/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [ 88/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Thủ tục hợp thửa đất theo Luật Đất đai 2024?
+  [ 89/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Mức bồi thường tai nạn lao động gây chết người?
+  [ 90/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Thuế chuyển nhượng bất động sản là bao nhiêu phần 
+  [ 91/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 92/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Quyền yêu cầu chia tài sản chung trong thời kỳ hôn
+  [ 93/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Quy định về thuế tiêu thụ đặc biệt đối với rượu bi
+  [ 94/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Thủ tục thuận tình ly hôn mất bao lâu?
+  [ 95/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Thủ tục ly hôn khi chồng đang ở nước ngoài?
+  [ 96/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [ 97/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [ 98/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Mức phạt kinh doanh không có giấy phép?
+  [ 99/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | moi_truong | Mức phạt khai thác khoáng sản trái phép?
+  [100/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [101/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | moi_truong | Trách nhiệm tái chế bao bì của nhà sản xuất?
+  [102/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [103/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Hợp đồng đặt cọc mua bán nhà có hiệu lực khi nào?
+  [104/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [105/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 31.8s | lao_dong | Quy định về làm thêm giờ tối đa trong một tháng?
+  [106/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [107/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Mức phạt không đội mũ bảo hiểm khi đi xe máy?
+  [108/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [109/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Quy định về đất tôn giáo theo Luật Đất đai 2024?
+  [110/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [111/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | lao_dong | Quy định về nội quy lao động và xử lý kỷ luật?
+  [112/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Điều kiện để tuyên bố một người mất tích?
+  [113/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [114/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [115/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [116/500] ✅ | Score: 0.90 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Thủ tục tố cáo hành vi vi phạm pháp luật?
+  [117/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Mức giá đất cụ thể do cơ quan nào quyết định?
+  [118/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [119/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Ai có thẩm quyền cấp Giấy chứng nhận quyền sử dụng
+  [120/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [121/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [122/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | moi_truong | Trách nhiệm pháp lý khi gây sự cố môi trường?
+  [123/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [124/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [125/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [126/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Quy định về quan hệ huyết thống trong kết hôn?
+  [127/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Quy trình giải thể doanh nghiệp tự nguyện?
+  [128/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [129/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [130/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Hồ sơ chuyển nhượng quyền sử dụng đất ở gồm những 
+  [131/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai khi không có sổ đỏ n
+  [132/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [133/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [134/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Quy định về hợp đồng lao động mùa vụ?
+  [135/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [136/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [137/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [138/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [139/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thuế thu nhập doanh nghiệp năm 2024 là bao nhiêu p
+  [140/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [141/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Quy định về lao động chưa thành niên?
+  [142/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Quy định quyết toán thuế TNCN cuối năm?
+  [143/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Quyền của cổ đông thiểu số trong công ty cổ phần?
+  [144/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Quy định về hội đồng quản trị công ty cổ phần?
+  [145/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [146/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [147/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [148/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [149/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Chế độ tài sản vợ chồng theo luật định áp dụng khi
+  [150/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Điều kiện kinh doanh ngành nghề có điều kiện?
+  [151/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [152/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [153/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [154/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [155/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [156/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Cách tính tiền sử dụng đất khi được giao đất ở?
+  [157/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [158/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Trình tự cưỡng chế thu hồi đất theo quy định mới n
+  [159/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục thành lập công ty trách nhiệm hữu hạn một 
+  [160/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | moi_truong | Quy định về ký quỹ phục hồi môi trường?
+  [161/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [162/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [163/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [164/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [165/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Hợp đồng hợp tác kinh doanh BCC là gì?
+  [166/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Quy định về con ngoài giá thú và quyền nhận cha mẹ
+  [167/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [168/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [169/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Tuổi kết hôn theo Luật Hôn nhân và Gia đình?
+  [170/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Hôn nhân có yếu tố nước ngoài giải quyết thế nào?
+  [171/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [172/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Quy hoạch sử dụng đất cấp huyện được lập cho bao n
+  [173/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Trường hợp nào người sử dụng lao động được sa thải
+  [174/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Chế độ nghỉ dưỡng sức sau ốm đau dài ngày?
+  [175/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [176/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Mức phạt sử dụng đất sai mục đích cho phép?
+  [177/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [178/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [179/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [180/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | thue | Thuế nhà thầu nước ngoài áp dụng cho trường hợp nà
+  [181/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Xử lý vi phạm bản quyền phần mềm theo pháp luật?
+  [182/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [183/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [184/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Trách nhiệm bồi thường khi đơn phương chấm dứt hợp
+  [185/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Hợp đồng vay tài sản có lãi suất tối đa bao nhiêu?
+  [186/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [187/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Trách nhiệm dân sự do nguồn nguy hiểm cao độ gây r
+  [188/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Quy định về mang thai hộ vì mục đích nhân đạo?
+  [189/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [190/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [191/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [192/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [193/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội sản xuất buôn bán hàng giả theo BLHS?
+  [194/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [195/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Nghĩa vụ tài chính khi được Nhà nước giao đất khôn
+  [196/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Mức đóng bảo hiểm xã hội bắt buộc cho người lao độ
+  [197/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Thủ tục đăng ký kết hôn tại UBND xã?
+  [198/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [199/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [200/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [201/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [202/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [203/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 32.9s | thue | Mức giảm trừ gia cảnh cho người nộp thuế TNCN năm 
+  [204/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [205/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Quyền của bị can trong giai đoạn điều tra?
+  [206/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Điều kiện thế chấp quyền sử dụng đất tại ngân hàng
+  [207/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Chuyển nhượng quyền sở hữu công nghiệp cần điều ki
+  [208/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội vi phạm quy định về an toàn giao thông đường b
+  [209/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [210/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [211/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [212/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [213/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [214/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [215/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [216/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [217/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [218/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Điều kiện để Việt kiều được mua đất tại Việt Nam?
+  [219/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Mức bồi thường thiệt hại khi bị xâm phạm quyền tác
+  [220/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [221/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Bồi thường thiệt hại ngoài hợp đồng theo Bộ luật D
+  [222/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [223/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Thời hiệu thừa kế theo quy định Bộ luật Dân sự 201
+  [224/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [225/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Quy định về cấp sổ đỏ cho đất tái định cư?
+  [226/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [227/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Mức phạt vi phạm quy định về phòng cháy chữa cháy?
+  [228/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [229/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [230/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [231/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Quy định về giống cây trồng được bảo hộ?
+  [232/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [233/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Quyền đòi lại tài sản cho mượn theo Bộ luật Dân sự
+  [234/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [235/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 94.1s | hanh_chinh | Quyền khởi kiện vụ án hành chính tại Tòa án?
+  [236/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [237/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 48.5s | moi_truong | Đánh giá tác động môi trường (ĐTM) áp dụng cho dự 
+  [238/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [239/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [240/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Điều kiện cấp sổ đỏ cho đất có nguồn gốc khai hoan
+  [241/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Hợp đồng thuê nhà có bắt buộc công chứng không?
+  [242/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Thủ tục nhận cha cho con ngoài giá thú?
+  [243/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [244/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Quyền của cha mẹ thăm nom con sau ly hôn?
+  [245/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Thủ tục giải quyết tranh chấp lao động cá nhân?
+  [246/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [247/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Quyền và nghĩa vụ của Ban kiểm soát công ty?
+  [248/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục chia tách doanh nghiệp theo quy định mới?
+  [249/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 57.0s | hanh_chinh | Quyền của người bị xử phạt vi phạm hành chính?
+  [250/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.1s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [251/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [252/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [253/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [254/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Thủ tục xin thay đổi người nuôi con sau ly hôn?
+  [255/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [256/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [257/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Điều kiện để miễn trách nhiệm hình sự?
+  [258/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [259/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Mức phạt chở quá tải trọng cho phép?
+  [260/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [261/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Trách nhiệm bồi thường của Nhà nước khi thu hồi đấ
+  [262/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [263/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Đất bị quy hoạch treo thì được quyền gì?
+  [264/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [265/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [266/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [267/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [268/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Điều kiện để hộ gia đình được nhận chuyển nhượng đ
+  [269/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 118.8s | dan_su | Quyền yêu cầu cấp dưỡng sau ly hôn?
+  [270/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [271/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Những tình tiết giảm nhẹ trách nhiệm hình sự theo 
+  [272/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [273/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Tuổi nghỉ hưu của lao động nam và nữ theo quy định
+  [274/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | moi_truong | Quy định về bảo vệ rừng tự nhiên?
+  [275/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [276/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Giải quyết tranh chấp sở hữu trí tuệ tại Tòa án?
+  [277/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [278/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [279/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hanh_chinh | Mức phạt không mang bằng lái xe khi tham gia giao 
+  [280/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Trách nhiệm của cha mẹ đối với thiệt hại do con ch
+  [281/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [282/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [283/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [284/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [285/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [286/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Thừa kế theo pháp luật khi không có di chúc chia c
+  [287/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [288/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [289/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 105.3s | moi_truong | Mức phạt xả thải không qua xử lý ra môi trường?
+  [290/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động nghỉ việc không báo trước bao nhiêu
+  [291/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [292/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [293/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [294/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Cơ sở pháp lý để khiếu nại quyết định thu hồi đất?
+  [295/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [296/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [297/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 82.8s | thue | Mức thuế suất thuế VAT hiện hành áp dụng cho hàng 
+  [298/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | dat_dai | Thủ tục xin giấy phép xây dựng trên đất ở nông thô
+  [299/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 98.0s | hinh_su | Tội hủy hoại tài sản có khung hình phạt thế nào?
+  [300/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 151.0s | lao_dong | Chế độ ốm đau cho người lao động đóng BHXH?
+  [301/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [302/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [303/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 138.9s | hinh_su | Quy định về bảo lĩnh trong tố tụng hình sự?
+  [304/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [305/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 59.8s | dat_dai | Thuế thu nhập cá nhân khi chuyển nhượng đất đai là
+  [306/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [307/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 89.5s | hanh_chinh | Mức phạt xả rác nơi công cộng theo Nghị định?
+  [308/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [309/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [310/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 81.6s | hanh_chinh | Mức phạt sử dụng bằng lái xe giả?
+  [311/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 54.2s | dat_dai | Thủ tục xin cấp Giấy chứng nhận quyền sử dụng đất 
+  [312/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [313/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [314/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [315/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [316/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 49.9s | dan_su | Quyền nuôi con dưới 36 tháng tuổi sau ly hôn?
+  [317/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 61.0s | hanh_chinh | Thủ tục khiếu nại quyết định hành chính?
+  [318/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [319/500] ✅ | Score: 0.65 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Thủ tục nhận con nuôi theo pháp luật Việt Nam?
+  [320/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [321/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [322/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 87.1s | hon_nhan | Trường hợp nào bị cấm kết hôn theo pháp luật?
+  [323/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.3s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [324/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 55.4s | lao_dong | Chế độ thai sản cho lao động nữ sinh đôi?
+  [325/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 134.9s | dat_dai | Mức phạt xây nhà trái phép trên đất nông nghiệp th
+  [326/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.1s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [327/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [328/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [329/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [330/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [331/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [332/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.1s | lao_dong | Hợp đồng lao động có bắt buộc phải bằng văn bản?
+  [333/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 124.5s | shtt | Li-xăng nhãn hiệu là gì và quy định ra sao?
+  [334/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [335/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 142.7s | dan_su | Thủ tục ly hôn đơn phương khi một bên không đồng ý
+  [336/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [337/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 44.1s | hinh_su | Tội cướp tài sản khung hình phạt cao nhất?
+  [338/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [339/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Quyền và nghĩa vụ của cha mẹ đối với con chưa thàn
+  [340/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 69.2s | moi_truong | Mức phạt đốt rơm rạ gây ô nhiễm không khí?
+  [341/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Quy trình đấu giá quyền sử dụng đất theo quy định 
+  [342/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [343/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [344/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [345/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [346/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Quyền đình công của người lao động theo pháp luật?
+  [347/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Trợ cấp thôi việc được tính như thế nào?
+  [348/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 79.0s | dat_dai | Giá đền bù khi Nhà nước thu hồi đất nông nghiệp tạ
+  [349/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 53.6s | hon_nhan | Chồng có quyền ly hôn khi vợ đang mang thai không?
+  [350/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [351/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [352/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 30.1s | lao_dong | Điều kiện hưởng trợ cấp thất nghiệp năm 2024?
+  [353/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [354/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [355/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 63.1s | dat_dai | Mức phạt lấn chiếm đất công theo Nghị định mới nhấ
+  [356/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [357/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | shtt | Bảo hộ chỉ dẫn địa lý theo Luật Sở hữu trí tuệ?
+  [358/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [359/500] ✅ | Score: 0.90 | Acc: 100.0% | ⏱️ 72.7s | dat_dai | Thủ tục thu hồi đất để phát triển kinh tế xã hội?
+  [360/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [361/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [362/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 58.3s | hinh_su | Tội lạm dụng tín nhiệm chiếm đoạt tài sản?
+  [363/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [364/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [365/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Thời hiệu khởi kiện tranh chấp lao động là bao lâu
+  [366/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 76.4s | hon_nhan | Tòa án có thẩm quyền giải quyết ly hôn là Tòa nào?
+  [367/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 71.0s | doanh_nghiep | Thủ tục phá sản doanh nghiệp theo Luật Phá sản?
+  [368/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [369/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hon_nhan | Nghĩa vụ cấp dưỡng giữa cha mẹ và con cái?
+  [370/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [371/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [372/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [373/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [374/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.1s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [375/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.1s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [376/500] ✅ | Score: 0.65 | Acc: 100.0% | ⏱️ 5.9s | dat_dai | Đất rừng phòng hộ có được chuyển nhượng không?
+  [377/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 45.8s | moi_truong | Bảo vệ đa dạng sinh học theo Luật Đa dạng sinh học
+  [378/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 45.4s | dan_su | Quy định về hợp đồng bảo hiểm nhân thọ?
+  [379/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | hanh_chinh | Mức phạt quảng cáo sai sự thật?
+  [380/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [381/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 40.4s | doanh_nghiep | Điều kiện để thành lập chi nhánh công ty?
+  [382/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 34.0s | hon_nhan | Quy định về hôn nhân đồng giới tại Việt Nam?
+  [383/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | hanh_chinh | Quy trình cưỡng chế thi hành quyết định xử phạt?
+  [384/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [385/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [386/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [387/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [388/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [389/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 35.2s | hinh_su | Thời hiệu truy cứu trách nhiệm hình sự tội ít nghi
+  [390/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [391/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 48.6s | dat_dai | Quyền sử dụng đất có phải là tài sản chung vợ chồn
+  [392/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [393/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [394/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [395/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [396/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.1s | dan_su | Thời hiệu khởi kiện yêu cầu chia thừa kế là bao lâ
+  [397/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [398/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [399/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 32.7s | doanh_nghiep | Quy định về hợp đồng góp vốn kinh doanh?
+  [400/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [401/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [402/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [403/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 40.8s | moi_truong | Mức phạt gây ô nhiễm nguồn nước?
+  [404/500] ✅ | Score: 0.85 | Acc: 100.0% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [405/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Mức cấp dưỡng nuôi con sau ly hôn theo quy định?
+  [406/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 36.2s | dat_dai | Quyền thừa kế đất đai của con nuôi theo pháp luật?
+  [407/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 17.1s | thue | Mức thuế suất thuế TNCN cho thu nhập từ đầu tư vốn
+  [408/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dan_su | Điều kiện để di chúc được coi là hợp pháp?
+  [409/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 42.5s | doanh_nghiep | Thủ tục thay đổi đăng ký kinh doanh khi đổi trụ sở
+  [410/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [411/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 37.8s | thue | Điều kiện để hộ kinh doanh cá thể được miễn thuế?
+  [412/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [413/500] ✅ | Score: 1.00 | Acc: 100.0% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [414/500] ❌ | Score: 0.55 | Acc: 99.8% | ⏱️ 28.8s | thue | Phạt trốn thuế theo pháp luật hiện hành?
+  [415/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.1s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [416/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [417/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 29.5s | moi_truong | Quy định về xử lý chất thải nguy hại?
+  [418/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [419/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội cho vay nặng lãi trong giao dịch dân sự bị xử 
+  [420/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [421/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 36.2s | lao_dong | Điều kiện để người lao động được đơn phương chấm d
+  [422/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dat_dai | Thủ tục xác nhận diện tích đất thực tế khác với sổ
+  [423/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [424/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 32.1s | dat_dai | Đất có sổ đỏ đồng sở hữu thì bán như thế nào?
+  [425/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [426/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 21.2s | dan_su | Quyền của người giám hộ đối với người được giám hộ
+  [427/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [428/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [429/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [430/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 55.1s | doanh_nghiep | Doanh nghiệp xã hội khác gì doanh nghiệp thông thư
+  [431/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [432/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 31.5s | thue | Quy định về ưu đãi thuế cho doanh nghiệp công nghệ
+  [433/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 43.7s | hanh_chinh | Mức phạt vượt đèn đỏ đối với xe máy năm 2024?
+  [434/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 34.8s | dat_dai | Thủ tục gia hạn sử dụng đất khi hết thời hạn?
+  [435/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [436/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 26.2s | hon_nhan | Quy định về tài sản chung và tài sản riêng của vợ 
+  [437/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [438/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 20.0s | lao_dong | Quy định về hợp đồng thử việc có cần đóng BHXH khô
+  [439/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [440/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | doanh_nghiep | Trách nhiệm pháp lý của người đại diện theo pháp l
+  [441/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [442/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 23.8s | moi_truong | Quy định về phân loại rác tại nguồn?
+  [443/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [444/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 22.4s | thue | Thời hạn nộp tờ khai thuế GTGT hàng tháng?
+  [445/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dat_dai | Mức bồi thường tài sản gắn liền với đất khi bị thu
+  [446/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hon_nhan | Chế độ tài sản vợ chồng theo thỏa thuận trước khi 
+  [447/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [448/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [449/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 31.0s | dat_dai | Thủ tục đăng ký thừa kế quyền sử dụng đất?
+  [450/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [451/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 18.2s | thue | Thủ tục đăng ký mã số thuế cá nhân?
+  [452/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 15.1s | hinh_su | Khung hình phạt tội trộm cắp tài sản trên 500 triệ
+  [453/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [454/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 27.4s | thue | Thủ tục hoàn thuế giá trị gia tăng cho doanh nghiệ
+  [455/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [456/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [457/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Chia tài sản chung vợ chồng khi ly hôn theo nguyên
+  [458/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [459/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [460/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 26.4s | lao_dong | Trách nhiệm của chủ sử dụng lao động khi không ký 
+  [461/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [462/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [463/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 21.7s | thue | Điều kiện để được miễn thuế thu nhập doanh nghiệp?
+  [464/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [465/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 24.2s | doanh_nghiep | Quy định về sáp nhập doanh nghiệp theo Luật Doanh 
+  [466/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 34.5s | dat_dai | Thời hạn giải quyết thủ tục tách thửa đất theo Luậ
+  [467/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 31.8s | moi_truong | Trách nhiệm thu gom xử lý chất thải rắn sinh hoạt?
+  [468/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [469/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [470/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [471/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [472/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 19.4s | shtt | Quy định về bảo hộ kiểu dáng công nghiệp?
+  [473/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [474/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dat_dai | Trường hợp nào Nhà nước thu hồi đất không bồi thườ
+  [475/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [476/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [477/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Quy định về tạm giữ, tạm giam trong tố tụng hình s
+  [478/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 30.1s | hinh_su | Tội lừa đảo chiếm đoạt tài sản bị xử lý thế nào?
+  [479/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 26.5s | dan_su | Quy định về quyền sở hữu tài sản trí tuệ?
+  [480/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 18.2s | hinh_su | Điều kiện để được hưởng án treo theo Bộ luật Hình 
+  [481/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 26.2s | dat_dai | Quyền sử dụng đất góp vốn kinh doanh có được không
+  [482/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 17.8s | dat_dai | Mức lệ phí trước bạ khi sang tên sổ đỏ hiện nay?
+  [483/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.1s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [484/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 29.5s | dat_dai | Quyền và nghĩa vụ của người sử dụng đất thuê trả t
+  [485/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [486/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | doanh_nghiep | Thủ tục khởi kiện tranh chấp hợp đồng thương mại q
+  [487/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [488/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | dat_dai | Giải quyết tranh chấp đất đai giữa hộ gia đình tại
+  [489/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Mức lương tối thiểu vùng 1 năm 2024 là bao nhiêu?
+  [490/500] ✅ | Score: 0.85 | Acc: 99.8% | ⏱️ 0.0s | dan_su | Ly hôn khi có tài sản chung là nhà đất đứng tên mộ
+  [491/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 16.6s | shtt | Quyền liên quan đến quyền tác giả bao gồm những gì
+  [492/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 27.6s | dat_dai | Đất nằm trong hành lang an toàn đường bộ có được x
+  [493/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 13.6s | lao_dong | Mức lương làm thêm giờ vào ngày lễ là bao nhiêu?
+  [494/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 18.5s | hinh_su | Tội cố ý gây thương tích trên 31% bị phạt bao nhiê
+  [495/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | lao_dong | Người lao động bị sa thải trái luật có được bồi th
+  [496/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 18.2s | doanh_nghiep | Trách nhiệm của thành viên hợp danh trong công ty 
+  [497/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 35.4s | hinh_su | Người dưới 16 tuổi phạm tội bị xử lý như thế nào?
+  [498/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 0.0s | hinh_su | Tội trốn thuế bị truy cứu hình sự khi nào?
+  [499/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 29.0s | dat_dai | Thủ tục xin phép chuyển mục đích sử dụng từ đất nô
+  [500/500] ✅ | Score: 1.00 | Acc: 99.8% | ⏱️ 21.4s | lao_dong | Quyền của người lao động khi bị tai nạn lao động?
+
+================================================================================
+🏛️ BÁO CÁO BENCHMARK DATALUATVN — 500 CÂU HỎI PHÁP LUẬT
+================================================================================
+  📊 Tổng câu hỏi:    500
+  ✅ Đạt (PASS):      499 (99.80%)
+  ❌ Không đạt (FAIL): 1
+  ⏱️ Latency TB:       8.34s/câu
+  🕐 Wall time:        1394s (23.2 phút)
+  ⚡ Concurrency:      3 workers
+
+📋 PHÂN TÍCH THEO LĨNH VỰC:
+  Lĩnh vực               Pass   Fail   Tổng   Accuracy  Avg Score
+  ------------------------------------------------------------
+  dan_su                   77      0     77     100.0%     0.898
+  dat_dai                 102      0    102     100.0%     0.990
+  doanh_nghiep             65      0     65     100.0%     0.894
+  hanh_chinh               20      0     20     100.0%     0.995
+  hinh_su                  86      0     86     100.0%     0.990
+  hon_nhan                 20      0     20     100.0%     1.000
+  lao_dong                 80      0     80     100.0%     0.995
+  moi_truong               15      0     15     100.0%     1.000
+  shtt                     15      0     15     100.0%     0.990
+  thue                     19      1     20      95.0%     0.972
+
+💾 Kết quả chi tiết đã lưu tại: benchmark_results.json
+
+🎉 XUẤT SẮC! — Accuracy: 99.80%

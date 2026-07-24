@@ -99,20 +99,106 @@ def detect_persona_switch(prompt: str) -> Tuple[Optional[str], str]:
 
     return None, prompt
 
-def get_persona_system_prompt(role_key: Optional[str]) -> str:
-    """Trả về System Prompt chuyên biệt cho Vai trò Chức danh Tư pháp."""
+def get_persona_system_prompt(role_key: Optional[str], include_skills: bool = True) -> str:
+    """
+    Trả về System Prompt chuyên biệt cho Vai trò Chức danh Tư pháp.
+    
+    Nâng cấp: Tự động truy xuất kỹ năng nghiệp vụ từ DB legal_theory_mind.db
+    để bổ sung chi tiết nghiệp vụ thực tế cho mỗi vai trò.
+    """
     if not role_key or role_key not in JUDICIAL_ROLES:
         return ""
 
     role_info = JUDICIAL_ROLES[role_key]
-    return (
+    
+    # Base prompt
+    prompt = (
         f"\n\n🎭 **CHẾ ĐỘ VAI TRÒ CHỨC DANH TƯ PHÁP CHUYÊN SÂU**: {role_info['icon']} {role_info['title']}\n"
         f"{role_info['prompt_style']}\n"
-        f"Hãy trình bày câu trả lời thể hiện rõ nét tư duy nghiệp vụ và phong thái chuẩn mực của {role_info['title']}."
     )
+    
+    # Fetch practice skills from DB (if available)
+    if include_skills:
+        try:
+            skills_context = _fetch_role_skills(role_info["title"])
+            if skills_context:
+                prompt += f"\n{skills_context}\n"
+        except Exception as e:
+            import logging
+            logging.getLogger("PersonaSwitcher").warning(f"Could not load skills: {e}")
+    
+    prompt += f"\nHãy trình bày câu trả lời thể hiện rõ nét tư duy nghiệp vụ và phong thái chuẩn mực của {role_info['title']}."
+    
+    return prompt
+
+
+def _fetch_role_skills(role_name: str, max_skills: int = 4) -> str:
+    """
+    Truy xuất kỹ năng nghiệp vụ từ bảng legal_practice_skills cho một vai trò cụ thể.
+    Trả về context string ngắn gọn để inject vào system prompt.
+    """
+    import os
+    import sqlite3
+    
+    db_path = "/Users/tonguyen/Library/CloudStorage/OneDrive-Personal/DrTo/luatvietnam/data/legal_theory_mind.db"
+    if not os.path.exists(db_path):
+        return ""
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        
+        # Map back to simple role name for DB
+        db_roles = {
+            "Luật sư Bào chữa & Tư vấn": "Luật sư",
+            "Kiểm sát viên (Thực hành Quyền Công tố)": "Kiểm sát viên",
+            "Thẩm phán (Chủ tọa Phiên tòa)": "Thẩm phán",
+            "Chấp hành viên Thi hành án": "Chấp hành viên",
+            "Điều tra viên Hình sự": "Điều tra viên"
+        }
+        db_role_name = db_roles.get(role_name, role_name)
+        
+        c.execute("""
+        SELECT skill_title, procedural_stage, practical_guidelines, legal_basis
+        FROM legal_practice_skills
+        WHERE role_name = ?
+        ORDER BY id
+        LIMIT ?
+        """, (db_role_name, max_skills))
+        
+        rows = c.fetchall()
+        conn.close()
+        
+        if not rows:
+            return ""
+        
+        parts = [f"\n### 📋 Kỹ năng Nghiệp vụ {role_name}:\n"]
+        for i, (title, stage, guidelines, basis) in enumerate(rows, 1):
+            summary = guidelines[:500] + "..." if len(guidelines) > 500 else guidelines
+            parts.append(f"**{i}. {title}** (Giai đoạn: {stage})")
+            parts.append(f"   Căn cứ: {basis}")
+            parts.append(f"   {summary}\n")
+        
+        return "\n".join(parts)
+    
+    except Exception:
+        return ""
+
+
+def get_all_roles_summary() -> str:
+    """Trả về bảng tóm tắt 5 vai trò tư pháp (cho /role help)."""
+    lines = ["🎭 **5 Vai trò Chức danh Tư pháp khả dụng:**\n"]
+    for key, info in JUDICIAL_ROLES.items():
+        lines.append(f"  {info['icon']} `/role {key}` — {info['title']}")
+    lines.append(f"\n  🔄 `/role reset` — Quay lại chế độ bình thường")
+    return "\n".join(lines)
+
 
 if __name__ == "__main__":
     test_p1 = "/role lawyer Tư vấn cho anh thủ tục kiện bồi thường hợp đồng"
     r1, p1 = detect_persona_switch(test_p1)
     print(f"Role: {r1} | Prompt: {p1}")
     print(get_persona_system_prompt(r1))
+    print("\n" + "="*60 + "\n")
+    print(get_all_roles_summary())
+

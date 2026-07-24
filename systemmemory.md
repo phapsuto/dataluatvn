@@ -207,3 +207,39 @@
 - Bài báo nghiên cứu khoa học pháp lý chuyên sâu: Cần cào từ Tạp chí Tòa án Nhân dân, Tạp chí Luật học
 - Công văn Giải đáp Nghiệp vụ TAND & Báo cáo Rút kinh nghiệm VKSND: 0%
 
+---
+
+### 🟢 GIAI ĐOẠN MỚI: XÂY DỰNG NHẬN THỨC PHÁP LÝ & KỸ NĂNG NGHỀ NGHIỆP TỪ LLM DISTILLATION
+- **Thời gian**: 2026-07-23 (Chiều tối)
+- **Mục tiêu**: Bơm trực tiếp tri thức 14 Môn Luật Cốt lõi, 27 Học thuyết Pháp lý và 38 Kỹ năng Nghiệp vụ Tư pháp vào Hệ thống thông qua việc chưng cất tri thức (Knowledge Distillation) từ LLM mạnh (Gemma-4-31B-it). Không cào báo lá cải, không giả lập, làm thật bằng LLM inference.
+
+#### 1. Đã chưng cất thành công toàn bộ Giáo trình & Học thuyết (BƯỚC 1 & 2):
+- Chạy `scripts/build_curriculum_knowledge.py` thông qua LLM sinh xuất 100% nội dung phân tích chuyên sâu cho:
+  - 📚 **105 Chủ đề** trải dài qua **14 Môn Luật Cốt lõi** (Hình sự, Dân sự, Hành chính, Đất đai, Tố tụng, Sở hữu Trí tuệ...)
+  - ⚖️ **27 Học thuyết và Nguyên tắc pháp lý** (Suy đoán vô tội, Không ai bị kết án hai lần, Nhân đạo trong Luật Hình sự...)
+- Toàn bộ lưu trữ vào bảng `curriculum_topics` và `legal_doctrines` trong Database `legal_theory_mind.db`.
+
+#### 2. Xây dựng Kỹ năng Nghiệp vụ 5 Vai trò Tư pháp (BƯỚC 6):
+- Chạy `scripts/build_practice_skills.py` sinh xuất **38 Kỹ năng Hành nghề Thực chiến** cho 5 vai trò:
+  - 🏛️ **Thẩm phán**: 8 kỹ năng (điều hành phiên tòa, ra phán quyết...)
+  - 👨‍⚖️ **Luật sư**: 8 kỹ năng (thu thập chứng cứ, tranh tụng, bào chữa...)
+  - ⚖️ **Kiểm sát viên**: 8 kỹ năng (kiểm sát khởi tố, luận tội...)
+  - 🕵️‍♂️ **Điều tra viên**: 8 kỹ năng (khám nghiệm hiện trường, hỏi cung...)
+  - 👮‍♂️ **Chấp hành viên**: 6 kỹ năng (xác minh điều kiện, kê biên, cưỡng chế...)
+- Toàn bộ lưu trữ vào bảng `legal_practice_skills`. Đã sửa lỗi `persona_switcher.py` để lấy chính xác các kỹ năng này nhúng vào System Prompt của Agent tùy theo Role.
+
+#### 3. Cập nhật Phương pháp luận & Khảo thí (BƯỚC 3, 5 & 7):
+- Tích hợp **IRAC Reasoning Engine** (Bước 3).
+- Cải tiến **Precedent Matcher** để tự động gắn Án lệ thực tế vào Context (Bước 5).
+- Tích hợp **Adversarial Reasoning** (Tư duy đối kháng - Bước 8) đánh giá vụ việc từ nhiều góc nhìn cho các query phức tạp.
+- 🧪 **Kiểm định Unit Test**: Chạy `tests/test_legal_cognition.py` — **PASS 100%** (Cả logic IRAC, Precedent, và nạp Persona skills thành công).
+
+---
+
+## 🗺️ KẾ HOẠCH TIẾP THEO (Giai đoạn 5)
+
+- [ ] **Bước 10**: Thiết kế Pipeline RAG End-to-End kết hợp Database nghiệp vụ & VectorDB để Chatbot có thể tra cứu song song Luật + Kỹ năng nghề nghiệp.
+- [ ] **Bước 11**: Chuẩn bị giao diện UI Chatbot cho 5 vai trò (có Menu hoặc Cú pháp chuyển vai).
+- [ ] **Bước 12**: Kiểm định Trình độ Pháp lý trên môi trường thật với các câu hỏi Bar Exam và Case Study thực tiễn.
+
+
