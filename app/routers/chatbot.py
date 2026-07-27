@@ -17,47 +17,6 @@ from app.utils.flare_retrieval import flare_generate_stream
 router = APIRouter(prefix="/assistant", tags=["🤖 Trợ lý ảo - AI Chatbot & RAG"])
 
 
-def strip_thinking_tags(text: str) -> str:
-    """Loại bỏ <think>...</think> blocks từ output của Gemma/reasoning models."""
-    return re.sub(r'<think>.*?</think>\s*', '', text, flags=re.DOTALL).strip()
-
-
-def clean_context_artifacts(text: str) -> str:
-    """Loại bỏ các từ khóa kỹ thuật thô cứng, câu chúc thừa và dọn dẹp khoảng cách dòng."""
-    if not text:
-        return ""
-    
-    # 1. Loại bỏ hoàn toàn khối "Lời chúc từ Lan Anh" nếu còn xuất hiện
-    text = re.sub(r'(?:💖|\*\*)*\s*Lời chúc từ Lan Anh[\s\S]*?(?=\n\s*(?:⚠️|\*\*Lưu ý|💬|👉)|$)', '', text, flags=re.IGNORECASE)
-
-    # 2. Các thẻ tiêu đề dạng [NGỮ CẢNH ...] hoặc [TÀI LIỆU ...]
-    text = re.sub(r'\[\s*(?:NGỮ CẢNH PHÁP LÝ|NGỮ CẢNH PHÁP LÝ BỔ SUNG|TÀI LIỆU PHÁP LUẬT BỔ SUNG|TÀI LIỆU PHÁP LUẬT)\s*\]', '', text, flags=re.IGNORECASE)
-    
-    # 3. Câu dẫn thô độc lập đầu dòng dạng "Dựa trên ngữ cảnh...", "Theo tài liệu được cung cấp..."
-    text = re.sub(
-        r'^\s*(?:dựa trên|dựa vào|theo|căn cứ vào)\s+(?:ngữ cảnh pháp lý|ngữ cảnh|tài liệu pháp luật|tài liệu|context)(?:\s+(?:được cung cấp|dưới đây|trên|này|chi tiết|bổ sung))*,?\s*',
-        '', text, flags=re.IGNORECASE | re.MULTILINE
-    )
-    
-    # 4. Loại bỏ tàn dư của thẻ placeholder [SEARCH: ...] nếu còn sót lại
-    text = re.sub(r'\[SEARCH:\s*.*?\]', '', text, flags=re.IGNORECASE)
-    
-    # 5. Loại bỏ các dòng tiêu đề kịch bản thô bị in nhầm từ System Prompt
-    text = re.sub(r'(?:🌸|📌|⚖️|🔍|💡|🛠️|💖|⚠️)\s*\[?\s*(?:Lời chào|Vấn đề pháp lý|Cơ sở pháp lý|Phân tích chi tiết|Kết luận|Khuyến nghị|Lời chúc|Lưu ý|Lưu ý nhỏ).*?\]?\n?', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'^(?:Vì người dùng|Cần đảm bảo|Viết bằng giọng|Cấu trúc phản hồi|Trả lời:).*?\n', '', text, flags=re.IGNORECASE | re.MULTILINE)
-    
-    # 6. Loại bỏ suy nghĩ nội bộ (internal thinking preamble) trước icon chào mừng 🌸 của Lan Anh
-    if "🌸" in text and not text.strip().startswith("🌸"):
-        text = "🌸" + text.split("🌸", 1)[1]
-    
-    # 7. Dọn dẹp nhiều dòng trống liên tiếp (chỉ giữ tối đa 1 dòng trống \n\n)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-
-    # Sửa hoa đầu câu nếu ký tự đầu bị chuyển thành chữ thường hoặc bị cắt mất từ đầu tiên
-    text = text.strip()
-    if text and text[0].islower():
-        text = text[0].upper() + text[1:]
-    return text
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -67,6 +26,7 @@ def clean_context_artifacts(text: str) -> str:
 class ChatRequest(BaseModel):
     prompt: str = Field(..., description="Câu hỏi pháp luật của người dùng")
     session_id: Optional[str] = Field(None, description="Mã phiên hội thoại để lưu lịch sử")
+    access_tier: Optional[str] = Field("CITIZEN", description="Chế độ phổ cập: CITIZEN | ENTERPRISE | JUDICIAL")
 
 class Citation(BaseModel):
     id: int
@@ -81,6 +41,10 @@ class ChatResponse(BaseModel):
     domain: Optional[str] = None
     flare_activated: Optional[bool] = None
     search_count: Optional[int] = None
+    access_tier: Optional[str] = Field(None, description="Chế độ phổ cập đã áp dụng")
+    dvs_status: Optional[str] = Field(None, description="Trạng thái kiểm chứng DVS Shield")
+    npl_payload: Optional[Dict[str, Any]] = Field(None, description="Sổ cái chứng minh pháp lý Normative Proof Ledger")
+    blind_spots: Optional[List[Dict[str, Any]]] = Field(None, description="Các điểm mù dữ kiện đã nhận diện")
 
 class SwitchProviderRequest(BaseModel):
     provider: str
@@ -213,324 +177,22 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     prompt = req.prompt.strip()
     session_id = req.session_id or "default_user"
     
-    # ── TẦNG SEMANTIC CACHE (RAG Gen 3) ──
+    # ── RAG Gen 3 Facade (Deep Modules) ──
+    from app.utils.assistant_facade import process_chat_query
+    
     try:
-        from app.utils.semantic_cache_manager import get_cache_manager
-        cache_mgr = get_cache_manager()
-        is_hit, cached_response, cached_citations = cache_mgr.lookup(prompt)
-        if is_hit:
-            print(f"🎯 [Semantic Cache] HIT for query: '{prompt}'")
-            
-            # Save history to session chat db
-            _save_chat_history(session_id, prompt, cached_response)
-            
-            # Convert citation_map to list of citations
-            citations_list = list(cached_citations.values()) if isinstance(cached_citations, dict) else (cached_citations or [])
-            return {
-                "response": cached_response,
-                "citations": citations_list,
-                "domain": "cached",
-                "flare_activated": False,
-                "search_count": 0
-            }
+        result = await process_chat_query(
+            prompt=prompt,
+            session_id=session_id,
+            persona_key="default",
+            save_chat_history_callback=_save_chat_history,
+            access_tier=(req.access_tier or "CITIZEN").upper()
+        )
+        return result
     except Exception as e:
-        print(f"⚠️ Semantic cache lookup warning: {e}")
-
-    # ── STEP 1: SEMANTIC ROUTING (Tầng 1) ──
-    route_res = route_query(prompt)
-    domain = route_res["domain"]
-    
-    # A. Nếu là chitchat chào hỏi thông thường
-    if not route_res["is_legal"] and domain == "chitchat":
-        print(f"💬 [Router] Chitchat detected. Replying directly via LLM.")
-        
-        # ── STEP 2: LOAD LONG-TERM MEMORY (Tầng 2) ──
-        memory_context = LegalUserMemory.get_relevant_memories(session_id, prompt)
-        
-        system_prompt = (
-            "Bạn là \"Lan Anh\" — Trợ lý Pháp lý Thông minh, Ấm áp, Thấu hiểu và Chu đáo.\n"
-            "Hãy trả lời người dùng một cách thân thiện, ngọt ngào, lịch sự, ân cần và "
-            "nhắc nhở rằng Lan Anh luôn sẵn sàng hỗ trợ các câu hỏi liên quan đến pháp luật Việt Nam nha."
-        )
-        if memory_context:
-            system_prompt += f"\n\nNgữ cảnh thông tin đã nhớ về người dùng:\n{memory_context}\n(Nếu người dùng hỏi thông tin cá nhân của họ mà khớp với ngữ cảnh trên, hãy trả lời chính xác dựa theo đó)."
-            
-        try:
-            tokens = []
-            async for token in LLMGateway.call_stream([{"role": "user", "content": prompt}], system_prompt):
-                tokens.append(token)
-            ai_reply = clean_context_artifacts(strip_thinking_tags("".join(tokens)))
-            
-            # ── STEP 6: SAVE INTERACTION TO MEMORY (Tầng 2) ──
-            try:
-                LegalUserMemory.save_interaction(session_id, prompt, ai_reply, [])
-            except Exception as e:
-                print(f"⚠️ Warning: Failed to save chitchat user memory interaction: {e}")
-                
-            # ── STEP 7: SAVE TO SESSION CHAT HISTORY DB ──
-            _save_chat_history(session_id, prompt, ai_reply)
-                    
-            return {
-                "response": ai_reply,
-                "citations": [],
-                "domain": "chitchat",
-                "flare_activated": False,
-                "search_count": 0
-            }
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Lỗi gọi LLM Gateway: {str(e)}")
-            
-    # B. Nếu là câu hỏi ngoài phạm vi pháp luật VN (out of scope)
-    if domain == "out_of_scope":
-        print(f"🛑 [Router] Out of scope query detected. Refusing politely.")
-        reply = (
-            "Dạ Lan Anh là Trợ lý Pháp lý Thông minh chuyên giải đáp các vấn đề pháp luật Việt Nam ạ. "
-            "Câu hỏi này nằm ngoài phạm vi chuyên môn pháp lý của Lan Anh. Anh/Chị vui lòng đặt câu hỏi liên quan đến luật pháp Việt Nam để Lan Anh hỗ trợ tốt nhất nha!"
-        )
-        return {
-            "response": reply,
-            "citations": [],
-            "domain": "out_of_scope",
-            "flare_activated": False,
-            "search_count": 0
-        }
-    
-    # ── STEP 1.5: CLARIFICATION DIALOGUE ──
-    # Kiểm tra câu hỏi có mơ hồ không → hỏi gợi mở thay vì trả kết quả kém
-    try:
-        from app.utils.clarification_engine import (
-            needs_clarification, get_smart_clarification
-        )
-        
-        # Đếm history length để skip clarification cho follow-up messages
-        chat_history_len = 0
-        try:
-            m_conn = get_memory_db()
-            m_cursor = m_conn.cursor()
-            m_cursor.execute(
-                "SELECT COUNT(*) FROM chat_messages WHERE session_id = ?",
-                (session_id,)
-            )
-            chat_history_len = m_cursor.fetchone()[0]
-            m_conn.close()
-        except Exception:
-            pass
-        
-        if needs_clarification(prompt, domain, chat_history_len):
-            print(f"🔮 [Clarification] Query mơ hồ, đang tạo câu hỏi gợi mở...")
-            
-            # Tier 2: Gọi DeepSeek (async) với kịch bản domain-specific
-            clarification_text = await get_smart_clarification(prompt, domain)
-            
-            if clarification_text:
-                # Lưu vào history để lượt sau không hỏi lại
-                _save_chat_history(session_id, prompt, clarification_text)
-                
-                return {
-                    "response": clarification_text,
-                    "citations": [],
-                    "domain": domain,
-                    "flare_activated": False,
-                    "search_count": 0
-                }
-    except Exception as e:
-        print(f"⚠️ [Clarification] Lỗi, bỏ qua và chạy RAG bình thường: {e}")
-        
-    # ── STEP 2: LOAD LONG-TERM MEMORY (Tầng 2) ──
-    memory_context = LegalUserMemory.get_relevant_memories(session_id, prompt)
-    
-    # ── STEP 2.5: MULTI-QUERY DECOMPOSITION ENGINE ──
-    from app.utils.query_decomposer import decompose_query
-    sub_queries = await decompose_query(prompt)
-    print(f"🔀 [Decomposer] Generated {len(sub_queries)} sub-queries for query '{prompt}': {sub_queries}")
-    
-    # ── STEP 3 & 4: UNIFIED RETRIEVAL PIPELINE ACROSS SUB-QUERIES ──
-    combined_chunks = []
-    combined_citations = {}
-    
-    for sq in sub_queries:
-        chunks_text, cit_map = await ultimate_retrieve(
-            query=sq,
-            domain_filter=route_res["doc_type_filter"],
-            top_k=4,
-            extracted_year=route_res.get("extracted_year"),
-            extracted_doc_type=route_res.get("extracted_doc_type"),
-            extracted_issuer=route_res.get("extracted_issuer")
-        )
-        if chunks_text:
-            combined_chunks.append(chunks_text)
-            combined_citations.update(cit_map)
-            
-    formatted_chunks = "\n\n====================\n\n".join(combined_chunks) if combined_chunks else ""
-    
-    # ── STEP 3.5: LEGAL THEORY & ACADEMIC MIND RETRIEVAL (BỘ NÃO LÝ LUẬN) ──
-    try:
-        from app.utils.theory_retrieval import search_legal_theory, format_theory_context
-        theory_results = search_legal_theory(prompt, top_k=3)
-        if theory_results:
-            theory_context = format_theory_context(theory_results)
-            print(f"🧠 [LegalMind] Loaded {len(theory_results)} academic theory contexts for prompt.")
-            if formatted_chunks:
-                formatted_chunks += f"\n\n====================\n\n{theory_context}"
-            else:
-                formatted_chunks = theory_context
-    except Exception as e_theory:
-        print(f"⚠️ [TheoryRetrieval] Warning: {e_theory}")
-
-    # ── STEP 3.6: PERSONA SWITCHER ENGINE (5 CHỨC DANH TƯ PHÁP) ──
-    try:
-        from app.utils.persona_switcher import detect_persona_switch, get_persona_system_prompt
-        role_key, clean_p = detect_persona_switch(prompt)
-        if role_key and role_key != "default":
-            prompt = clean_p
-            persona_prompt = get_persona_system_prompt(role_key)
-            print(f"🎭 [PersonaSwitch] Activated role '{role_key}' for query.")
-            if formatted_chunks:
-                formatted_chunks = f"{persona_prompt}\n\n====================\n\n" + formatted_chunks
-            else:
-                formatted_chunks = persona_prompt
-    except Exception as e_persona:
-        print(f"⚠️ [PersonaSwitch] Warning: {e_persona}")
-
-    citation_map = combined_citations
-    flare_activated = False
-    search_count = len(sub_queries)
-
-    # ── STEP 3.7: IRAC LEGAL REASONING ENGINE (PHƯƠNG PHÁP LUẬN PHÁP LÝ) ──
-    role_key_for_reasoning = None
-    try:
-        role_key_for_reasoning = role_key if role_key and role_key != "default" else None
-    except NameError:
-        pass
-    
-    try:
-        from app.utils.legal_reasoning import build_reasoning_prompt, detect_legal_complexity
-        complexity = detect_legal_complexity(prompt)
-        
-        # Only inject IRAC for moderate+ complexity queries
-        if complexity in ("moderate", "complex", "adversarial"):
-            reasoning_instruction = build_reasoning_prompt(
-                query=prompt,
-                role=role_key_for_reasoning,
-                retrieved_docs=list(citation_map.values()) if citation_map else None,
-                precedents=None  # Will be added in next step
-            )
-            if reasoning_instruction:
-                print(f"🧠 [IRAC] Activated {complexity} reasoning ({len(reasoning_instruction)} chars)")
-                if formatted_chunks:
-                    formatted_chunks = reasoning_instruction + "\n\n====================\n\n" + formatted_chunks
-                else:
-                    formatted_chunks = reasoning_instruction
-    except Exception as e_irac:
-        print(f"⚠️ [IRAC] Warning: {e_irac}")
-
-    # ── STEP 3.8: PRECEDENT MATCHER (ÁP DỤNG ÁN LỆ THÔNG MINH) ──
-    try:
-        from app.utils.precedent_matcher import search_precedents, format_precedent_context
-        precedent_results = search_precedents(prompt, top_k=2)
-        if precedent_results:
-            precedent_context = format_precedent_context(precedent_results, max_chars_per_precedent=1500)
-            print(f"📜 [Precedent] Found {len(precedent_results)} relevant precedents")
-            if formatted_chunks:
-                formatted_chunks += f"\n\n{precedent_context}"
-            else:
-                formatted_chunks = precedent_context
-    except Exception as e_prec:
-        print(f"⚠️ [Precedent] Warning: {e_prec}")
-
-    # ── STEP 3.9: ADVERSARIAL REASONING (TƯ DUY ĐỐI KHÁNG ĐA CHIỀU) ──
-    try:
-        from app.utils.adversarial_reasoning import should_use_adversarial, build_adversarial_instruction
-        if should_use_adversarial(prompt):
-            adv_instruction = build_adversarial_instruction(prompt)
-            print(f"⚔️ [Adversarial] Activated multi-perspective reasoning")
-            if formatted_chunks:
-                formatted_chunks = adv_instruction + "\n\n====================\n\n" + formatted_chunks
-            else:
-                formatted_chunks = adv_instruction
-    except Exception as e_adv:
-        print(f"⚠️ [Adversarial] Warning: {e_adv}")
-
-    # ── STEP 5: FLARE RAG GENERATION (Tầng 5) ──
-    final_text = ""
-    citations_list = list(citation_map.values())
-    
-    # Detect if top result was exact match → skip FLARE draft for speed
-    has_exact_match = any("is_exact_match" not in str(v) for v in citation_map.values()) if not citation_map else False
-    # Simpler: check if query contains a legal symbol that was matched
-    import re as _re
-    _has_legal_ref = bool(_re.search(r'(\b\d+[\w\-\/]*\/[A-Za-zĐđÀ-ỹ0-9\-]+\b|[Đđ]iều\s+\d+)', prompt))
-    force_simple = _has_legal_ref  # Skip FLARE draft when query has explicit legal references
-    
-    if formatted_chunks:
-        try:
-            async for event in flare_generate_stream(
-                query=prompt,
-                initial_context=formatted_chunks,
-                citation_map=citation_map,
-                domain_filter=route_res["doc_type_filter"],
-                custom_model=None,  # Sử dụng model mặc định của FPT provider (Qwen3-32B)
-                force_simple=force_simple
-            ):
-                ev_type = event.get("type")
-                if ev_type == "token":
-                    final_text += event["content"]
-                elif ev_type == "status":
-                    flare_activated = event["flare_activated"]
-                    search_count = event["search_count"]
-                    citations_list = list(event["citation_map"].values())
-        except Exception as ex:
-            raise HTTPException(status_code=500, detail=f"Lỗi RAG Generation: {str(ex)}")
-    else:
-        final_text = "Không tìm thấy tài liệu pháp lý liên quan phù hợp để trả lời câu hỏi của bạn."
-
-    # ── STRIP THINKING TAGS & CONTEXT ARTIFACTS ──
-    final_text = clean_context_artifacts(strip_thinking_tags(final_text))
-
-    # ── TÍCH HỢP GỢI Ý TƯƠNG TÁC KẾ TIẾP CỦA LAN ANH ──
-    # Removed hardcoded followups as they were repetitive and statically generated.
-
-    # ── CẬP NHẬT SEMANTIC CACHE (RAG Gen 3) ──
-    # Không cache các câu trả lời thất bại/trống để tránh đóng băng lỗi
-    failure_patterns = [
-        "không tìm thấy tài liệu",
-        "chưa tìm thấy quy định",
-        "không có thông tin",
-        "ngoài phạm vi",
-        "không tìm thấy",
-        "chưa tìm thấy",
-        "không có dữ liệu",
-        "không tồn tại trong",
-    ]
-    should_cache = (
-        final_text 
-        and domain not in ["chitchat", "out_of_scope"] 
-        and all(p not in final_text.lower() for p in failure_patterns)
-    )
-    if should_cache:
-        try:
-            from app.utils.semantic_cache_manager import get_cache_manager
-            cache_mgr = get_cache_manager()
-            cache_mgr.update(prompt, final_text, citation_map)
-        except Exception as e:
-            print(f"⚠️ Failed to update semantic cache: {e}")
-
-    # ── STEP 6: SAVE INTERACTION TO MEMORY (Tầng 2) ──
-    try:
-        LegalUserMemory.save_interaction(session_id, prompt, final_text, citations_list)
-    except Exception as e:
-        print(f"⚠️ Warning: Failed to save user memory interaction: {e}")
-        
-    # ── STEP 7: SAVE TO SESSION CHAT HISTORY DB ──
-    _save_chat_history(session_id, prompt, final_text)
-
-    return {
-        "response": final_text,
-        "citations": citations_list,
-        "domain": domain,
-        "flare_activated": flare_activated,
-        "search_count": search_count
-    }
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Lỗi xử lý câu hỏi: {str(e)}")
 
 
 @router.get("/providers", summary="Lấy trạng thái các LLM providers")

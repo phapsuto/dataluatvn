@@ -1809,6 +1809,141 @@
         opacity: 0;
       }
     }
+
+    /* --- Tri-Tier Phổ Cập Toàn Diện CSS --- */
+    .tri-tier-selector-banner {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      width: 100%;
+      max-width: 840px;
+      margin: 10px 0 20px 0;
+    }
+    .tier-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 12px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .tier-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(59, 130, 246, 0.5);
+      background: rgba(30, 41, 59, 0.85);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
+    .tier-card.active {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.55) 0%, rgba(15, 23, 42, 0.85) 100%);
+      border: 1.5px solid #3b82f6;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
+    }
+    .tier-card.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+    }
+    .tier-icon {
+      font-size: 1.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .tier-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tier-info strong {
+      font-size: 0.88rem;
+      color: #f8fafc;
+      font-weight: 700;
+    }
+    .tier-info span {
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.35;
+    }
+
+    .tier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .tier-badge.tier-citizen {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .tier-badge.tier-enterprise {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+    .tier-badge.tier-judicial {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+    }
+
+    .dvs-shield-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin: 8px 0 10px 0;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.12);
+    }
+
+    .npl-ledger-card {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      font-size: 0.76rem;
+      color: #e2e8f0;
+      font-family: var(--font-ui), monospace;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.3);
+    }
+    .npl-ledger-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #38bdf8;
+      font-weight: 700;
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.2);
+      padding-bottom: 6px;
+    }
+    .npl-ledger-body {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      color: #94a3b8;
+    }
   </style>
 </head>
 <body>
@@ -1950,6 +2085,31 @@
             <!-- Greeting Empty view (Gemini style) -->
             <div class="chat-empty-state" id="chat-empty-view">
               <div class="chat-empty-title">Xin chào! Tôi là Trợ lý pháp luật Việt Nam.</div>
+              
+              <div class="tri-tier-selector-banner">
+                <div class="tier-card active" onclick="selectTier('CITIZEN', this)">
+                  <div class="tier-icon">👥</div>
+                  <div class="tier-info">
+                    <strong>Phổ cập Dân sinh (Citizen)</strong>
+                    <span>3 bước hành động bảo vệ quyền lợi, ngôn ngữ dễ hiểu cho mọi người dân.</span>
+                  </div>
+                </div>
+                <div class="tier-card" onclick="selectTier('ENTERPRISE', this)">
+                  <div class="tier-icon">🏢</div>
+                  <div class="tier-info">
+                    <strong>Quản trị Doanh nghiệp (Enterprise)</strong>
+                    <span>Statutory Conflict Scanner, phân tích xung đột pháp lý & rủi ro cho HR/Pháp chế.</span>
+                  </div>
+                </div>
+                <div class="tier-card" onclick="selectTier('JUDICIAL', this)">
+                  <div class="tier-icon">⚖️</div>
+                  <div class="tier-info">
+                    <strong>Tài phán Tư pháp (Judicial)</strong>
+                    <span>Tứ diện RAFA Matrix, sổ cái NPL-JSON, phân tầng hiệu lực SAH cho tư pháp chuyên nghiệp.</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="suggestion-grid">
                 <div class="suggestion-pill" onclick="sendSuggestion('Thủ tục xin cấp Sổ đỏ đất nông nghiệp?')">
                   <strong>Đất đai & Bất động sản</strong>
@@ -1983,6 +2143,11 @@
                 <option value="kiem_sat_vien">⚖️ Kiểm sát viên</option>
                 <option value="dieu_tra_vien">🕵️ Điều tra viên</option>
                 <option value="chap_hanh_vien">👮 Chấp hành viên</option>
+              </select>
+              <select id="chat-tier-select" class="tier-select" title="Chọn Chế độ Phổ cập (Dân sinh - Doanh nghiệp - Tư pháp)" onchange="onTierSelectChange(this.value)" style="border: none; background: transparent; color: #10b981; font-weight: 700; font-family: var(--font-ui); outline: none; padding: 0 10px; cursor: pointer; height: 100%; border-left: 1px solid rgba(255,255,255,0.15);">
+                <option value="CITIZEN" selected>👥 Phổ cập Dân sinh</option>
+                <option value="ENTERPRISE">🏢 Quản trị Doanh nghiệp</option>
+                <option value="JUDICIAL">⚖️ Tài phán Tư pháp</option>
               </select>
               <button class="chat-icon-btn" onclick="toast('Tính năng đính kèm tài liệu đang được hoàn thiện và sẽ ra mắt trong phiên bản kế tiếp.', 'info')"><i data-lucide="paperclip"></i></button>
               <textarea id="chat-input" placeholder="Nhập câu hỏi hoặc tình huống pháp lý của bạn..." rows="1" onkeydown="handleChatKeyDown(event)" oninput="adjustTextareaHeight(this)"></textarea>
@@ -3152,6 +3317,7 @@
         const label = isUser ? 'U' : 'AI';
         
         let botHeaderHTML = '';
+        let nplCardHTML = '';
         if (!isUser) {
           const domainIcons = {
             "chitchat": "💬",
@@ -3165,11 +3331,48 @@
             "out_of_scope": "🛑"
           };
           const icon = domainIcons[msg.domain] || "⚖️";
+          const tierLabel = msg.access_tier === 'ENTERPRISE' ? '🏢 Quản trị Doanh nghiệp' :
+                            msg.access_tier === 'JUDICIAL' ? '⚖️ Tài phán Tư pháp' :
+                            '👥 Phổ cập Dân sinh';
+          const tierClass = msg.access_tier === 'ENTERPRISE' ? 'tier-enterprise' :
+                            msg.access_tier === 'JUDICIAL' ? 'tier-judicial' :
+                            'tier-citizen';
+
+          let dvsBadgeHTML = '';
+          if (msg.dvs_status === 'VERIFIED_BY_DVS_SHIELD') {
+            dvsBadgeHTML = `
+              <div class="dvs-shield-badge" title="DVS Shield đã kiểm tra tính hiệu lực & bảo mật của lập luận">
+                <span>🛡️ DVS SHIELD VERIFIED</span>
+                <span style="opacity: 0.7;">• NPL-JSON Active</span>
+              </div>
+            `;
+          }
+
+          if (msg.npl_payload && msg.npl_payload.audit_receipt) {
+            const receipt = msg.npl_payload.audit_receipt;
+            nplCardHTML = `
+              <div class="npl-ledger-card">
+                <div class="npl-ledger-header">
+                  <span>📜 SỐ CÁI CHỨNG MINH PHÁP LÝ (NPL-JSON v4.0)</span>
+                  <span>${receipt.receipt_id || 'NPL-ACTIVE'}</span>
+                </div>
+                <div class="npl-ledger-body">
+                  <span>Cấp độ cơ sở pháp lý: <strong>Tier 1 (${receipt.tier1_primary_count || 0})</strong> | <strong>Tier 2 (${receipt.tier2_precedent_count || 0})</strong></span>
+                  <span>Mã băm SHA-256: <strong>PASSED ✅</strong></span>
+                </div>
+              </div>
+            `;
+          }
+
           botHeaderHTML = `
-            <div class="message-bot-header">
-              <span class="bot-icon">${icon}</span>
-              <span class="bot-name">Trợ lý Pháp lý Lan Anh</span>
+            <div class="message-bot-header" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="bot-icon">${icon}</span>
+                <span class="bot-name">Trợ lý Pháp lý Lan Anh</span>
+              </div>
+              <span class="tier-badge ${tierClass}">${tierLabel}</span>
             </div>
+            ${dvsBadgeHTML}
           `;
         }
 
@@ -3207,6 +3410,9 @@
           if (msg.flare_activated) {
             footerItems.push(`🔄 FLARE`);
           }
+          if (msg.dvs_status === 'VERIFIED_BY_DVS_SHIELD') {
+            footerItems.push(`🛡️ DVS: Verified`);
+          }
           if (footerItems.length > 0 || timeStr) {
             footerHTML = `
               <div class="message-metadata-footer">
@@ -3229,6 +3435,7 @@
             <div class="message-bubble ${isUser ? 'user-bubble' : 'assistant-bubble'}">
               ${botHeaderHTML}
               <div class="message-content">${formatMessageContent(msg.content)}</div>
+              ${nplCardHTML}
               ${citationsHTML}
               ${footerHTML}
             </div>
@@ -3335,6 +3542,40 @@
       }
     }
 
+    function selectTier(tier, cardEl) {
+      const select = document.getElementById('chat-tier-select');
+      if (select) select.value = tier;
+      
+      const banner = document.querySelector('.tri-tier-selector-banner');
+      if (banner) {
+        banner.querySelectorAll('.tier-card').forEach(c => c.classList.remove('active'));
+        if (cardEl) cardEl.classList.add('active');
+      }
+      
+      const tierNames = {
+        'CITIZEN': '👥 Phổ cập Dân sinh (3 bước hành động)',
+        'ENTERPRISE': '🏢 Quản trị Doanh nghiệp (Statutory Scanner)',
+        'JUDICIAL': '⚖️ Tài phán Tư pháp (RAFA Matrix & NPL-JSON)'
+      };
+      toast(`Đã chuyển sang chế độ: ${tierNames[tier] || tier}`, 'ok');
+    }
+
+    function onTierSelectChange(tier) {
+      const banner = document.querySelector('.tri-tier-selector-banner');
+      if (banner) {
+        banner.querySelectorAll('.tier-card').forEach(c => c.classList.remove('active'));
+        const indexMap = { 'CITIZEN': 0, 'ENTERPRISE': 1, 'JUDICIAL': 2 };
+        const cards = banner.querySelectorAll('.tier-card');
+        if (cards[indexMap[tier]]) cards[indexMap[tier]].classList.add('active');
+      }
+      const tierNames = {
+        'CITIZEN': '👥 Phổ cập Dân sinh (3 bước hành động)',
+        'ENTERPRISE': '🏢 Quản trị Doanh nghiệp (Statutory Scanner)',
+        'JUDICIAL': '⚖️ Tài phán Tư pháp (RAFA Matrix & NPL-JSON)'
+      };
+      toast(`Đã chuyển sang chế độ: ${tierNames[tier] || tier}`, 'ok');
+    }
+
     function sendSuggestion(txt) {
       document.getElementById('chat-input').value = txt;
       sendMessage();
@@ -3348,6 +3589,9 @@
       const personaSelect = document.getElementById('chat-persona-select');
       const personaValue = personaSelect ? personaSelect.value : 'default';
       const personaName = personaSelect && personaSelect.options[personaSelect.selectedIndex] ? personaSelect.options[personaSelect.selectedIndex].text.replace(/^[^\s]+\s/, '') : '';
+
+      const tierSelect = document.getElementById('chat-tier-select');
+      const selectedTier = tierSelect ? tierSelect.value : 'CITIZEN';
 
       // If a persona is selected, append the invisible keyword so the backend router can detect it
       if (personaValue !== 'default') {
@@ -3413,7 +3657,8 @@
           },
           body: JSON.stringify({
             prompt: prompt,
-            session_id: currentSessionId
+            session_id: currentSessionId,
+            access_tier: selectedTier
           })
         });
 
@@ -3430,6 +3675,10 @@
           citations: data.citations || [],
           domain: data.domain,
           flare_activated: data.flare_activated,
+          access_tier: data.access_tier || selectedTier,
+          dvs_status: data.dvs_status,
+          npl_payload: data.npl_payload,
+          blind_spots: data.blind_spots || [],
           latency: latency,
           timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
         };

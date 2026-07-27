@@ -167,6 +167,35 @@ User Query
 
 ---
 
+## 🚀 RAG GEN 4 UPGRADE WORK LOG (Universal Tri-Tier Accessibility Engine)
+> **Trạng thái Giai đoạn 1**: ✅ ĐÃ HOÀN THÀNH (2026-07-27) - Nền tảng cấu trúc dữ liệu pháp lý (NPL-JSON & CLF-SHA256)
+- **Module đã tạo**: `app/utils/normative_ledger.py`
+- **Tính năng**:
+  - `clf_sha256`: Mã băm bất biến chuẩn hóa khoảng trắng (Cryptographic Legal Fingerprint)
+  - `determine_sah_tier`: Phân tầng pháp lý 4 cấp SAH Hierarchy (Tier 1 Binding Primary, Tier 2 Judicial Precedent, Tier 3 Expert Guidance, Tier 4 Informal Reference)
+  - `NormativeProofLedger`: Cấu trúc dữ liệu và serializer chuẩn `npl-v1.json` với chữ ký kiểm toán `audit_receipt`
+- **Kiểm thử**: Đã chạy `tests/test_phase1_normative_ledger.py` → 100% PASSED.
+
+> **Trạng thái Giai đoạn 2**: ✅ ĐÃ HOÀN THÀNH (2026-07-27) - Nâng cấp Engine 7LCP, BSFE & DVS Shielding
+- **Module đã tạo/nâng cấp**:
+  - `app/utils/blind_spot_engine.py`: Động cơ phát hiện điểm mù pháp lý (BSFE) & rẽ nhánh điều kiện tự động (7LCP Conditional Branching).
+  - `app/utils/intent_prompts.py` & `app/utils/flare_retrieval.py`: Nâng cấp hệ thống Prompt theo 3 chế độ Phổ cập (`CITIZEN` - Dân sinh 3 bước, `ENTERPRISE` - Quản trị rủi ro & Statutory Conflict Scanner, `JUDICIAL` - Tài phán chuyên nghiệp RAFA Matrix).
+  - `app/utils/assistant_facade.py` & `app/routers/chatbot.py`: Tích hợp DVS Shield (Dynamic Verification Shield), NPL-JSON Ledger và kiểm tra điểm mù vào luồng xử lý truy vấn `/assistant/chat`.
+- **Kiểm thử**: Đã chạy `tests/test_phase2_7lcp_bsfe_dvs.py` cùng toàn bộ 41 unit/integration tests → 100% PASSED.
+
+> **Trạng thái Giai đoạn 3**: ✅ ĐÃ HOÀN THÀNH (2026-07-27) - Phổ cập toàn diện Trải nghiệm Người dùng (Tri-Tier Portal UI/UX)
+- **Module/Giao diện đã nâng cấp**: `static/portal.html`
+- **Tính năng**:
+  - Tích hợp **Tri-Tier Universal Accessibility Banner** ngay trong khung lời chào của trợ lý với 3 thẻ chế độ tương tác:
+    1. 👥 **Phổ cập Dân sinh (Citizen)**: Ngôn ngữ dễ hiểu, tóm tắt 3 bước hành động bảo vệ quyền lợi.
+    2. 🏢 **Quản trị Doanh nghiệp (Enterprise)**: Statutory Conflict Scanner, phân tích xung đột pháp lý & rủi ro tuân thủ cho HR/Pháp chế.
+    3. ⚖️ **Tài phán Tư pháp (Judicial)**: Tứ diện RAFA Matrix, hiển thị số cái kiểm toán pháp lý NPL-JSON, phân tầng hiệu lực SAH.
+  - Tích hợp bộ chọn `access_tier` trực tiếp trên thanh công cụ chat input (`#chat-tier-select`), đồng bộ real-time với banner và gửi tham số `access_tier` lên backend `/assistant/chat`.
+  - Hiển thị trực quan Huy hiệu bảo mật **🛡️ DVS SHIELD VERIFIED** và thẻ Sổ cái **📜 SỐ CÁI CHỨNG MINH PHÁP LÝ (NPL-JSON v4.0)** trong từng tin nhắn phản hồi của AI.
+- **Kiểm thử**: Đã kiểm thử đầy đủ toàn bộ bộ test `pytest tests/ -v` (41/41 PASSED, không lỗi, không regression).
+
+---
+
 ## 📁 KEY FILES REFERENCE
 
 | File | Lines | Purpose |
@@ -175,6 +204,7 @@ User Query
 | `app/routers/chatbot.py` | ~383 | Main chat endpoint |
 | `app/routers/laws.py` | ~2800 | Search API + models |
 | `app/utils/ultimate_retrieval.py` | ~1011 | Core retrieval pipeline |
+| `app/utils/normative_ledger.py` | ~170 | RAG Gen 4 CLF-SHA256 & NPL-JSON Ledger |
 | `app/utils/flare_retrieval.py` | ~169 | FLARE RAG generation |
 | `app/utils/legal_router.py` | ~314 | Intent routing |
 | `app/utils/llm_gateway.py` | ~180 | LLM API wrapper |
@@ -184,3 +214,4 @@ User Query
 | `app/utils/user_memory.py` | ~200 | User session memory |
 | `telegram_bot.py` | ~1200 | Telegram integration |
 | `mcp_server.py` | ~700 | MCP tool server |
+

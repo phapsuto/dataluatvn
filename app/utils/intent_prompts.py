@@ -212,3 +212,57 @@ def classify_intent(query: str) -> Tuple[str, str]:
     
     # 6. Default: Full analysis (trường hợp không match → phân tích chuyên sâu)
     return "full_analysis", PROMPT_FULL_ANALYSIS
+
+
+# ══════════════════════════════════════════════════════════════
+# TRI-TIER ACCESSIBILITY ENGINE PROMPT EXTENSIONS (RAG GEN 4)
+# ══════════════════════════════════════════════════════════════
+
+_TIER_PROMPT_CITIZEN = """
+
+# CHẾ ĐỘ PHỔ CẬP DÂN SINH (UNIVERSAL CITIZEN TIER):
+- Sử dụng ngôn ngữ thấu cảm, bình dị, dễ hiểu, tránh nhồi nhét ngữ pháp pháp lý phức tạp.
+- Trình bày trực diện: Đúng hay sai, được quyền hay không, theo quy định nào.
+- Cuối câu trả lời nêu rõ 3 BƯỚC HÀNH ĐỘNG THIẾT THỰC để người dân bảo vệ quyền lợi.
+- Các mã băm SHA-256 và tọa độ pháp lý sâu sẽ được tự động đính kèm trong ngăn kiểm chứng Accordion.
+"""
+
+_TIER_PROMPT_ENTERPRISE = """
+
+# CHẾ ĐỘ QUẢN TRỊ DOANH NGHIỆP (ENTERPRISE / CORPORATE TIER):
+- Sử dụng văn phong quản trị rủi ro, chuyên nghiệp, chuẩn xác, tập trung vào tuân thủ và chế tài.
+- Trình bày rõ các điểm rủi ro tuân thủ theo mức độ [CRITICAL] (vô hiệu/trái luật) hoặc [MAJOR] (vi phạm thủ tục).
+- Phân tích rủi ro theo Bộ quét xung đột hợp đồng/nội quy (Statutory Conflict Scanner).
+- Cung cấp giải pháp khắc phục tuân thủ hợp pháp cho doanh nghiệp.
+"""
+
+_TIER_PROMPT_JUDICIAL = """
+
+# CHẾ ĐỘ TÀI PHÁN TƯ PHÁP (JUDICIAL & PROFESSIONAL TIER):
+- Sử dụng văn phong học thuật, nghiêm cẩn, tuân thủ tuyệt đối logic tài phán tư pháp.
+- Bắt buộc lập luận theo mô hình TỨ DIỆN RAFA MATRIX:
+  + [RULE - TIER 1 PRIMARY AUTHORITY]: Văn bản pháp luật gốc, điều, khoản, điểm có hiệu lực.
+  + [CLF - SHA-256 FINGERPRINT]: Nguyên văn điều khoản được bảo chứng bằng mã băm SHA-256.
+  + [APPLICATION]: Ánh xạ pháp luật vào tình tiết thực tế.
+  + [FACTS vs ASSUMPTIONS]: Phân biệt dữ kiện đã xác thực và giả định điều kiện.
+- Đảm bảo cấu trúc lập luận chuẩn mực, sẵn sàng xuất hồ sơ thể thức Nghị định 30/2020/NĐ-CP.
+"""
+
+
+def get_system_prompt_for_tier(query: str, access_tier: str = "CITIZEN") -> Tuple[str, str]:
+    """
+    Trả về (qa_type, system_prompt) đã được tùy biến theo 3 lớp trải nghiệm:
+    CITIZEN (Dân sinh), ENTERPRISE (Doanh nghiệp), JUDICIAL (Tư pháp).
+    """
+    qa_type, base_prompt = classify_intent(query)
+    tier = (access_tier or "CITIZEN").upper()
+    
+    if tier == "ENTERPRISE":
+        tier_extension = _TIER_PROMPT_ENTERPRISE
+    elif tier == "JUDICIAL":
+        tier_extension = _TIER_PROMPT_JUDICIAL
+    else:
+        tier_extension = _TIER_PROMPT_CITIZEN
+        
+    return qa_type, base_prompt + tier_extension
+

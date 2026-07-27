@@ -2,7 +2,7 @@ import re
 from typing import Dict, Any, List, Tuple, AsyncGenerator
 from app.utils.llm_gateway import LLMGateway
 from app.utils.ultimate_retrieval import ultimate_retrieve
-from app.utils.intent_prompts import classify_intent
+from app.utils.intent_prompts import classify_intent, get_system_prompt_for_tier
 
 from app.utils.intent_prompts import PROMPT_LAN_ANH_MASTER
 
@@ -38,7 +38,8 @@ async def flare_generate_stream(
     citation_map: Dict[str, Dict[str, Any]],
     domain_filter: List[str] = None,
     custom_model: str = None,
-    force_simple: bool = False
+    force_simple: bool = False,
+    access_tier: str = "CITIZEN"
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Asynchronously yields streaming tokens and metadata for the FLARE process:
@@ -46,15 +47,15 @@ async def flare_generate_stream(
     - Pass 2: Merges new context and streams the final answer tokens back to the user.
     
     Uses Multi-task System Prompts: selects specialized prompt based on user intent
-    (explain_simple, summarize, qa_practical, classify, scope, full_analysis).
+    (explain_simple, summarize, qa_practical, classify, scope, full_analysis) and access_tier.
     """
     word_count = len(query.split())
     # ⚡ Tối ưu tốc độ: Khi đã có initial_context hoặc vế dưới 60 từ -> chạy 1-pass streaming siêu tốc
     is_simple = force_simple or bool(initial_context) or word_count < 60 or (domain_filter and "chitchat" in domain_filter)
     
-    # ── INTENT-BASED PROMPT SELECTION ──
-    qa_type, intent_system_prompt = classify_intent(query)
-    print(f"🎯 [Intent] Classified as '{qa_type}' → using specialized prompt")
+    # ── INTENT-BASED PROMPT SELECTION (WITH TRI-TIER OVERRIDE) ──
+    qa_type, intent_system_prompt = get_system_prompt_for_tier(query, access_tier=access_tier)
+    print(f"🎯 [Intent] Classified as '{qa_type}' (Tier: {access_tier}) → using specialized prompt")
     
     # ── FIRST PASS: DRAFT GENERATION ──
     # If the query is very short or simple, we skip the drafting phase to save latency.

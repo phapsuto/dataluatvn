@@ -225,7 +225,9 @@ def split_message(text: str, max_len: int = 4000) -> list:
 # LUATBOT API CLIENT
 # ══════════════════════════════════════════════════
 
-def call_luatbot_chat(prompt: str, session_id: str = "telegram_default") -> dict:
+USER_ACCESS_TIERS = {}  # chat_id -> "CITIZEN" | "ENTERPRISE" | "JUDICIAL"
+
+def call_luatbot_chat(prompt: str, session_id: str = "telegram_default", access_tier: str = "CITIZEN") -> dict:
     """Gọi API /assistant/chat của LuatBot."""
     url = f"{LUATBOT_API_URL}/assistant/chat"
     headers = {
@@ -235,6 +237,7 @@ def call_luatbot_chat(prompt: str, session_id: str = "telegram_default") -> dict
     payload = {
         "prompt": prompt,
         "session_id": f"telegram_{session_id}",
+        "access_tier": access_tier,
     }
     
     try:
@@ -501,7 +504,8 @@ def handle_chat(chat_id: int, user_id: int, text: str, message_id: int):
     """Xử lý chat pháp luật trực tiếp."""
     send_typing(chat_id)
     
-    result = call_luatbot_chat(text, session_id=str(user_id))
+    tier = USER_ACCESS_TIERS.get(chat_id, "CITIZEN")
+    result = call_luatbot_chat(text, session_id=str(user_id), access_tier=tier)
     
     msg = format_chat_response(result)
     
@@ -955,6 +959,29 @@ def handle_role_command(chat_id: int, text: str):
     else:
         send_message(chat_id, f"❌ Không tìm thấy vai trò `{role_arg}`. Gõ `/role` để xem danh sách.")
 
+def handle_tier_command(chat_id: int, text: str):
+    """Xử lý lệnh /tier để chuyển đổi 3 chế độ Phổ cập Toàn diện (CITIZEN - ENTERPRISE - JUDICIAL)."""
+    tier_arg = text[5:].strip().upper()
+    if not tier_arg or tier_arg not in ["CITIZEN", "ENTERPRISE", "JUDICIAL", "1", "2", "3"]:
+        send_message(
+            chat_id,
+            "🌐 *CÚ PHÁP ĐỔI CHẾ ĐỘ PHỔ CẬP TOÀN DIỆN:*\n\n"
+            "• `/tier citizen` (hoặc `/tier 1`) : 👥 *Phổ cập Dân sinh* — 3 bước hành động bảo vệ quyền lợi, ngôn ngữ dễ hiểu\n"
+            "• `/tier enterprise` (hoặc `/tier 2`) : 🏢 *Quản trị Doanh nghiệp* — Statutory Conflict Scanner & rủi ro tuân thủ cho HR/Pháp chế\n"
+            "• `/tier judicial` (hoặc `/tier 3`) : ⚖️ *Tài phán Tư pháp* — Tứ diện RAFA Matrix, phân tầng SAH & số cái NPL-JSON\n"
+        )
+        return
+
+    if tier_arg in ["1", "CITIZEN"]:
+        USER_ACCESS_TIERS[chat_id] = "CITIZEN"
+        send_message(chat_id, "👥 *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Phổ cập Dân sinh (CITIZEN)*\n\nPhản hồi tiếp theo sẽ tuân theo cấu trúc 3 bước hành động với ngôn ngữ dễ hiểu, chuẩn xác cho mọi công dân.")
+    elif tier_arg in ["2", "ENTERPRISE"]:
+        USER_ACCESS_TIERS[chat_id] = "ENTERPRISE"
+        send_message(chat_id, "🏢 *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Quản trị Doanh nghiệp (ENTERPRISE)*\n\nPhản hồi tiếp theo sẽ tích hợp Statutory Conflict Scanner & phân tích rủi ro tuân thủ.")
+    elif tier_arg in ["3", "JUDICIAL"]:
+        USER_ACCESS_TIERS[chat_id] = "JUDICIAL"
+        send_message(chat_id, "⚖️ *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Tài phán Tư pháp (JUDICIAL)*\n\nPhản hồi tiếp theo sẽ áp dụng ma trận RAFA Matrix, phân tầng SAH & đính kèm chứng minh pháp lý NPL-JSON.")
+
 def process_update(update: dict):
     """Xử lý một update từ Telegram."""
     msg = update.get("message")
@@ -993,6 +1020,8 @@ def process_update(update: dict):
         handle_benchmark(chat_id)
     elif text.startswith("/role"):
         handle_role_command(chat_id, text)
+    elif text.startswith("/tier"):
+        handle_tier_command(chat_id, text)
     elif text.startswith("/search"):
         query = text[7:].strip()
         handle_search(chat_id, query)
