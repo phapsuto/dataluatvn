@@ -285,6 +285,58 @@ def call_luatbot_search(query: str, limit: int = 5) -> dict:
         return {"error": True, "detail": str(e)}
 
 
+def download_telegram_file(file_id: str, max_size_bytes: int = 8 * 1024 * 1024) -> tuple[Optional[bytes], str]:
+    """Tải file từ Telegram Bot API về bộ nhớ (bytes) với kiểm tra giới hạn 8MB."""
+    file_info = tg_request("getFile", {"file_id": file_id})
+    if not file_info.get("ok"):
+        return None, f"Lỗi Telegram getFile: {file_info.get('description', 'Unknown')}"
+    
+    result = file_info["result"]
+    file_size = result.get("file_size", 0)
+    if file_size > max_size_bytes:
+        return None, f"Dung lượng file vượt quá giới hạn 8MB (file tải lên: {file_size/1024/1024:.2f} MB)."
+        
+    file_path = result.get("file_path")
+    if not file_path:
+        return None, "Không tìm thấy đường dẫn file từ Telegram."
+        
+    download_url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}"
+    try:
+        resp = requests.get(download_url, timeout=45)
+        if resp.status_code == 200:
+            if len(resp.content) > max_size_bytes:
+                return None, f"Dung lượng file tải về vượt quá 8MB."
+            return resp.content, ""
+        return None, f"HTTP {resp.status_code} khi tải file từ Telegram."
+    except Exception as e:
+        return None, f"Lỗi mạng khi tải file: {str(e)}"
+
+
+def call_luatbot_upload_attachment(file_bytes: bytes, filename: str, session_id: str = "default") -> dict:
+    """Gọi API /assistant/upload-attachment của LuatBot để bóc tách tài liệu."""
+    url = f"{LUATBOT_API_URL}/assistant/upload-attachment"
+    headers = {
+        "X-API-Key": LUATBOT_API_KEY,
+    }
+    files = {
+        "file": (filename, file_bytes, "application/octet-stream")
+    }
+    data = {
+        "session_id": f"telegram_{session_id}"
+    }
+    try:
+        resp = requests.post(url, files=files, data=data, headers=headers, timeout=60)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 400:
+            err_json = resp.json()
+            return {"error": True, "detail": err_json.get("detail", "Lỗi yêu cầu không hợp lệ.")}
+        else:
+            return {"error": True, "detail": f"HTTP {resp.status_code}: {resp.text[:200]}"}
+    except Exception as e:
+        return {"error": True, "detail": f"Lỗi kết nối server LuatBot: {str(e)}"}
+
+
 def check_server_health() -> dict:
     """Kiểm tra trạng thái server LuatBot."""
     try:
@@ -369,6 +421,9 @@ def handle_start(chat_id: int, user_name: str):
         f"Lan Anh rất vui được hỗ trợ *{user_name}*! Lan Anh là Trợ lý Pháp lý Việt Nam "
         "chuyên sâu về Hệ thống Pháp luật (cập nhật mới nhất đến 07/2026).\n\n"
         "🔹 *Hỏi câu hỏi bất kỳ* — Lan Anh sẽ phân tích 360 độ kèm trích dẫn điều khoản chính xác\n"
+        "🔹 *Gửi file/ảnh trực tiếp* — Tải lên hợp đồng, quyết định, tài liệu (.pdf, .docx, .jpg) để thẩm định pháp lý!\n"
+        "🔹 `/files` — Xem danh sách tài liệu đang đính kèm trong phiên\n"
+        "🔹 `/clearfiles` — Xóa tài liệu khỏi phiên làm việc\n"
         "🔹 `/search [từ khóa]` — Tra cứu văn bản pháp luật\n"
         "🔹 `/status` — Kiểm tra trạng thái hệ thống\n"
         "🔹 `/help` — Xem hướng dẫn chi tiết\n\n"
@@ -385,11 +440,11 @@ def handle_help(chat_id: int):
     help_text = (
         "📖 *Hướng dẫn sử dụng LuatBot*\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "💬 *Chat trực tiếp*\n"
-        "Gõ bất kỳ câu hỏi pháp luật nào, bot sẽ:\n"
-        "• Phân tích ý định (Semantic Router)\n"
-        "• Truy xuất văn bản liên quan (RAG)\n"
-        "• Trả lời kèm trích dẫn điều khoản\n\n"
+        "💬 *Chat & Thẩm định tài liệu trực tiếp*\n"
+        "• Gõ câu hỏi pháp luật, bot sẽ trả lời kèm trích dẫn điều khoản.\n"
+        "• Gửi trực tiếp file PDF, Word (DOC/DOCX), TXT hoặc ảnh chụp tài liệu, hợp đồng, quyết định (tối đa 8MB/file, 10 file/phiên).\n"
+        "• `/files` — Xem danh sách tài liệu đã tải lên\n"
+        "• `/clearfiles` — Xóa tài liệu khỏi phiên\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "🔍 *Lệnh tìm kiếm*\n"
         "`/search luật lao động 2019` — Tìm văn bản\n\n"
@@ -515,6 +570,81 @@ def handle_chat(chat_id: int, user_id: int, text: str, message_id: int):
         # Thử lại không định dạng
         plain_msg = msg.replace("*", "").replace("_", "").replace("`", "")
         send_message(chat_id, plain_msg, parse_mode=None, reply_to=message_id)
+
+
+def handle_file_upload(chat_id: int, user_id: int, file_id: str, filename: str, caption: str, message_id: int):
+    """Xử lý tải lên tài liệu hoặc ảnh qua Telegram."""
+    send_typing(chat_id)
+    send_message(chat_id, f"📥 *Lan Anh đang tải về và bóc tách tài liệu:* `{filename}`...", parse_mode="HTML")
+    
+    file_bytes, err_msg = download_telegram_file(file_id)
+    if not file_bytes:
+        send_message(chat_id, f"⚠️ *Không thể xử lý file:* {err_msg}", reply_to=message_id)
+        return
+        
+    res = call_luatbot_upload_attachment(file_bytes, filename, session_id=str(user_id))
+    if res.get("error"):
+        send_message(chat_id, f"⚠️ *Lỗi khi bóc tách tài liệu:* {res.get('detail')}", reply_to=message_id)
+        return
+        
+    doc_type = res.get("doc_type", "Tài liệu pháp lý")
+    summary = res.get("structured_summary", "")
+    short_summary = summary[:800] + ("..." if len(summary) > 800 else "")
+    
+    reply_msg = (
+        f"✅ <b>Lan Anh đã nhận và phân tích thành công tài liệu!</b>\n\n"
+        f"📄 <b>Tên tài liệu:</b> <code>{html.escape(filename)}</code>\n"
+        f"📌 <b>Loại văn bản:</b> <b>{html.escape(doc_type)}</b>\n\n"
+        f"<b>💡 Tóm tắt Cấu trúc & Pháp lý cơ bản:</b>\n{md_to_html(short_summary)}\n\n"
+        f"───\n"
+        f"📌 <i>Tài liệu đã được ghim vào phiên làm việc hiện tại. Bạn có thể đặt câu hỏi pháp lý liên quan ngay bây giờ! (Gõ <code>/clearfiles</code> để gỡ tài liệu khỏi phiên).</i>"
+    )
+    send_message(chat_id, reply_msg, parse_mode="HTML", reply_to=message_id)
+    
+    if caption and caption.strip():
+        send_typing(chat_id)
+        handle_chat(chat_id, user_id, caption.strip(), message_id)
+
+
+def handle_list_attachments(chat_id: int, user_id: int):
+    """Xử lý lệnh /files hoặc /attachments."""
+    send_typing(chat_id)
+    url = f"{LUATBOT_API_URL}/assistant/attachments/telegram_{user_id}"
+    headers = {"X-API-Key": LUATBOT_API_KEY}
+    try:
+        resp = requests.get(url, headers=headers, timeout=15)
+        if resp.status_code == 200:
+            data = resp.json()
+            atts = data.get("attachments", [])
+            if not atts:
+                send_message(chat_id, "📁 <b>Phiên làm việc hiện tại chưa có tài liệu đính kèm nào.</b>\n\n💡 Bạn có thể gửi file PDF, Word (DOC/DOCX), TXT hoặc hình ảnh chụp tài liệu trực tiếp vào chat cho Lan Anh nhé!", parse_mode="HTML")
+                return
+            lines = [f"📁 <b>Danh sách Tài liệu Đính kèm ({len(atts)}/10 file):</b>\n"]
+            for i, att in enumerate(atts, 1):
+                lines.append(f"<b>{i}. {html.escape(att['filename'])}</b> — <i>{html.escape(att['doc_type'])}</i>")
+            lines.append("\n💡 <i>Mọi câu hỏi của bạn sẽ được Lan Anh tự động đối chiếu với các tài liệu trên. Gõ <code>/clearfiles</code> để xóa danh sách.</i>")
+            send_message(chat_id, "\n".join(lines), parse_mode="HTML")
+        else:
+            send_message(chat_id, f"⚠️ Lỗi tra cứu danh sách tài liệu: HTTP {resp.status_code}")
+    except Exception as e:
+        send_message(chat_id, f"⚠️ Lỗi kết nối: {str(e)}")
+
+
+def handle_clear_attachments(chat_id: int, user_id: int):
+    """Xử lý lệnh /clearfiles."""
+    send_typing(chat_id)
+    url = f"{LUATBOT_API_URL}/assistant/attachments/session/telegram_{user_id}"
+    headers = {"X-API-Key": LUATBOT_API_KEY}
+    try:
+        resp = requests.delete(url, headers=headers, timeout=15)
+        if resp.status_code == 200:
+            data = resp.json()
+            count = data.get("deleted_count", 0)
+            send_message(chat_id, f"🗑️ <b>Đã xóa {count} tài liệu đính kèm khỏi phiên làm việc!</b>\n\nLan Anh đã sẵn sàng cho một phiên tư vấn mới.", parse_mode="HTML")
+        else:
+            send_message(chat_id, f"⚠️ Lỗi xóa tài liệu: HTTP {resp.status_code}")
+    except Exception as e:
+        send_message(chat_id, f"⚠️ Lỗi kết nối: {str(e)}")
 
 
 # ══════════════════════════════════════════════════
@@ -992,10 +1122,8 @@ def process_update(update: dict):
     user_id = msg["from"]["id"]
     user_name = msg["from"].get("first_name", "User")
     text = msg.get("text", "").strip()
+    caption = msg.get("caption", "").strip()
     message_id = msg["message_id"]
-    
-    if not text:
-        return
     
     # Access control
     if ALLOWED_USER_IDS and user_id not in ALLOWED_USER_IDS:
@@ -1005,6 +1133,26 @@ def process_update(update: dict):
     # Rate limiting
     if not check_rate_limit(user_id):
         send_message(chat_id, "⏳ Bạn gửi quá nhanh. Vui lòng đợi 1 phút.")
+        return
+
+    # Xử lý file đính kèm (tài liệu PDF/Word/TXT/CSV...)
+    if "document" in msg:
+        doc = msg["document"]
+        file_id = doc["file_id"]
+        filename = doc.get("file_name", "document.doc")
+        handle_file_upload(chat_id, user_id, file_id, filename, caption, message_id)
+        return
+        
+    # Xử lý hình ảnh đính kèm (ảnh chụp hợp đồng, quyết định...)
+    if "photo" in msg:
+        photo_list = msg["photo"]
+        best_photo = photo_list[-1]
+        file_id = best_photo["file_id"]
+        filename = f"photo_{int(time.time())}.jpg"
+        handle_file_upload(chat_id, user_id, file_id, filename, caption, message_id)
+        return
+
+    if not text:
         return
     
     logger.info(f"[{user_id}] @{msg['from'].get('username', 'N/A')}: {text[:100]}")
@@ -1018,6 +1166,10 @@ def process_update(update: dict):
         handle_status(chat_id)
     elif text.startswith("/benchmark"):
         handle_benchmark(chat_id)
+    elif text.startswith("/files") or text.startswith("/attachments"):
+        handle_list_attachments(chat_id, user_id)
+    elif text.startswith("/clearfiles") or text.startswith("/clear"):
+        handle_clear_attachments(chat_id, user_id)
     elif text.startswith("/role"):
         handle_role_command(chat_id, text)
     elif text.startswith("/tier"):
@@ -1082,6 +1234,7 @@ def main():
     if me and me.get("ok"):
         bot_info = me["result"]
         print(f"✅ Bot: @{bot_info['username']} ({bot_info['first_name']})")
+        logger.info(f"✅ Bot connected: @{bot_info['username']} ({bot_info['first_name']})")
     else:
         print(f"❌ Không thể kết nối Telegram sau 5 lần thử: {me}")
         sys.exit(1)
@@ -1106,6 +1259,8 @@ def main():
         "commands": [
             {"command": "start", "description": "🏠 Bắt đầu — Giới thiệu LuatBot"},
             {"command": "help", "description": "📖 Hướng dẫn sử dụng"},
+            {"command": "files", "description": "📁 Xem danh sách tài liệu đính kèm"},
+            {"command": "clearfiles", "description": "🗑️ Xóa tài liệu đính kèm trong phiên"},
             {"command": "search", "description": "🔍 Tìm kiếm văn bản pháp luật"},
             {"command": "status", "description": "📊 Kiểm tra trạng thái server"},
             {"command": "benchmark", "description": "📈 Xem kết quả benchmark LLM"},
@@ -1121,8 +1276,8 @@ def main():
         print(f"🔄 Khôi phục đồng bộ liên tục với chat_id: {chat_id}")
         start_continuous_polling(chat_id)
         
-    # Ensure clean long polling by clearing webhooks & pending conflicts
-    tg_request("deleteWebhook", {"drop_pending_updates": True})
+    # Ensure clean long polling without dropping messages sent during restart
+    tg_request("deleteWebhook", {"drop_pending_updates": False})
 
     # Long polling loop
     offset = 0
@@ -1133,7 +1288,6 @@ def main():
             result = tg_request("getUpdates", {
                 "offset": offset,
                 "timeout": 15,
-                "allowed_updates": ["message"],
             }, timeout=25.0)
             
             if result.get("ok"):

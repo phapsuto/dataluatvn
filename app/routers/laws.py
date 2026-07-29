@@ -2031,7 +2031,12 @@ def download_law_docx(
     # 5. Nội dung văn bản
     if content_html:
         soup = BeautifulSoup(content_html, "html.parser")
-        content_container = soup.find(id="content") or soup.find(class_="noi-dung") or soup
+        content_container = (
+            soup.find(class_="the-document-body")
+            or soup.find(id="content")
+            or soup.find(class_="noi-dung")
+            or soup
+        )
         
         # Traverse elements
         for block in content_container.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table", "li"]):

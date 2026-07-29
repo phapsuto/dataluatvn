@@ -43,72 +43,83 @@ def clean_context_artifacts(text: str) -> str:
     return text
 
 
+from bs4 import BeautifulSoup
+
 def clean_document_html(html: str) -> str:
     """
-    Làm sạch nội dung HTML của văn bản pháp luật:
+    Làm sạch nội dung HTML của văn bản pháp luật bằng BeautifulSoup + regex:
+    - Loại bỏ hoàn toàn các khung dấu đỏ độc quyền, SVG logo LuatVietnam / Thư viện pháp luật.
+    - Loại bỏ các khối thông báo trạng thái rác ('Tình trạng hiệu lực: Đã biết', 'Hiệu lực: Đã biết').
     - Loại bỏ hoàn toàn các thông báo đăng nhập / yêu cầu tài khoản (paywall prompts).
-    - Loại bỏ logo, đóng dấu bản quyền (watermark), và link trang web nguồn (LuatVietnam, Thư viện pháp luật, VBPL...).
     - Loại bỏ các thông báo tải về / hướng dẫn cài phần mềm DOC, PDF.
-    - Loại bỏ các dòng lặp lại 'Tình trạng hiệu lực: Đã biết' hoặc 'Hiệu lực: Đã biết'.
+    - Gỡ bỏ link (unwrap) trỏ về các trang web nguồn (LuatVietnam, Thư viện pháp luật, VBPL).
     """
     if not html:
         return ""
 
-    # 1. Loại bỏ các khối div/p chứa thông báo đăng nhập, tiện ích thành viên, ghi chú tải về
-    html = re.sub(
-        r'<div[^>]*>\s*<p[^>]*>\s*(?:<b>|<strong>)?\s*\**\s*Bạn chưa Đăng nhập thành viên[\s\S]*?</div>\s*</div>',
-        '', html, flags=re.IGNORECASE
-    )
-    html = re.sub(
-        r'<div[^>]*class="[^"]*(?:note-download|member-note|login-prompt)[^"]*"[^>]*>[\s\S]*?</div>',
-        '', html, flags=re.IGNORECASE
-    )
-    html = re.sub(
-        r'<p[^>]*>[\s\S]*?(?:Bạn chưa Đăng nhập thành viên|tiện ích dành cho tài khoản|Vui lòng Đăng nhập để xem chi tiết|vui lòng.*Đăng ký.*tại đây|Để đọc được văn bản tải trên)[\s\S]*?</p>',
-        '', html, flags=re.IGNORECASE
-    )
-    html = re.sub(
-        r'<div[^>]*>[\s\S]*?(?:Bạn chưa Đăng nhập thành viên|tiện ích dành cho tài khoản|Vui lòng Đăng nhập để xem chi tiết|vui lòng.*Đăng ký.*tại đây|Để đọc được văn bản tải trên)[\s\S]*?</div>',
-        '', html, flags=re.IGNORECASE
-    )
+    try:
+        soup = BeautifulSoup(html, "html.parser")
 
-    # 2. Loại bỏ đóng dấu bản quyền "*** LuatVietnam.vn ***" hoặc "*** Thư viện pháp luật ***"
-    html = re.sub(
-        r'<[^>]*>[\s\S]*?\*{3,}\s*(?:LuatVietnam\.vn|LuatVietnam|Thư viện pháp luật|thuvienphapluat\.vn|vbpl\.vn)?\s*\*{3,}[\s\S]*?</[^>]+>',
-        '', html, flags=re.IGNORECASE
-    )
-    html = re.sub(
-        r'\*{3,}\s*(?:LuatVietnam\.vn|LuatVietnam|Thư viện pháp luật|thuvienphapluat\.vn|vbpl\.vn)\s*\*{3,}',
-        '', html, flags=re.IGNORECASE
-    )
-    html = re.sub(
-        r'(?:LuatVietnam\.vn|LuatVietnam|thuvienphapluat\.vn|thuvienphapluat|vbpl\.vn)',
-        '', html, flags=re.IGNORECASE
-    )
+        # 1. Loại bỏ các khối container rác từ LuatVietnam / Thư viện pháp luật
+        bad_classes = [
+            "fix_docquyen", "khung_docquyen", "text_docquyen", "img-bgdocquyen",
+            "row-status", "item-status", "note-download", "list-download",
+            "the-document-header", "tooltip-1", "btn-tip-r-more", "div-table",
+            "note-login", "member-note", "login-prompt", "box-text-content"
+        ]
+        for bad_cls in bad_classes:
+            for el in soup.find_all(class_=bad_cls):
+                el.decompose()
 
-    # 3. Loại bỏ các thẻ link <a> trỏ đến trang nguồn nhưng giữ lại text bên trong (nếu không phải là link rác)
-    def _replace_source_link(match):
-        inner = match.group(1)
-        if any(w in inner.lower() for w in ['luatvietnam', 'thuvienphapluat', 'vbpl.vn', 'đăng ký', 'đăng nhập']):
-            return ''
-        return inner
+        # 2. Loại bỏ các thẻ svg/img logo, dấu bản quyền, icon tải về
+        for svg in soup.find_all("svg"):
+            svg.decompose()
+        for img in soup.find_all("img"):
+            src = (img.get("src", "") or "") + (img.get("data-src", "") or "")
+            if any(k in src.lower() for k in ["luatvietnam", "thuvienphapluat", "download-pdf", "download-docx", "logo"]):
+                img.decompose()
 
-    html = re.sub(
-        r'<a[^>]*href="[^"]*(?:luatvietnam|thuvienphapluat|vbpl\.vn)[^"]*"[^>]*>([\s\S]*?)</a>',
-        _replace_source_link, html, flags=re.IGNORECASE
-    )
+        # 3. Gỡ liên kết (unwrap) trỏ về các website nguồn hoặc đăng nhập/đăng ký
+        for a in soup.find_all("a"):
+            href = (a.get("href", "") or "").lower()
+            if any(k in href for k in ["luatvietnam", "thuvienphapluat", "vbpl.vn", "login", "register", "javascript:void(0)"]):
+                a.unwrap()
 
-    # 4. Loại bỏ dòng rác Tình trạng hiệu lực lặp lại trong nội dung
-    html = re.sub(
-        r'<p[^>]*>\s*(?:<b>|<strong>)?\s*(?:Tình trạng hiệu lực|Hiệu lực)\s*:\s*(?:Đã biết|Còn hiệu lực|Hết hiệu lực|Chưa có hiệu lực)[\s\S]*?</p>',
-        '', html, flags=re.IGNORECASE
-    )
-    html = re.sub(
-        r'(?:Tình trạng hiệu lực|Hiệu lực)\s*:\s*(?:Đã biết|Còn hiệu lực|Hết hiệu lực|Chưa có hiệu lực)',
-        '', html, flags=re.IGNORECASE
-    )
+        # 4. Loại bỏ các thẻ chứa thông báo paywall, tình trạng hiệu lực rác, đóng dấu bản quyền
+        bad_keywords = [
+            "bạn chưa đăng nhập thành viên",
+            "tiện ích dành cho tài khoản",
+            "vui lòng đăng nhập để xem",
+            "vui lòng đăng ký tại đây",
+            "để đọc được văn bản tải trên",
+            "luatvietnam.vn",
+            "luatvietnam",
+            "*** luatvietnam",
+            "*** thư viện pháp luật",
+            "thuvienphapluat.vn",
+            "tình trạng hiệu lực: đã biết",
+            "tình trạng hiệu lực: còn hiệu lực",
+            "tình trạng hiệu lực: chưa có hiệu lực",
+            "tình trạng hiệu lực: hết hiệu lực",
+            "hiệu lực: đã biết",
+            "hiệu lực: còn hiệu lực",
+            "hiệu lực: chưa có hiệu lực",
+            "hiệu lực: hết hiệu lực",
+            "ngày hết hiệu lực:",
+            "ngày áp dụng:"
+        ]
+        for tag in list(soup.find_all(["p", "div", "span", "strong", "b", "li", "td"])):
+            txt = tag.get_text().strip().lower()
+            if any(kw in txt for kw in bad_keywords) and len(txt) < 300:
+                tag.decompose()
 
-    # 5. Dọn dẹp thẻ trống hoặc nhiều dòng trống
+        html = str(soup)
+    except Exception:
+        pass
+
+    # 5. Fallback regex dọn dẹp chuỗi sót lại
+    html = re.sub(r'\*{3,}\s*(?:LuatVietnam\.vn|LuatVietnam|Thư viện pháp luật|thuvienphapluat\.vn|vbpl\.vn)?\s*\*{3,}', '', html, flags=re.IGNORECASE)
+    html = re.sub(r'(?:Tình trạng hiệu lực|Hiệu lực)\s*:\s*(?:Đã biết|Còn hiệu lực|Hết hiệu lực|Chưa có hiệu lực)', '', html, flags=re.IGNORECASE)
     html = re.sub(r'<p[^>]*>\s*(?:&nbsp;|\s)*</p>', '', html, flags=re.IGNORECASE)
     html = re.sub(r'\n{3,}', '\n\n', html)
     return html.strip()
@@ -137,8 +148,17 @@ def clean_document_text(text: str) -> str:
             'luatvietnam',
             'thuvienphapluat.vn',
             '*** luatvietnam',
+            '*** thư viện pháp luật',
             'tình trạng hiệu lực: đã biết',
+            'tình trạng hiệu lực: còn hiệu lực',
+            'tình trạng hiệu lực: chưa có hiệu lực',
+            'tình trạng hiệu lực: hết hiệu lực',
             'hiệu lực: đã biết',
+            'hiệu lực: còn hiệu lực',
+            'hiệu lực: chưa có hiệu lực',
+            'hiệu lực: hết hiệu lực',
+            'ngày hết hiệu lực:',
+            'ngày áp dụng:',
         ]):
             continue
         clean_lines.append(line)

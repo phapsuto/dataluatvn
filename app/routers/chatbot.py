@@ -3,7 +3,7 @@ import requests
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from bs4 import BeautifulSoup, NavigableString
 
 from app.dependencies import require_api_key
@@ -13,6 +13,13 @@ from app.utils.legal_router import route_query
 from app.utils.user_memory import LegalUserMemory
 from app.utils.ultimate_retrieval import ultimate_retrieve
 from app.utils.flare_retrieval import flare_generate_stream
+from app.utils.file_parsers import parse_file
+from app.utils.legal_doc_analyzer import (
+    LegalDocumentAnalyzer,
+    AttachmentSessionManager,
+    MAX_FILE_SIZE_BYTES,
+    MAX_ATTACHMENTS_PER_SESSION
+)
 
 router = APIRouter(prefix="/assistant", tags=["🤖 Trợ lý ảo - AI Chatbot & RAG"])
 
@@ -27,6 +34,9 @@ class ChatRequest(BaseModel):
     prompt: str = Field(..., description="Câu hỏi pháp luật của người dùng")
     session_id: Optional[str] = Field(None, description="Mã phiên hội thoại để lưu lịch sử")
     access_tier: Optional[str] = Field("CITIZEN", description="Chế độ phổ cập: CITIZEN | ENTERPRISE | JUDICIAL")
+    attachment_id: Optional[str] = Field(None, description="Mã file đính kèm đã upload để phân tích pháp lý")
+    attachment_context: Optional[str] = Field(None, description="Tóm tắt/nội dung tài liệu đính kèm")
+
 
 class Citation(BaseModel):
     id: int
@@ -163,6 +173,140 @@ def _save_chat_history(session_id: str, prompt: str, response: str):
 # ║                      ROUTERS                                 ║
 # ╚══════════════════════════════════════════════════════════════╝
 
+def _enrich_prompt_with_attachment(prompt: str, attachment_id: Optional[str], attachment_context: Optional[str], session_id: Optional[str] = None) -> str:
+    if attachment_id:
+        att = AttachmentSessionManager.get_attachment(attachment_id)
+        if att:
+            doc_preview = att['content_text'][:6000] if len(att['content_text']) > 6000 else att['content_text']
+            return (
+                f"{prompt}\n\n"
+                f"--- [NGỮ CẢNH TÀI LIỆU ĐÍNH KÈM: {att['filename']} ({att['doc_type']})] ---\n"
+                f"**Tóm tắt cấu trúc tài liệu:**\n{att['structured_summary']}\n\n"
+                f"**Trích đoạn nội dung văn bản:**\n{doc_preview}\n\n"
+                f"--- [YÊU CẦU ĐỐI CHIẾU PHÁP LÝ VIỆT NAM] ---\n"
+                f"Hãy tư vấn dựa trên quy định pháp luật Việt Nam hiện hành và đối chiếu chi tiết với tài liệu đính kèm trên theo đúng phong cách Trợ lý Lan Anh."
+            )
+    elif attachment_context:
+        return (
+            f"{prompt}\n\n"
+            f"--- [NGỮ CẢNH TÀI LIỆU ĐÍNH KÈM] ---\n"
+            f"{attachment_context}\n\n"
+            f"--- [YÊU CẦU ĐỐI CHIẾU PHÁP LÝ VIỆT NAM] ---\n"
+            f"Hãy tư vấn dựa trên quy định pháp luật Việt Nam hiện hành và đối chiếu chi tiết với tài liệu đính kèm trên theo đúng phong cách Trợ lý Lan Anh."
+        )
+    elif session_id:
+        atts = AttachmentSessionManager.get_session_attachments(session_id)
+        if atts:
+            recent_atts = atts[:2]
+            combined_summary = []
+            combined_text = []
+            for a in recent_atts:
+                combined_summary.append(f"- **{a['filename']} ({a['doc_type']}):**\n{a['structured_summary']}")
+                preview = a['content_text'][:4000] if len(a['content_text']) > 4000 else a['content_text']
+                combined_text.append(f"### Tài liệu: {a['filename']}\n{preview}")
+            summary_str = "\n\n".join(combined_summary)
+            text_str = "\n\n".join(combined_text)
+            return (
+                f"{prompt}\n\n"
+                f"--- [NGỮ CẢNH CÁC TÀI LIỆU ĐÍNH KÈM TRONG PHIÊN HỘI THOẠI] ---\n"
+                f"**Tổng hợp tóm tắt tài liệu:**\n{summary_str}\n\n"
+                f"**Trích đoạn nội dung tài liệu:**\n{text_str}\n\n"
+                f"--- [YÊU CẦU ĐỐI CHIẾU PHÁP LÝ VIỆT NAM] ---\n"
+                f"Hãy tư vấn dựa trên quy định pháp luật Việt Nam hiện hành và đối chiếu chi tiết với các tài liệu đính kèm trên theo đúng phong cách Trợ lý Lan Anh."
+            )
+    return prompt
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                      ROUTERS                                 ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+@router.post("/upload-attachment", summary="Tải lên tài liệu đính kèm (Ảnh, PDF, Word) cho Trợ lý Lan Anh")
+async def upload_attachment(
+    file: UploadFile = File(...),
+    session_id: Optional[str] = Form("default_user"),
+    _key=Depends(require_api_key)
+):
+    """
+    Tải lên tài liệu đính kèm (tối đa 8MB/file, 10 file/phiên):
+    - Đọc nội dung đa phương thức: PDF, DOCX, DOC, TXT, CSV, Hình ảnh (PNG/JPG/WEBP).
+    - Hỗ trợ OCR hình ảnh/PDF scan bằng FPT Cloud Vision và fallback Tesseract OCR.
+    - Phân tích cấu trúc pháp lý tự động bằng FPT Cloud LLM.
+    """
+    file_bytes = await file.read()
+    if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Dung lượng file vượt quá giới hạn 8MB (file tải lên: {len(file_bytes)/1024/1024:.2f} MB)."
+        )
+        
+    try:
+        content_text = parse_file(file.filename, file_bytes)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Lỗi khi đọc tài liệu: {str(e)}")
+        
+    try:
+        analysis = await LegalDocumentAnalyzer.analyze_attachment(content_text, file.filename)
+        doc_type = analysis.get("doc_type", "Tài liệu pháp lý")
+        structured_summary = analysis.get("structured_summary", "")
+        
+        ext = file.filename.split(".")[-1].upper() if "." in file.filename else "DOC"
+        saved = AttachmentSessionManager.save_attachment(
+            session_id=session_id or "default_user",
+            filename=file.filename,
+            file_type=ext,
+            content_text=content_text,
+            structured_summary=structured_summary,
+            doc_type=doc_type
+        )
+        return {
+            "status": "success",
+            "attachment_id": saved["attachment_id"],
+            "filename": saved["filename"],
+            "file_type": saved["file_type"],
+            "doc_type": saved["doc_type"],
+            "structured_summary": saved["structured_summary"]
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi xử lý tài liệu đính kèm: {str(e)}")
+
+
+@router.get("/attachments/{session_id}", summary="Lấy danh sách tài liệu đính kèm của phiên")
+def get_session_attachments(session_id: str, _key=Depends(require_api_key)):
+    """Trả về danh sách tài liệu đã đính kèm trong phiên hội thoại."""
+    attachments = AttachmentSessionManager.get_session_attachments(session_id)
+    # Remove large content_text from response to keep payload light
+    res = []
+    for att in attachments:
+        res.append({
+            "attachment_id": att["attachment_id"],
+            "filename": att["filename"],
+            "file_type": att["file_type"],
+            "doc_type": att["doc_type"],
+            "structured_summary": att["structured_summary"],
+            "created_at": att["created_at"]
+        })
+    return {"attachments": res}
+
+
+@router.delete("/attachments/session/{session_id}", summary="Xóa toàn bộ tài liệu đính kèm của một phiên")
+def clear_session_attachments(session_id: str, _key=Depends(require_api_key)):
+    """Xóa toàn bộ tài liệu đính kèm khỏi phiên làm việc."""
+    count = AttachmentSessionManager.clear_session(session_id)
+    return {"status": "success", "deleted_count": count, "message": f"Đã xóa {count} tài liệu khỏi phiên."}
+
+
+@router.delete("/attachments/{attachment_id}", summary="Xóa một tài liệu đính kèm")
+def delete_attachment(attachment_id: str, _key=Depends(require_api_key)):
+    """Xóa tài liệu khỏi phiên làm việc."""
+    success = AttachmentSessionManager.delete_attachment(attachment_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu đính kèm.")
+    return {"status": "success", "message": "Đã xóa tài liệu đính kèm."}
+
+
 @router.post("/chat", response_model=ChatResponse, summary="Hỏi đáp pháp luật tích hợp RAG 7 Tầng")
 async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     """
@@ -177,12 +321,20 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     prompt = req.prompt.strip()
     session_id = req.session_id or "default_user"
     
+    # Enrich prompt with attachment context if attachment_id, attachment_context, or active session attachments present
+    enriched_prompt = _enrich_prompt_with_attachment(
+        prompt=prompt,
+        attachment_id=req.attachment_id,
+        attachment_context=req.attachment_context,
+        session_id=session_id
+    )
+    
     # ── RAG Gen 3 Facade (Deep Modules) ──
     from app.utils.assistant_facade import process_chat_query
     
     try:
         result = await process_chat_query(
-            prompt=prompt,
+            prompt=enriched_prompt,
             session_id=session_id,
             persona_key="default",
             save_chat_history_callback=_save_chat_history,
@@ -228,11 +380,18 @@ async def assistant_stream(req: ChatRequest, _key=Depends(require_api_key)):
         prompt = req.prompt.strip()
         session_id = req.session_id or "default_session"
         
+        enriched_prompt = _enrich_prompt_with_attachment(
+            prompt=prompt,
+            attachment_id=req.attachment_id,
+            attachment_context=req.attachment_context,
+            session_id=session_id
+        )
+        
         # Step 1: Intent & 5-Axis
         yield f"event: intent_detected\ndata: {json.dumps({'status': 'in_progress', 'step': '5-Axis Intent Classification'})}\n\n"
         
         # Step 2: Run Full Squad Pipeline
-        squad_res = await LegalSquadOrchestrator.run_full_pipeline(prompt)
+        squad_res = await LegalSquadOrchestrator.run_full_pipeline(enriched_prompt)
         
         sub_queries = squad_res.get("sub_queries", [prompt])
         yield f"event: sub_queries\ndata: {json.dumps({'sub_queries': sub_queries})}\n\n"
@@ -252,3 +411,4 @@ async def assistant_stream(req: ChatRequest, _key=Depends(require_api_key)):
         yield f"event: done\ndata: {json.dumps({'status': 'completed'})}\n\n"
 
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
+

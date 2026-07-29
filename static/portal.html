@@ -2136,6 +2136,7 @@
 
           <!-- Bottom input bar -->
           <div class="chat-input-container">
+            <div id="chat-attachments-bar" class="chat-attachments-bar" style="display: none; padding: 8px 16px; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-radius: 12px 12px 0 0; margin-bottom: 4px;"></div>
             <div class="chat-input-bar">
               <select id="chat-persona-select" class="persona-select" title="Chọn Vai trò Tư pháp" style="border: none; background: transparent; color: var(--primary); font-weight: 600; font-family: var(--font-ui); outline: none; padding: 0 10px; cursor: pointer; height: 100%;">
                 <option value="default">🌐 Lan Anh</option>
@@ -2150,7 +2151,8 @@
                 <option value="ENTERPRISE">🏢 Quản trị Doanh nghiệp</option>
                 <option value="JUDICIAL">⚖️ Nghiệp vụ Tư pháp</option>
               </select>
-              <button class="chat-icon-btn" onclick="toast('Tính năng đính kèm tài liệu đang được hoàn thiện và sẽ ra mắt trong phiên bản kế tiếp.', 'info')"><i data-lucide="paperclip"></i></button>
+              <input type="file" id="chat-file-input" style="display:none;" accept=".pdf,.docx,.doc,.txt,.csv,.png,.jpg,.jpeg,.webp" onchange="handleAttachmentUpload(event)" />
+              <button class="chat-icon-btn" onclick="document.getElementById('chat-file-input').click()" title="Đính kèm tài liệu pháp lý (PDF, Word, Ảnh)"><i data-lucide="paperclip"></i></button>
               <textarea id="chat-input" placeholder="Nhập câu hỏi hoặc tình huống pháp lý của bạn..." rows="1" onkeydown="handleChatKeyDown(event)" oninput="adjustTextareaHeight(this)"></textarea>
               <button class="chat-icon-btn" onclick="toast('Tính năng nhập liệu bằng giọng nói (Speech-to-Text) đang được hoàn thiện và sẽ ra mắt trong phiên bản kế tiếp.', 'info')"><i data-lucide="mic"></i></button>
               <button class="send-btn" onclick="sendMessage()"><i data-lucide="arrow-up" style="width:16px;height:16px;"></i></button>
@@ -3261,6 +3263,77 @@
     }
 
     // ─── CHATBOT LOGIC (GEMINI STYLE) ───
+    let currentChatAttachments = [];
+
+    async function handleAttachmentUpload(event) {
+      const fileInput = event.target;
+      if (!fileInput.files || fileInput.files.length === 0) return;
+      const file = fileInput.files[0];
+      
+      if (currentChatAttachments.length >= 10) {
+        toast('Mỗi phiên làm việc chỉ được đính kèm tối đa 10 tài liệu.', 'error');
+        fileInput.value = '';
+        return;
+      }
+      
+      if (file.size > 8 * 1024 * 1024) {
+        toast('Dung lượng file tối đa là 8 MB.', 'error');
+        fileInput.value = '';
+        return;
+      }
+      
+      toast(`Đang đọc & bóc tách cấu trúc tài liệu: ${file.name}...`, 'info');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('session_id', currentSessionId || 'default_user');
+      
+      try {
+        const res = await fetch('/assistant/upload-attachment', {
+          method: 'POST',
+          headers: { 'X-API-Key': PORTAL_API_KEY },
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Lỗi tải lên tài liệu.');
+        
+        currentChatAttachments.push(data);
+        renderAttachmentBadges();
+        toast(`Đã đính kèm tài liệu: ${file.name} (${data.doc_type})`, 'ok');
+      } catch (err) {
+        toast(`Lỗi upload tài liệu: ${err.message}`, 'error');
+      } finally {
+        fileInput.value = '';
+      }
+    }
+
+    function renderAttachmentBadges() {
+      const bar = document.getElementById('chat-attachments-bar');
+      if (!bar) return;
+      if (currentChatAttachments.length === 0) {
+        bar.style.display = 'none';
+        bar.innerHTML = '';
+        return;
+      }
+      bar.style.display = 'flex';
+      bar.innerHTML = currentChatAttachments.map((att, idx) => `
+        <div class="attachment-chip" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #fff;">
+          <span>📎 <strong>${att.filename}</strong> (${att.doc_type})</span>
+          <button onclick="removeAttachment(${idx})" style="background: transparent; border: none; color: #f87171; cursor: pointer; font-weight: bold; margin-left: 4px;">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removeAttachment(idx) {
+      const removed = currentChatAttachments.splice(idx, 1);
+      renderAttachmentBadges();
+      if (removed[0] && removed[0].attachment_id) {
+        fetch(`/assistant/attachments/${removed[0].attachment_id}`, {
+          method: 'DELETE',
+          headers: { 'X-API-Key': PORTAL_API_KEY }
+        }).catch(() => {});
+      }
+    }
+
     function adjustTextareaHeight(el) {
       el.style.height = 'auto';
       el.style.height = el.scrollHeight + 'px';
@@ -3268,6 +3341,8 @@
 
     function startNewChat() {
       currentSessionId = 'session_' + Date.now();
+      currentChatAttachments = [];
+      renderAttachmentBadges();
       const session = {
         id: currentSessionId,
         title: 'Tư vấn mới',
@@ -3665,7 +3740,9 @@
           body: JSON.stringify({
             prompt: prompt,
             session_id: currentSessionId,
-            access_tier: selectedTier
+            access_tier: selectedTier,
+            attachment_id: currentChatAttachments.length > 0 ? currentChatAttachments[currentChatAttachments.length - 1].attachment_id : null,
+            attachment_context: currentChatAttachments.length > 0 ? currentChatAttachments.map(a => `[TÀI LIỆU: ${a.filename} (${a.doc_type})]\nTóm tắt: ${a.structured_summary}`).join('\n\n') : null
           })
         });
 

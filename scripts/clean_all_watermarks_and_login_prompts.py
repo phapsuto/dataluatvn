@@ -45,6 +45,13 @@ def clean_content_store_db():
        OR content_html LIKE '%Tình trạng hiệu lực:%'
        OR content_html LIKE '%Hiệu lực: Đã biết%'
        OR content_html LIKE '%tiện ích dành cho tài khoản%'
+       OR content_html LIKE '%fix_docquyen%'
+       OR content_html LIKE '%khung_docquyen%'
+       OR content_html LIKE '%img-bgdocquyen%'
+       OR content_html LIKE '%text_docquyen%'
+       OR content_html LIKE '%row-status%'
+       OR content_html LIKE '%item-status%'
+       OR content_html LIKE '%Đã biết%'
     """
     cursor.execute(query)
     rows = cursor.fetchall()

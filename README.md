@@ -6,8 +6,9 @@
 [![FAISS](https://img.shields.io/badge/FAISS-FlatIP%20%7C%20IDMap-FF6F00.svg)](https://github.com/facebookresearch/faiss)
 [![Legal Sources](https://img.shields.io/badge/Sources-8%20Official%20National%20Portals-0052CC.svg)]()
 [![Database Docs](https://img.shields.io/badge/Documents-154%2C280%2B%20Legal%20%26%20Judicial-00875A.svg)]()
+[![Multimodal Upload](https://img.shields.io/badge/Multimodal-PDF%20%7C%20Word%20%7C%20TXT%20%7C%20CSV%20%7C%20Image-9C27B0.svg)]()
 [![Silent Sync](https://img.shields.io/badge/Sync-100%25%20Headless%20Background-79F2C0.svg)]()
-[![Verification](https://img.shields.io/badge/Automated%20Tests-43%2F43%20PASSED%20(100%25)-success.svg)]()
+[![Verification](https://img.shields.io/badge/Automated%20Tests-50%2F50%20PASSED%20(100%25)-success.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **DataLuatVN** là kiến trúc AI Pháp lý Quốc gia thế hệ mới nhất (**RAG Gen 4.0 Universal Tri-Tier Engine**) cùng **Trợ lý Pháp lý Thông minh Lan Anh** — hệ thống tư vấn, khai thác và kiểm định dữ liệu pháp luật Việt Nam hiệu năng cao. Hệ thống quản lý và truy xuất dữ liệu từ kho **154.280+ văn bản quy phạm pháp luật** (cập nhật mới nhất đến **tháng 07/2026**), **897.890 mối liên kết pháp lý chéo**, toàn bộ hệ thống **Pháp Điển Việt Nam**, cùng bộ chỉ mục **Án Lệ & Bản Án** của Tòa án Nhân dân Tối cao.
@@ -63,6 +64,11 @@ Hệ thống chuyển đổi chế độ tư vấn tức thì theo nhu cầu c�
 
 ### 4. 🧭 7LCP Pipeline & Blind-Spot Fact Engine (BSFE)
 - Khi người dùng đặt câu hỏi thiếu tình tiết mấu chốt (ví dụ: *"Bị đuổi việc có được bồi thường không?"* nhưng thiếu thông tin loại hợp đồng hay nguyên nhân sa thải), **BSFE** tự động phát hiện "điểm mù dữ kiện" và kích hoạt rẽ nhánh điều kiện (*Conditional Branching*): *"Trường hợp 1: Nếu hợp đồng không xác định thời hạn... / Trường hợp 2: Nếu sa thải do vi phạm kỷ luật..."*.
+
+### 5. 📎 Động cơ Thẩm định Tài liệu & Hình ảnh Đa phương thức (Multimodal Document & Image Legal Audit)
+- **Tải lên trực tiếp trên Web Portal & Telegram**: Hỗ trợ nhận diện và bóc tách tự động các định dạng tài liệu thực tế: **PDF, Word (`.doc`, `.docx`), Văn bản (`.txt`), Bảng tính (`.csv`) và Hình ảnh (`.png`, `.jpg`, `.jpeg`)** (ảnh chụp hợp đồng, quyết định, tài liệu pháp lý).
+- **Kiểm soát dung lượng tối ưu**: Tối đa **8MB / tài liệu** và **10 tài liệu / phiên hội thoại**, chống lạm dụng băng thông và đảm bảo tốc độ phản hồi tức thì.
+- **Áp dụng pháp lý chuyên sâu vào tài liệu**: Tự động bóc tách cấu trúc, trích xuất dữ liệu, tổng hợp nội dung và đối chiếu điều khoản luật Việt Nam hiện hành để phân tích hợp đồng, rà soát tính hợp pháp và tư vấn rủi ro pháp lý theo từng file được tải lên.
 
 ---
 
@@ -254,6 +260,9 @@ Bot Telegram tích hợp trọn vẹn sức mạnh **Động cơ Phổ cập 3 T
 
 | Lệnh Telegram | Chế độ kích hoạt | Ý nghĩa phục vụ |
 | :--- | :--- | :--- |
+| **Gửi File / Ảnh** | 📎 **Tải tài liệu lên hội thoại** | Gửi trực tiếp PDF, Word (`.docx`), TXT, CSV, Hình ảnh (Tối đa 8MB/file, 10 file/phiên) để Lan Anh phân tích pháp lý |
+| `/files` | 📂 **Danh sách tài liệu đã tải** | Xem danh sách và tình trạng các tài liệu đang lưu trong phiên hội thoại hiện tại |
+| `/clearfiles` | 🗑️ **Xóa tài liệu khỏi phiên** | Làm sạch bộ nhớ đệm tài liệu đính kèm trong phiên hội thoại |
 | `/tier citizen` (hoặc `/tier 1`) | 👥 **Tầng Dân sinh (CITIZEN)** | Văn phong gần gũi, dễ hiểu, tóm tắt *"3 Bước Hành Động"* bảo vệ quyền lợi |
 | `/tier enterprise` (hoặc `/tier 2`) | 🏢 **Tầng Doanh nghiệp (ENTERPRISE)** | Quản trị tuân thủ, rà soát xung đột điều khoản, rủi ro pháp lý HR/Kinh doanh |
 | `/tier judicial` (hoặc `/tier 3`) | ⚖️ **Tầng Tư pháp (JUDICIAL)** | Tứ diện RAFA Matrix, lập luận hàn lâm chuyên sâu cho Luật sư/Thẩm phán |
@@ -294,14 +303,15 @@ if response.status_code == 200:
 
 ## 🧪 Kiểm Thử Tự Động (100% Automated Verification)
 
-Hệ thống DataLuatVN RAG Gen 4.0 đi kèm bộ kiểm thử tự động toàn diện với 43 kịch bản, bảo đảm hoạt động chuẩn xác từ thuật toán băm SHA-256, định tuyến tầng dịch vụ đến giao diện Web/Telegram:
+Hệ thống DataLuatVN RAG Gen 4.0 đi kèm bộ kiểm thử tự động toàn diện với 50 kịch bản, bảo đảm hoạt động chuẩn xác từ thuật toán băm SHA-256, định tuyến tầng dịch vụ, tải lên tài liệu đa phương thức đến giao diện Web/Telegram:
 
 ```bash
-# Chạy kiểm chứng toàn bộ 43 bài kiểm thử unit & integration
+# Chạy kiểm chứng toàn bộ 50 bài kiểm thử unit & integration
 python3 -m pytest tests/ -v
 ```
 
 ### Kết Quả Kiểm Thử Bộ Lỗi & Đột Phá Gen 4.0:
+- ✅ `test_multimodal_upload.py` (7/7 tests) — Bóc tách file (TXT, CSV, PDF, DOCX), quản lý phiên tối đa 10 file x 8MB, tự động làm giàu ngữ cảnh RAG cho Lan Anh.
 - ✅ `test_phase1_normative_ledger.py` (4/4 tests) — CLF-SHA256 hash invariants, SAH Tier sorting, NPL-JSON serializer.
 - ✅ `test_phase2_7lcp_bsfe_dvs.py` (6/6 tests) — Blind-Spot detection, DVS Shield HMAC verification, Tri-Tier prompt rendering.
 - ✅ `test_phase3_universal_tri_tier.py` (2/2 tests) — UI/UX Portal Tri-Tier selectors, Telegram `/tier` state persistence.
