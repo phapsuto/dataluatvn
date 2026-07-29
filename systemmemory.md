@@ -242,4 +242,49 @@
 - [ ] **Bước 11**: Chuẩn bị giao diện UI Chatbot cho 5 vai trò (có Menu hoặc Cú pháp chuyển vai).
 - [ ] **Bước 12**: Kiểm định Trình độ Pháp lý trên môi trường thật với các câu hỏi Bar Exam và Case Study thực tiễn.
 
+---
 
+## 🌟 NÂNG CẤP TRỢ LÝ PHÁP LUẬT GEN 4.0 — THIẾT KẾ BENTO BOX & PHỔ CẬP TOÀN DIỆN (GIAI ĐOẠN 1 -> 3)
+- **Thời gian cập nhật**: 2026-07-28
+- **Tầm nhìn sản phẩm**: Nâng cấp mô hình tự chủ mạnh mẽ, biến công nghệ trên mạng thành sức mạnh riêng biệt của dự án, với văn phong tiếng Việt gần gũi, chuẩn mực, loại bỏ triệt để mọi từ ngữ kỹ thuật công nghệ khô khan.
+
+### 1. Cải tiến Thiết kế Giao diện (Bento Box Aesthetic & Chuẩn Hóa Ngôn từ)
+- **Thiết kế Bento Box bo tròn tinh tế**: Tái cấu trúc 3 thẻ phân tầng dịch vụ chính trên `portal.html` với viền bo tròn mềm mại (`border-radius: 16px`), bố cục lưới Bento rõ ràng, sang trọng và nhã nhặn.
+- **Loại bỏ triệt để thuật ngữ Công nghệ / IT**:
+  - Thay thế toàn bộ các từ khô cứng như *AI Check*, *RAFA Matrix*, *NPL-JSON*, *Statutory Scanner*, *RAG* bằng tiếng Việt tự nhiên, gần gũi và dễ hiểu:
+    - *Tra cứu chuyên sâu* (thay cho AI Check)
+    - *Đối chiếu hiệu lực pháp lý* (thay cho RAFA Matrix)
+    - *Định dạng văn bản chuẩn* (thay cho NPL-JSON)
+    - *Quét và phân tích quy định* (thay cho Statutory Scanner)
+  - Đồng bộ trên cả giao diện Web Portal (`static/portal.html`) và Trợ lý Telegram (`telegram_bot.py`).
+
+### 2. Phổ cập Dịch vụ Toàn diện 3 Đối tượng Người dùng (Giai đoạn 3)
+- **Dân sinh (Người dùng bình thường)**: Ngôn ngữ giải thích dễ hiểu, minh họa cụ thể cho các tình huống đời sống hàng ngày (thủ tục hành chính, lao động, hôn nhân gia đình...).
+- **Doanh nghiệp**: Trọng tâm vào pháp lý kinh doanh, hợp đồng, thủ tục tuân thủ, lao động thuế và quản trị rủi ro.
+- **Tư pháp Chuyên nghiệp (Thẩm phán, Kiểm sát viên, Luật sư...)**: Trích dẫn điều khoản chính xác đến từng điểm/khoản, hỗ trợ đối chiếu lập luận pháp lý chuyên sâu.
+
+### 3. Tối ưu Hệ thống Máy chủ & Bộ máy Đồng bộ Dữ liệu
+- **Khắc phục Crawler Đồng bộ tự động (`scripts/sync_new_laws.py`)**: Cô lập độc lập ngữ cảnh trình duyệt Playwright cho từng nguồn (VBPL, LuatVietnam, PhapLuat), loại bỏ hoàn toàn hiện tượng đóng ngữ cảnh chung khiến việc quét bị gián đoạn.
+- **Mount tĩnh chính xác**: Đảm bảo cổng máy chủ 2004 hỗ trợ đồng thời cả hai đường dẫn `/portal` và `/static/portal.html` với đầy đủ tài nguyên CSS/JS không bị lỗi 404.
+
+### 4. Hệ thống Đồng bộ Tự động Âm thầm & Hợp nhất 8 Nguồn Pháp luật Chính thống
+- **Chế độ Đồng bộ Âm thầm (Silent Headless Sync Mode)**: Chuyển hoàn toàn `HEADLESS = True` mặc định trên mọi nền tảng (macOS, Linux, Windows) trong `scripts/sync_new_laws.py`, `scripts/fill_missing_content.py`, và `app/routers/dashboard_api.py`. Hệ thống chạy làm mới văn bản và tạo chỉ mục tìm kiếm dưới nền 100% không hiển thị cửa sổ trình duyệt làm phiền người dùng.
+- **Mở rộng lên 8 Nguồn Pháp luật & Tư pháp Chính thống Cao nhất**:
+  1. `vbpl.vn` — Cơ sở dữ liệu Quốc gia về Văn bản Pháp luật (Quốc hội, Chính phủ, Bộ ngành).
+  2. `luatvietnam.vn` — Hệ thống Văn bản mới nhất từ Trung ương đến Địa phương.
+  3. `phapluat.gov.vn` — Cổng Hệ thống Văn bản Pháp luật Chính phủ.
+  4. `anle.toaan.gov.vn` — Cổng Án lệ Quốc gia - Tòa án nhân dân tối cao.
+  5. `congbobanan.toaan.gov.vn` — Cổng Công bố Bản án có hiệu lực pháp luật.
+  6. `toaan.gov.vn` — Nghị quyết Hội đồng Thẩm phán & Công văn giải đáp nghiệp vụ TANDTC.
+  7. `vksndtc.gov.vn` — Hướng dẫn nghiệp vụ & Thông báo rút kinh nghiệm Viện kiểm sát nhân dân tối cao.
+  8. `moj.gov.vn` & `danchuphapluat.vn` — Giải đáp nghiệp vụ & bình luận khoa học pháp lý Bộ Tư pháp.
+- **Hoàn thiện Bộ tự động Tách đoạn & Chỉ mục Ngữ nghĩa (`parse_html_to_chunks`)**: Tích hợp trực tiếp hàm xử lý văn bản vào trình cào tự động, xử lý thành công 100% văn bản mới và cập nhật chỉ mục tìm kiếm tức thì mà không gặp lỗi thiếu module.
+
+### 5. Rà soát & Tối ưu hóa Toàn diện Quy trình Đồng bộ Dữ liệu Hằng ngày (4 Tầng Chỉ mục)
+- **Tự động hóa Đồng bộ 4 Tầng Chỉ mục**: Đã bổ sung liên kết tự động tại cuối trình đồng bộ (`scripts/sync_new_laws.py`) để kích hoạt làm mới cả 4 chỉ mục tra cứu ngay sau khi tải văn bản mới:
+  1. Chỉ mục tra cứu ngữ nghĩa (Vector Zvec & FAISS).
+  2. Chỉ mục tra cứu toàn văn (FTS5 SQLite).
+  3. Chỉ mục tra cứu từ khóa chính xác (BM25 Keyword Index).
+  4. Đồ thị liên kết hiệu lực pháp lý (Knowledge Graph).
+- **Chống Xung đột Khóa Cơ sở dữ liệu (SQLite WAL Mode & Timeout)**: Chuẩn hóa chế độ ghi chép không chặn, cho phép tra cứu và làm mới văn bản song song không bị gián đoạn hay khóa tệp dữ liệu.
+- **Quy chuẩn Vận hành Định kỳ & Tự phục hồi (Self-Healing Cron Plan)**: Tài liệu hóa chi tiết kế hoạch làm mới lúc 02:00 sáng hằng ngày, tự động bỏ qua cổng thông tin bảo trì quá 6 giây và cơ chế khôi phục kết nối tự động trong `ke_hoach_toi_uu_cap_nhat_du_lieu_luat.md`.

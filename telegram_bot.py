@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ╔══════════════════════════════════════════════════════════════════════╗
-║  🤖 LuatBot Telegram — Trợ lý Pháp lý AI trên Telegram            ║
+║  🤖 LuatBot Telegram — Trợ lý Pháp luật Việt Nam                  ║
 ║  Tích hợp với hệ thống RAG 7 Tầng của LuatBot API                 ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
@@ -366,8 +366,8 @@ def handle_start(chat_id: int, user_name: str):
     """Xử lý lệnh /start."""
     welcome = (
         "🌸 *Xin chào! Lan Anh chào bạn nha!*\n\n"
-        f"Lan Anh rất vui được hỗ trợ *{user_name}*! Lan Anh là Trợ lý Pháp lý AI "
-        "thông minh chuyên sâu về Hệ thống Pháp luật Việt Nam (cập nhật mới nhất đến 07/2026).\n\n"
+        f"Lan Anh rất vui được hỗ trợ *{user_name}*! Lan Anh là Trợ lý Pháp lý Việt Nam "
+        "chuyên sâu về Hệ thống Pháp luật (cập nhật mới nhất đến 07/2026).\n\n"
         "🔹 *Hỏi câu hỏi bất kỳ* — Lan Anh sẽ phân tích 360 độ kèm trích dẫn điều khoản chính xác\n"
         "🔹 `/search [từ khóa]` — Tra cứu văn bản pháp luật\n"
         "🔹 `/status` — Kiểm tra trạng thái hệ thống\n"
@@ -395,7 +395,7 @@ def handle_help(chat_id: int):
         "`/search luật lao động 2019` — Tìm văn bản\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "💻 *Lệnh điều khiển IDE Agent*\n"
-        "`/agent [lệnh]` — Ra lệnh trực tiếp cho AI Agent trong IDE\n"
+        "`/agent [lệnh]` — Ra lệnh trực tiếp cho Trợ lý lập trình trong IDE\n"
         "Ví dụ: `/agent viết test case cho chatbot.py`\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "📊 *Lệnh hệ thống*\n"
@@ -965,22 +965,22 @@ def handle_tier_command(chat_id: int, text: str):
     if not tier_arg or tier_arg not in ["CITIZEN", "ENTERPRISE", "JUDICIAL", "1", "2", "3"]:
         send_message(
             chat_id,
-            "🌐 *CÚ PHÁP ĐỔI CHẾ ĐỘ PHỔ CẬP TOÀN DIỆN:*\n\n"
-            "• `/tier citizen` (hoặc `/tier 1`) : 👥 *Phổ cập Dân sinh* — 3 bước hành động bảo vệ quyền lợi, ngôn ngữ dễ hiểu\n"
-            "• `/tier enterprise` (hoặc `/tier 2`) : 🏢 *Quản trị Doanh nghiệp* — Statutory Conflict Scanner & rủi ro tuân thủ cho HR/Pháp chế\n"
-            "• `/tier judicial` (hoặc `/tier 3`) : ⚖️ *Tài phán Tư pháp* — Tứ diện RAFA Matrix, phân tầng SAH & số cái NPL-JSON\n"
+            "🌐 *CÚ PHÁP CHỌN CHẾ ĐỘ SỬ DỤNG:*\n\n"
+            "• `/tier citizen` (hoặc `/tier 1`) : 👥 *Tra cứu Dân sinh* — Giải đáp pháp luật đơn giản, dễ hiểu kèm hướng dẫn hành động cụ thể cho công dân\n"
+            "• `/tier enterprise` (hoặc `/tier 2`) : 🏢 *Quản trị Doanh nghiệp* — Phân tích rủi ro pháp lý & rà soát xung đột quy định cho doanh nghiệp\n"
+            "• `/tier judicial` (hoặc `/tier 3`) : ⚖️ *Nghiệp vụ Tư pháp* — Thẩm định pháp lý chuyên sâu, đối chiếu hiệu lực văn bản & xuất chứng cứ tố tụng\n"
         )
         return
 
     if tier_arg in ["1", "CITIZEN"]:
         USER_ACCESS_TIERS[chat_id] = "CITIZEN"
-        send_message(chat_id, "👥 *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Phổ cập Dân sinh (CITIZEN)*\n\nPhản hồi tiếp theo sẽ tuân theo cấu trúc 3 bước hành động với ngôn ngữ dễ hiểu, chuẩn xác cho mọi công dân.")
+        send_message(chat_id, "👥 *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Tra cứu Dân sinh*\n\nPhản hồi tiếp theo sẽ tuân theo cấu trúc hướng dẫn hành động với ngôn ngữ dễ hiểu, chuẩn xác cho công dân.")
     elif tier_arg in ["2", "ENTERPRISE"]:
         USER_ACCESS_TIERS[chat_id] = "ENTERPRISE"
-        send_message(chat_id, "🏢 *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Quản trị Doanh nghiệp (ENTERPRISE)*\n\nPhản hồi tiếp theo sẽ tích hợp Statutory Conflict Scanner & phân tích rủi ro tuân thủ.")
+        send_message(chat_id, "🏢 *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Quản trị Doanh nghiệp*\n\nPhản hồi tiếp theo sẽ tập trung phân tích rủi ro pháp lý & rà soát xung đột quy định.")
     elif tier_arg in ["3", "JUDICIAL"]:
         USER_ACCESS_TIERS[chat_id] = "JUDICIAL"
-        send_message(chat_id, "⚖️ *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Tài phán Tư pháp (JUDICIAL)*\n\nPhản hồi tiếp theo sẽ áp dụng ma trận RAFA Matrix, phân tầng SAH & đính kèm chứng minh pháp lý NPL-JSON.")
+        send_message(chat_id, "⚖️ *ĐÃ CHUYỂN SANG CHẾ ĐỘ: Nghiệp vụ Tư pháp*\n\nPhản hồi tiếp theo sẽ thẩm định chuyên sâu, đối chiếu hiệu lực theo gia phả văn bản & bảo chứng pháp lý.")
 
 def process_update(update: dict):
     """Xử lý một update từ Telegram."""
@@ -1067,7 +1067,7 @@ def main():
     """Main polling loop — Long Polling."""
     ensure_single_instance()
     print("=" * 60)
-    print("⚖️  LuatBot Telegram — Trợ lý Pháp lý AI")
+    print("⚖️  LuatBot Telegram — Trợ lý Pháp luật Việt Nam")
     print("=" * 60)
     
     # Kiểm tra kết nối Telegram (Retry tối đa 5 lần)
@@ -1109,7 +1109,7 @@ def main():
             {"command": "search", "description": "🔍 Tìm kiếm văn bản pháp luật"},
             {"command": "status", "description": "📊 Kiểm tra trạng thái server"},
             {"command": "benchmark", "description": "📈 Xem kết quả benchmark LLM"},
-            {"command": "agent", "description": "💻 Ra lệnh cho AI Agent trong IDE"},
+            {"command": "agent", "description": "💻 Ra lệnh cho Trợ lý lập trình trong IDE"},
             {"command": "sync", "description": "🔗 Đồng bộ 2 chiều trực tiếp với IDE Agent"},
         ]
     })

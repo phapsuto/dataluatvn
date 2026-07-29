@@ -255,15 +255,13 @@ async def dashboard_crawler_start(request: Request):
     env["CRAWLER_TABS"] = str(tabs)
     if proxy:
         env["CRAWLER_PROXY"] = proxy
-    # Auto-detect: headless on Linux, headed on macOS
-    import platform
-    if platform.system() == "Linux":
-        env["CRAWLER_HEADLESS"] = "1"
+    # Luôn chạy chế độ âm thầm (headless=True) trên tất cả hệ điều hành để không bật cửa sổ trình duyệt
+    env["CRAWLER_HEADLESS"] = "1"
 
     _crawler_process = subprocess.Popen(cmd, env=env, cwd=_PROJECT_ROOT)
     return {"ok": True, "pid": _crawler_process.pid, "tabs": tabs, "limit": limit,
             "proxy": proxy or "none",
-            "headless": env.get("CRAWLER_HEADLESS", "0") == "1"}
+            "headless": True}
 
 
 @router.post("/crawler/stop")

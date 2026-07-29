@@ -21,6 +21,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import DB_NAME, API_PORT, DESCRIPTION, TAGS_METADATA
 from app.database import init_admin_db, init_memory_db
@@ -128,6 +129,9 @@ app.include_router(lineage.router)
 app.include_router(assistant_memory.router)
 app.include_router(chatbot.router)
 app.include_router(document_chat.router)
+
+# Mount static files (portal.html, css, js)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # ╔══════════════════════════════════════════════════════════════╗

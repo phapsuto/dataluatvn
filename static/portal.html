@@ -1302,16 +1302,6 @@
       box-shadow: var(--shadow-md);
     }
 
-    .badge-pdf {
-      background-color: #ef4444;
-      color: #ffffff;
-      font-size: 0.65rem;
-      font-weight: 800;
-      padding: 0.2rem 0.4rem;
-      border-radius: 3px;
-      line-height: 1;
-    }
-
     .badge-docx {
       background-color: #2563eb;
       color: #ffffff;
@@ -1811,67 +1801,78 @@
     }
 
     /* --- Tri-Tier Phổ Cập Toàn Diện CSS --- */
+    /* --- Modern Bento Box Tri-Tier Menu --- */
     .tri-tier-selector-banner {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
       width: 100%;
-      max-width: 840px;
-      margin: 10px 0 20px 0;
+      max-width: 920px;
+      margin: 16px auto 24px auto;
+    }
+    @media (max-width: 768px) {
+      .tri-tier-selector-banner {
+        grid-template-columns: 1fr;
+      }
     }
     .tier-card {
       display: flex;
+      flex-direction: column;
       align-items: flex-start;
       gap: 12px;
-      padding: 14px;
-      border-radius: 12px;
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid rgba(148, 163, 184, 0.18);
+      padding: 20px;
+      border-radius: 20px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
+      box-shadow: 0 4px 16px rgba(15, 44, 89, 0.05);
+      text-align: left;
     }
     .tier-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(59, 130, 246, 0.5);
-      background: rgba(30, 41, 59, 0.85);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      transform: translateY(-4px);
+      border-color: #3b82f6;
+      box-shadow: 0 12px 28px rgba(59, 130, 246, 0.12);
     }
     .tier-card.active {
-      background: linear-gradient(135deg, rgba(30, 58, 138, 0.55) 0%, rgba(15, 23, 42, 0.85) 100%);
-      border: 1.5px solid #3b82f6;
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
+      background: #ffffff;
+      border: 1.5px solid #0f2c59;
+      box-shadow: 0 8px 24px rgba(15, 44, 89, 0.14);
     }
     .tier-card.active::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #3b82f6, #10b981);
+      height: 4px;
+      background: linear-gradient(90deg, #0f2c59, #b8956c);
     }
     .tier-icon {
-      font-size: 1.5rem;
-      background: rgba(255, 255, 255, 0.08);
-      width: 40px; height: 40px;
-      border-radius: 10px;
+      font-size: 1.6rem;
+      background: #f0f4f8;
+      color: #0f2c59;
+      width: 46px; height: 46px;
+      border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
     .tier-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
     }
     .tier-info strong {
-      font-size: 0.88rem;
-      color: #f8fafc;
+      font-size: 1.02rem;
+      color: #0f2c59;
       font-weight: 700;
+      line-height: 1.3;
     }
     .tier-info span {
-      font-size: 0.76rem;
-      color: #94a3b8;
-      line-height: 1.35;
+      font-size: 0.86rem;
+      color: #64748b;
+      line-height: 1.5;
+      font-weight: 400;
     }
 
     .tier-badge {
@@ -2090,22 +2091,22 @@
                 <div class="tier-card active" onclick="selectTier('CITIZEN', this)">
                   <div class="tier-icon">👥</div>
                   <div class="tier-info">
-                    <strong>Phổ cập Dân sinh (Citizen)</strong>
-                    <span>3 bước hành động bảo vệ quyền lợi, ngôn ngữ dễ hiểu cho mọi người dân.</span>
+                    <strong>Tra cứu Dân sinh</strong>
+                    <span>Giải đáp quy định pháp luật bằng ngôn ngữ đơn giản, dễ hiểu, kèm theo hướng dẫn hành động cụ thể cho người dân.</span>
                   </div>
                 </div>
                 <div class="tier-card" onclick="selectTier('ENTERPRISE', this)">
                   <div class="tier-icon">🏢</div>
                   <div class="tier-info">
-                    <strong>Quản trị Doanh nghiệp (Enterprise)</strong>
-                    <span>Statutory Conflict Scanner, phân tích xung đột pháp lý & rủi ro cho HR/Pháp chế.</span>
+                    <strong>Quản trị Doanh nghiệp</strong>
+                    <span>Phân tích toàn diện rủi ro pháp lý, rà soát xung đột quy định và hỗ trợ tuân thủ cho doanh nghiệp, nhân sự và pháp chế.</span>
                   </div>
                 </div>
                 <div class="tier-card" onclick="selectTier('JUDICIAL', this)">
                   <div class="tier-icon">⚖️</div>
                   <div class="tier-info">
-                    <strong>Tài phán Tư pháp (Judicial)</strong>
-                    <span>Tứ diện RAFA Matrix, sổ cái NPL-JSON, phân tầng hiệu lực SAH cho tư pháp chuyên nghiệp.</span>
+                    <strong>Nghiệp vụ Tư pháp</strong>
+                    <span>Thẩm định pháp lý chuyên sâu, đối chiếu hiệu lực văn bản theo cây gia phả pháp luật và xuất báo cáo chứng cứ cho hoạt động tố tụng.</span>
                   </div>
                 </div>
               </div>
@@ -2144,10 +2145,10 @@
                 <option value="dieu_tra_vien">🕵️ Điều tra viên</option>
                 <option value="chap_hanh_vien">👮 Chấp hành viên</option>
               </select>
-              <select id="chat-tier-select" class="tier-select" title="Chọn Chế độ Phổ cập (Dân sinh - Doanh nghiệp - Tư pháp)" onchange="onTierSelectChange(this.value)" style="border: none; background: transparent; color: #10b981; font-weight: 700; font-family: var(--font-ui); outline: none; padding: 0 10px; cursor: pointer; height: 100%; border-left: 1px solid rgba(255,255,255,0.15);">
-                <option value="CITIZEN" selected>👥 Phổ cập Dân sinh</option>
+              <select id="chat-tier-select" class="tier-select" title="Chọn chế độ sử dụng" onchange="onTierSelectChange(this.value)" style="border: none; background: transparent; color: #10b981; font-weight: 700; font-family: var(--font-ui); outline: none; padding: 0 10px; cursor: pointer; height: 100%; border-left: 1px solid rgba(255,255,255,0.15);">
+                <option value="CITIZEN" selected>👥 Tra cứu Dân sinh</option>
                 <option value="ENTERPRISE">🏢 Quản trị Doanh nghiệp</option>
-                <option value="JUDICIAL">⚖️ Tài phán Tư pháp</option>
+                <option value="JUDICIAL">⚖️ Nghiệp vụ Tư pháp</option>
               </select>
               <button class="chat-icon-btn" onclick="toast('Tính năng đính kèm tài liệu đang được hoàn thiện và sẽ ra mắt trong phiên bản kế tiếp.', 'info')"><i data-lucide="paperclip"></i></button>
               <textarea id="chat-input" placeholder="Nhập câu hỏi hoặc tình huống pháp lý của bạn..." rows="1" onkeydown="handleChatKeyDown(event)" oninput="adjustTextareaHeight(this)"></textarea>
@@ -2254,10 +2255,6 @@
             <div class="overview-section">
               <h4 id="ov-download-header">TẢI VĂN BẢN</h4>
               <div class="download-links-container">
-                <div class="download-link-item" onclick="downloadPdf()">
-                  <span class="badge-pdf">PDF</span>
-                  <span id="ov-pdf-link-text">Tải bản PDF (có dấu đỏ)</span>
-                </div>
                 <div class="download-link-item" onclick="downloadDocx()">
                   <span class="badge-docx">DOCX</span>
                   <span id="ov-docx-link-text">Tải bản Word (.docx)</span>
@@ -2345,7 +2342,7 @@
 
           <h4 style="color: var(--primary); text-transform: uppercase; border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; margin-top: 2.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
             <i data-lucide="shield-alert" style="width: 20px; height: 20px; color: #ef4444;"></i>
-            Quy định chồng chéo & Đối chiếu thứ bậc hiệu lực (AI Check)
+            Quy định chồng chéo & Đối chiếu thứ bậc hiệu lực văn bản
           </h4>
           <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">Phát hiện và đối chiếu các văn bản cùng lĩnh vực. Đánh giá ưu tiên áp dụng theo thứ bậc hiệu lực (Điều 156 Luật Ban hành văn bản quy phạm pháp luật).</p>
           <table class="related-list-table">
@@ -2779,7 +2776,10 @@
 
       const loaiVb = d.loai_van_ban ? d.loai_van_ban + ' ' : '';
       const soKyHieu = d.so_ky_hieu && d.so_ky_hieu !== 'Không số' ? 'số ' + d.so_ky_hieu + ' ' : '';
-      const fullTitle = `${loaiVb}${soKyHieu}${d.title}`;
+      let fullTitle = `${loaiVb}${soKyHieu}${d.title || ''}`;
+      if (d.title && (d.title.toLowerCase().startsWith((d.loai_van_ban || '').toLowerCase()) || /^(queyt dinh|quyết định|luật|nghị định|thông tư|chỉ thị|nghị quyết|pháp lệnh)/i.test(d.title.trim()))) {
+        fullTitle = d.title;
+      }
 
       // Update Overview (Tổng quan)
       document.getElementById('ov-title').innerText = fullTitle;
@@ -2797,8 +2797,22 @@
       
       document.getElementById('ov-ngayhieuluc').innerText = d.ngay_co_hieu_luc || d.ngay_ban_hanh || 'Đã biết';
       let cleanStatus = d.tinh_trang_hieu_luc || 'Còn hiệu lực';
-      if (cleanStatus.includes('Cho biết') || cleanStatus.includes('đang tra cứu') || cleanStatus.length > 50) {
+      if (cleanStatus.includes('Cho biết') || cleanStatus.includes('đang tra cứu') || cleanStatus.length > 50 || !cleanStatus.trim() || cleanStatus === 'Chưa xác định') {
         cleanStatus = 'Còn hiệu lực';
+      }
+      if (cleanStatus.toLowerCase().includes('chưa có hiệu lực')) {
+        const effDateStr = d.ngay_co_hieu_luc || d.ngay_ban_hanh;
+        if (effDateStr && effDateStr.includes('/')) {
+          const parts = effDateStr.split('/');
+          if (parts.length === 3) {
+            const effDate = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            if (effDate <= today) {
+              cleanStatus = 'Còn hiệu lực';
+            }
+          }
+        }
       }
       document.getElementById('ov-tinhtrang').innerText = cleanStatus;
       document.getElementById('ov-trichyeu').innerText = d.title;
@@ -2811,8 +2825,7 @@
       document.getElementById('ov-summary-header').innerText = `TÓM TẮT ${docTypeUpper} ${docNoUpper}`.trim();
       document.getElementById('ov-download-header').innerText = `TẢI ${docTypeUpper} ${docNoUpper}`.trim();
       
-      document.getElementById('ov-pdf-link-text').innerText = `${docName} PDF (Bản có dấu đỏ)`;
-      document.getElementById('ov-docx-link-text').innerText = `${docName} DOCX (Bản soạn thảo)`;
+      document.getElementById('ov-docx-link-text').innerText = `Tải bản Word (.docx) cho ${docName}`;
 
       // Update Full Text (Nội dung)
       let day = '...';
@@ -3201,12 +3214,6 @@
       window.open(`/laws/${currentDocId}/download?api_key=${PORTAL_API_KEY}`, '_blank');
     }
 
-    function downloadPdf() {
-      if (!currentDocId) return;
-      alert("Hệ thống đang trích xuất file PDF có dấu đỏ cho văn bản " + (currentDocData?.so_ky_hieu || "") + ". Trong lúc chờ đợi, bạn có thể tải bản Word DOCX chính thức bên dưới.");
-      downloadDocx();
-    }
-
     function parseMarkdownToSimpleHTML(md) {
       if (!md) return '<p style="text-align:center;color:var(--text-muted);">Văn bản chưa cập nhật nội dung toàn văn.</p>';
       if (md.trim().startsWith('<') || md.includes('</p>')) return md;
@@ -3314,7 +3321,7 @@
       msgList.innerHTML = activeSession.messages.map(msg => {
         const isUser = msg.role === 'user';
         const avatarClass = isUser ? 'avatar-user' : 'avatar-assistant';
-        const label = isUser ? 'U' : 'AI';
+        const label = isUser ? 'U' : '⚖️';
         
         let botHeaderHTML = '';
         let nplCardHTML = '';
@@ -3332,8 +3339,8 @@
           };
           const icon = domainIcons[msg.domain] || "⚖️";
           const tierLabel = msg.access_tier === 'ENTERPRISE' ? '🏢 Quản trị Doanh nghiệp' :
-                            msg.access_tier === 'JUDICIAL' ? '⚖️ Tài phán Tư pháp' :
-                            '👥 Phổ cập Dân sinh';
+                            msg.access_tier === 'JUDICIAL' ? '⚖️ Nghiệp vụ Tư pháp' :
+                            '👥 Tra cứu Dân sinh';
           const tierClass = msg.access_tier === 'ENTERPRISE' ? 'tier-enterprise' :
                             msg.access_tier === 'JUDICIAL' ? 'tier-judicial' :
                             'tier-citizen';
@@ -3341,9 +3348,9 @@
           let dvsBadgeHTML = '';
           if (msg.dvs_status === 'VERIFIED_BY_DVS_SHIELD') {
             dvsBadgeHTML = `
-              <div class="dvs-shield-badge" title="DVS Shield đã kiểm tra tính hiệu lực & bảo mật của lập luận">
-                <span>🛡️ DVS SHIELD VERIFIED</span>
-                <span style="opacity: 0.7;">• NPL-JSON Active</span>
+              <div class="dvs-shield-badge" title="Hệ thống đã rà soát và xác thực tính chính xác hiệu lực văn bản">
+                <span>🛡️ ĐÃ XÁC THỰC HIỆU LỰC PHÁP LÝ</span>
+                <span style="opacity: 0.7;">• BẢO CHỨNG CHUẨN MỰC</span>
               </div>
             `;
           }
@@ -3353,12 +3360,12 @@
             nplCardHTML = `
               <div class="npl-ledger-card">
                 <div class="npl-ledger-header">
-                  <span>📜 SỐ CÁI CHỨNG MINH PHÁP LÝ (NPL-JSON v4.0)</span>
-                  <span>${receipt.receipt_id || 'NPL-ACTIVE'}</span>
+                  <span>📜 SỔ CÁI XÁC THỰC HIỆU LỰC VĂN BẢN</span>
+                  <span>${receipt.receipt_id || 'MÃ-XÁC-THỰC'}</span>
                 </div>
                 <div class="npl-ledger-body">
-                  <span>Cấp độ cơ sở pháp lý: <strong>Tier 1 (${receipt.tier1_primary_count || 0})</strong> | <strong>Tier 2 (${receipt.tier2_precedent_count || 0})</strong></span>
-                  <span>Mã băm SHA-256: <strong>PASSED ✅</strong></span>
+                  <span>Cấp độ cơ sở pháp lý: <strong>Ưu tiên chính (${receipt.tier1_primary_count || 0})</strong> | <strong>Áp dụng thực tiễn (${receipt.tier2_precedent_count || 0})</strong></span>
+                  <span>Xác minh toàn vẹn: <strong>CHUẨN MỰC ✅</strong></span>
                 </div>
               </div>
             `;
@@ -3553,9 +3560,9 @@
       }
       
       const tierNames = {
-        'CITIZEN': '👥 Phổ cập Dân sinh (3 bước hành động)',
-        'ENTERPRISE': '🏢 Quản trị Doanh nghiệp (Statutory Scanner)',
-        'JUDICIAL': '⚖️ Tài phán Tư pháp (RAFA Matrix & NPL-JSON)'
+        'CITIZEN': '👥 Tra cứu Dân sinh (Hướng dẫn hành động cụ thể)',
+        'ENTERPRISE': '🏢 Quản trị Doanh nghiệp (Rà soát xung đột pháp lý)',
+        'JUDICIAL': '⚖️ Nghiệp vụ Tư pháp (Thẩm định hiệu lực văn bản)'
       };
       toast(`Đã chuyển sang chế độ: ${tierNames[tier] || tier}`, 'ok');
     }
@@ -3569,9 +3576,9 @@
         if (cards[indexMap[tier]]) cards[indexMap[tier]].classList.add('active');
       }
       const tierNames = {
-        'CITIZEN': '👥 Phổ cập Dân sinh (3 bước hành động)',
-        'ENTERPRISE': '🏢 Quản trị Doanh nghiệp (Statutory Scanner)',
-        'JUDICIAL': '⚖️ Tài phán Tư pháp (RAFA Matrix & NPL-JSON)'
+        'CITIZEN': '👥 Tra cứu Dân sinh (Hướng dẫn hành động cụ thể)',
+        'ENTERPRISE': '🏢 Quản trị Doanh nghiệp (Rà soát xung đột pháp lý)',
+        'JUDICIAL': '⚖️ Nghiệp vụ Tư pháp (Thẩm định hiệu lực văn bản)'
       };
       toast(`Đã chuyển sang chế độ: ${tierNames[tier] || tier}`, 'ok');
     }
@@ -3631,7 +3638,7 @@
       const loaderRow = document.createElement('div');
       loaderRow.className = 'message-row assistant-row';
       loaderRow.innerHTML = `
-        <div class="message-avatar avatar-assistant">AI</div>
+        <div class="message-avatar avatar-assistant">⚖️</div>
         <div class="message-bubble assistant-bubble">
           <div class="message-bot-header">
             <span class="bot-icon">⚖️</span>
@@ -3662,7 +3669,7 @@
           })
         });
 
-        if (!res.ok) throw new Error('Không thể kết nối đến Trợ lý AI.');
+        if (!res.ok) throw new Error('Không thể kết nối đến Trợ lý pháp luật.');
         const data = await res.json();
         
         const latency = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -3690,7 +3697,7 @@
         msgList.removeChild(loaderRow);
         const assistantMsg = {
           role: 'assistant',
-          content: `❌ Lỗi kết nối hệ thống AI: ${err.message}`,
+          content: `❌ Lỗi kết nối hệ thống pháp luật: ${err.message}`,
           timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
         };
         session.messages.push(assistantMsg);

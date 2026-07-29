@@ -61,21 +61,21 @@ def test_telegram_bot_tier_command(monkeypatch):
     handle_tier_command(chat_id, "/tier enterprise")
     assert USER_ACCESS_TIERS.get(chat_id) == "ENTERPRISE"
     assert len(dummy.messages) == 1
-    assert "ENTERPRISE" in dummy.messages[-1][1]
+    assert "Doanh nghiệp" in dummy.messages[-1][1]
 
     # Test switch to JUDICIAL
     handle_tier_command(chat_id, "/tier judicial")
     assert USER_ACCESS_TIERS.get(chat_id) == "JUDICIAL"
     assert len(dummy.messages) == 2
-    assert "JUDICIAL" in dummy.messages[-1][1]
+    assert "Tư pháp" in dummy.messages[-1][1]
 
     # Test switch to CITIZEN via number
     handle_tier_command(chat_id, "/tier 1")
     assert USER_ACCESS_TIERS.get(chat_id) == "CITIZEN"
     assert len(dummy.messages) == 3
-    assert "CITIZEN" in dummy.messages[-1][1]
+    assert "Dân sinh" in dummy.messages[-1][1]
 
     # Test invalid argument
     handle_tier_command(chat_id, "/tier unknown_mode")
     assert len(dummy.messages) == 4
-    assert "CÚ PHÁP ĐỔI CHẾ ĐỘ PHỔ CẬP" in dummy.messages[-1][1]
+    assert "CÚ PHÁP CHỌN CHẾ ĐỘ SỬ DỤNG" in dummy.messages[-1][1]

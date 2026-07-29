@@ -147,7 +147,7 @@ async def crawl_documents(missing_ids):
     conn_content.execute("PRAGMA busy_timeout=30000")
 
     NUM_TABS = int(os.environ.get("CRAWLER_TABS", "5"))
-    HEADLESS = os.environ.get("CRAWLER_HEADLESS", "0") == "1"
+    HEADLESS = os.environ.get("CRAWLER_HEADLESS", "1") != "0"
     PROXY = os.environ.get("CRAWLER_PROXY", "").strip()
     MAX_RETRIES = 3
 

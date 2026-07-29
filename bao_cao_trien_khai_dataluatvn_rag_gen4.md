@@ -59,17 +59,25 @@ Thực hiện đúng định hướng và thống nhất 100% theo đề xuất 
 ---
 
 ### 3. Giai đoạn 3: Phổ cập Trải nghiệm Toàn dân trên Web Portal & Telegram Bot
-- **Các giao diện/mạng xã hội đã nâng cấp**: `static/portal.html`, `telegram_bot.py`
-- **Các cải tiến đột phá về Trải nghiệm Người dùng (UI/UX)**:
-  - **Tri-Tier Universal Accessibility Banner** trong giao diện Web Portal (`#portal.html`):
-    - Ngay dưới lời chào của trợ lý AI, người dùng có thể nhấp chọn 3 chế độ phổ cập với mô tả quyền lợi rõ ràng.
-    - Bộ chọn trên thanh công cụ chat (`#chat-tier-select`) đồng bộ hóa thời gian thực (real-time state synchronization) với các thẻ banner, tự động lưu lại trong JavaScript state và truyền tham số `access_tier` trong HTTP POST request.
-  - **Hiển thị Huy hiệu Kiểm toán Pháp lý trực quan**:
-    - **🛡️ DVS SHIELD VERIFIED**: Huy hiệu màu lục ngọc bảo bọc trong thẻ tin nhắn, khẳng định căn cứ đã được đối chiếu băm hợp lệ.
-    - **📜 SỐ CÁI CHỨNG MINH PHÁP LÝ (NPL-JSON v4.0)**: Khung thẻ Sổ cái (Ledger Card) với hiệu ứng kính mờ (glassmorphism), liệt kê số lượng điều khoản căn cứ, chữ ký số kiểm toán SHA-256 và nút mở modal xem nguyên bản JSON.
-  - **Tích hợp lệnh `/tier` trên Telegram Bot (`telegram_bot.py`)**:
-    - Người dùng Telegram có thể gõ `/tier citizen`, `/tier enterprise`, `/tier judicial` (hoặc `/tier 1/2/3`) để chuyển đổi chế độ nhận trả lời phù hợp với nhu cầu.
-    - Bộ nhớ `USER_ACCESS_TIERS` tự động duy trì chế độ đã chọn cho từng phiên chat của người dùng.
+- **Các giao diện/mạng xã hội đã nâng cấp**: `static/portal.html`, `telegram_bot.py`, `server.py`, `scripts/sync_new_laws.py`
+- **Các cải tiến đột phá về Trải nghiệm Người dùng & Ngôn ngữ Tiếng Việt (UI/UX & Tone of Voice)**:
+  - **Thiết kế Bento Box sang trọng, nhẹ nhàng, bo tròn 16px**:
+    - Tái cấu trúc 3 thẻ phân tầng dịch vụ trên `portal.html` theo chuẩn bố cục Bento Box hiện đại, góc bo tròn mềm mại (`border-radius: 16px`), đổ bóng tinh tế và màu sắc nhã nhặn.
+    - Chuyển đổi liền mạch giữa 3 nhóm đối tượng:
+      - **Dân sinh (Người dân)**: Giải thích dễ hiểu, minh họa cụ thể cho đời sống (thủ tục hành chính, lao động, hôn nhân gia đình...).
+      - **Doanh nghiệp**: Trọng tâm vào hợp đồng, tuân thủ pháp luật kinh doanh, lao động thuế.
+      - **Tư pháp Chuyên nghiệp**: Hỗ trợ Thẩm phán, Kiểm sát viên, Luật sư tra cứu cấu trúc điều khoản chính xác, trích dẫn chặt chẽ đến từng điểm/khoản.
+  - **Loại bỏ triệt để 100% thuật ngữ Công nghệ / IT khô khan**:
+    - Thay thế các từ thuật ngữ ngoại lai (*AI Check*, *RAFA Matrix*, *NPL-JSON*, *Statutory Scanner*, *RAG*, *AI Agent*) bằng tiếng Việt chuẩn mực, gần gũi, dễ hiểu:
+      - *Tra cứu chuyên sâu* (thay cho AI Check)
+      - *Đối chiếu hiệu lực pháp lý* (thay cho RAFA Matrix)
+      - *Định dạng văn bản chuẩn* (thay cho NPL-JSON)
+      - *Quét và phân tích quy định* (thay cho Statutory Scanner)
+      - *Trợ lý Pháp luật Việt Nam* / *Trợ lý lập trình* (thay cho Trợ lý AI / AI Agent)
+  - **Khắc phục Triệt để Lỗi Đồng Bộ Tự Động (`sync_new_laws.py`)**:
+    - Sửa lỗi crawler ngừng cập nhật ở ngày 21/07 do bị đóng ngữ cảnh trình duyệt (shared browser context disconnection).
+    - Tách độc lập ngữ cảnh (`browser.new_context()`) cho từng nguồn dữ liệu (VBPL, LuatVietnam, PhapLuat), đảm bảo tiến trình thu thập diễn ra bền bỉ, liên tục và không bị ảnh hưởng chéo.
+  - **Tối ưu Máy chủ (`server.py`)**: Mount tĩnh `/static` hỗ trợ mượt mà truy cập cả hai đường dẫn `/portal` và `/static/portal.html`.
 - **Kiểm chứng**: Đã chạy bộ kiểm thử `tests/test_phase3_universal_tri_tier.py` → **PASSED (100%)**.
 
 ---
