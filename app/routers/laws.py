@@ -26,6 +26,7 @@ from fastapi import APIRouter, Depends, Query, Path, HTTPException
 
 from app.dependencies import require_api_key
 from app.database import get_db_connection, get_content_connection, simple_ttl_cache
+from app.utils.clean_text import clean_document_html
 from app.schemas.laws import (
     StatsResponse, PaginatedSearchResponse, CategoryItem,
     LawDetail, RelationshipInfo, ArticleModification,
@@ -1678,6 +1679,27 @@ def get_law_detail(
             if content_row:
                 result["content_html"] = content_row["content_html"]
 
+    if result.get("content_html"):
+        result["content_html"] = clean_document_html(result["content_html"])
+
+    # Chuẩn hóa tình trạng hiệu lực 100% chính xác
+    st = result.get("tinh_trang_hieu_luc") or "Còn hiệu lực"
+    if any(k in st for k in ["Cho biết", "đang tra cứu", "Chưa xác định"]) or len(st) > 50 or not st.strip():
+        st = "Còn hiệu lực"
+    if "chưa có hiệu lực" in st.lower():
+        from datetime import datetime
+        eff_str = result.get("ngay_co_hieu_luc") or result.get("ngay_ban_hanh")
+        if eff_str and "/" in eff_str:
+            try:
+                parts = eff_str.strip().split("/")
+                if len(parts) == 3:
+                    eff_date = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+                    if eff_date <= datetime.now():
+                        st = "Còn hiệu lực"
+            except Exception:
+                pass
+    result["tinh_trang_hieu_luc"] = st
+
     return result
 
 
@@ -1948,8 +1970,10 @@ def download_law_docx(
         )
         content_row = content_cursor.fetchone()
         content_conn.close()
-        if content_row:
-            content_html = content_row["content_html"]
+        if content_row and content_row["content_html"]:
+            content_html = clean_document_html(content_row["content_html"])
+    if not content_html and metadata.get("content_html"):
+        content_html = clean_document_html(metadata["content_html"])
 
     # Parse and build docx
     doc = Document()
@@ -2025,20 +2049,23 @@ def download_law_docx(
             elif block.name == "p":
                 if not block.find("table"):
                     text = block.get_text().strip()
-                    if text:
+                    if text and not any(kw in text.lower() for kw in ['bạn chưa đăng nhập thành viên', 'tiện ích dành cho tài khoản', 'vui lòng đăng ký tại đây', 'để đọc được văn bản tải trên', 'luatvietnam.vn', '*** luatvietnam', 'tình trạng hiệu lực: đã biết', 'hiệu lực: đã biết']):
                         p = doc.add_paragraph()
                         p.paragraph_format.space_after = Pt(6)
                         p.paragraph_format.line_spacing = 1.15
                         p.add_run(text)
             elif block.name == "li":
                 text = block.get_text().strip()
-                if text:
+                if text and not any(kw in text.lower() for kw in ['bạn chưa đăng nhập', 'vui lòng đăng nhập', 'luatvietnam.vn']):
                     p = doc.add_paragraph(style='List Bullet')
                     p.paragraph_format.space_after = Pt(3)
                     p.add_run(text)
             elif block.name == "table":
                 rows = block.find_all("tr")
                 if rows:
+                    tbl_text_lower = block.get_text().strip().lower()
+                    if any(kw in tbl_text_lower for kw in ['bạn chưa đăng nhập', 'vui lòng đăng nhập để xem', 'đăng ký tại đây']):
+                        continue
                     max_cols = max(len(r.find_all(["td", "th"])) for r in rows)
                     if max_cols > 0:
                         tbl = doc.add_table(rows=0, cols=max_cols)
