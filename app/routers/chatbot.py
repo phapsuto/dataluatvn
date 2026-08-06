@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
     prompt: str = Field(..., description="Câu hỏi pháp luật của người dùng")
     session_id: Optional[str] = Field(None, description="Mã phiên hội thoại để lưu lịch sử")
     access_tier: Optional[str] = Field("CITIZEN", description="Chế độ phổ cập: CITIZEN | ENTERPRISE | JUDICIAL")
+    mode: Optional[str] = Field("chat", description="Chế độ: chat hoặc legal_crosscheck")
 
 class Citation(BaseModel):
     id: int
@@ -177,6 +178,29 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     prompt = req.prompt.strip()
     session_id = req.session_id or "default_user"
     
+    if req.mode == "legal_crosscheck":
+        from app.utils.ultimate_retrieval import ultimate_retrieve
+        from app.utils.llm_gateway import LLMGateway
+        from app.utils.clean_text import clean_context_artifacts, strip_thinking_tags
+        
+        formatted_chunks, citation_map, _ = await ultimate_retrieve(
+            query=prompt, domain_filter=[], top_k=5
+        )
+        crosscheck_prompt = "Dựa vào thông tin luật sau, hãy cho biết hành vi mô tả cấu thành tội gì, thuộc Điều, Khoản nào. TRẢ VỀ JSON: {\"toi_danh\": \"...\", \"dieu\": \"...\"}. CHỈ TRẢ VỀ JSON."
+        try:
+            tokens = []
+            async for token in LLMGateway.call_stream([{"role": "user", "content": f"Luật:\n{formatted_chunks}\n\nHành vi:\n{prompt}"}], crosscheck_prompt):
+                tokens.append(token)
+            return {
+                "response": clean_context_artifacts(strip_thinking_tags("".join(tokens))),
+                "citations": list(citation_map.values()),
+                "domain": "dan_su",
+                "flare_activated": False,
+                "search_count": 1
+            }
+        except Exception as ex:
+            raise HTTPException(status_code=500, detail=str(ex))
+            
     # ── RAG Gen 3 Facade (Deep Modules) ──
     from app.utils.assistant_facade import process_chat_query
     
@@ -228,6 +252,30 @@ async def assistant_stream(req: ChatRequest, _key=Depends(require_api_key)):
         prompt = req.prompt.strip()
         session_id = req.session_id or "default_session"
         
+        if req.mode == "legal_crosscheck":
+            from app.utils.ultimate_retrieval import ultimate_retrieve
+            from app.utils.llm_gateway import LLMGateway
+            from app.utils.clean_text import clean_context_artifacts, strip_thinking_tags
+            import json
+            
+            formatted_chunks, citation_map, _ = await ultimate_retrieve(
+                query=prompt, domain_filter=[], top_k=5
+            )
+            crosscheck_prompt = "Dựa vào thông tin luật sau, hãy cho biết hành vi mô tả cấu thành tội gì, thuộc Điều, Khoản nào. TRẢ VỀ JSON: {\"toi_danh\": \"...\", \"dieu\": \"...\"}. CHỈ TRẢ VỀ JSON."
+            try:
+                tokens = []
+                async for token in LLMGateway.call_stream([{"role": "user", "content": f"Luật:\n{formatted_chunks}\n\nHành vi:\n{prompt}"}], crosscheck_prompt):
+                    tokens.append(token)
+                    yield f"event: token\ndata: {json.dumps({'content': token})}\n\n"
+                    
+                final_text = clean_context_artifacts(strip_thinking_tags("".join(tokens)))
+                yield f"event: citations\ndata: {json.dumps({'citations': [c.dict() for c in citation_map.values()], 'domain': 'dan_su', 'flare_activated': False, 'search_count': 1})}\n\n"
+                yield "event: done\ndata: {}\n\n"
+                return
+            except Exception as ex:
+                yield f"event: error\ndata: {json.dumps({'error': str(ex)})}\n\n"
+                return
+
         # Step 1: Intent & 5-Axis
         yield f"event: intent_detected\ndata: {json.dumps({'status': 'in_progress', 'step': '5-Axis Intent Classification'})}\n\n"
         
