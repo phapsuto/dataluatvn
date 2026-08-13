@@ -21,13 +21,15 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_HOURS = 24 * 7  # 7 days
 
-# Runtime safety check for public deployment
+# Runtime safety checks
+import warnings
 if not JWT_SECRET:
-    import warnings
-    warnings.warn("⚠️  JWT_SECRET not set in .env — using insecure default. Set JWT_SECRET for production!", stacklevel=2)
-    JWT_SECRET = "dlvn-dev-only-insecure-default"
+    raise RuntimeError(
+        "❌ JWT_SECRET chưa được thiết lập trong .env. "
+        "Hãy tạo secret ngẫu nhiên: python3 -c \"import secrets; print(secrets.token_hex(32))\" "
+        "rồi thêm JWT_SECRET=<giá_trị> vào .env"
+    )
 if not FPT_CLOUD_API_KEY and not GEMINI_API_KEY:
-    import warnings
     warnings.warn("⚠️  Cả FPT_CLOUD_API_KEY và GEMINI_API_KEY đều chưa được thiết lập trong .env — các tính năng LLM sẽ bị tắt.", stacklevel=2)
 
 # --- SOTA RAG Config ---
@@ -39,16 +41,22 @@ USE_ZVEC_BACKEND = os.environ.get("USE_ZVEC_BACKEND", "true").lower() == "true"
 
 
 # --- Fixed Accounts (Internal Use Only) ---
-# Passwords loaded from environment variables. Set ADMIN_PASSWORD in .env.
+# Passwords and admin emails loaded from environment variables.
 _admin_password = os.environ.get("ADMIN_PASSWORD", "")
 if not _admin_password:
-    import warnings
-    warnings.warn("⚠️  ADMIN_PASSWORD not set in .env — using insecure default. Set ADMIN_PASSWORD for production!", stacklevel=2)
-    _admin_password = "changeme-insecure-default"
+    raise RuntimeError(
+        "❌ ADMIN_PASSWORD chưa được thiết lập trong .env. "
+        "Hãy thêm ADMIN_PASSWORD=<mật_khẩu_mạnh> vào file .env"
+    )
+
+# Admin emails: cấu hình trong .env, cách nhau bằng dấu phẩy
+# Ví dụ: ADMIN_EMAILS=email1@gmail.com,email2@gmail.com
+_admin_emails_raw = os.environ.get("ADMIN_EMAILS", "phamkhoa3092003@gmail.com,phapsuto@gmail.com")
+_admin_emails = [e.strip() for e in _admin_emails_raw.split(",") if e.strip()]
 
 ACCOUNTS = {
-    "phamkhoa3092003@gmail.com": hashlib.sha256(_admin_password.encode()).hexdigest(),
-    "phapsuto@gmail.com": hashlib.sha256(_admin_password.encode()).hexdigest(),
+    email: hashlib.sha256(_admin_password.encode()).hexdigest()
+    for email in _admin_emails
 }
 
 

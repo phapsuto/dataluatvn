@@ -1,5 +1,5 @@
 import re
-import requests
+import json
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
@@ -7,12 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from bs4 import BeautifulSoup, NavigableString
 
 from app.dependencies import require_api_key
-from app.database import get_db_connection, get_content_connection, get_memory_db
+from app.database import get_memory_db
 from app.utils.llm_gateway import LLMGateway
-from app.utils.legal_router import route_query
 from app.utils.user_memory import LegalUserMemory
-from app.utils.ultimate_retrieval import ultimate_retrieve
-from app.utils.flare_retrieval import flare_generate_stream
 from app.utils.file_parsers import parse_file
 from app.utils.legal_doc_analyzer import (
     LegalDocumentAnalyzer,
@@ -244,6 +241,12 @@ async def upload_attachment(
         content_text = parse_file(file.filename, file_bytes)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Lỗi khi đọc tài liệu: {str(e)}")
+
+    if not content_text or len(content_text.strip()) < 20:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Không trích xuất được nội dung từ file '{file.filename}'. File có thể bị trống, hỏng, hoặc là file quét (scanned) không có OCR."
+        )
         
     try:
         analysis = await LegalDocumentAnalyzer.analyze_attachment(content_text, file.filename)
@@ -319,7 +322,9 @@ async def chat_with_assistant(req: ChatRequest, _key=Depends(require_api_key)):
     6. Trích dẫn chuẩn xác P-Cite Citation Lock.
     """
     prompt = req.prompt.strip()
-    session_id = req.session_id or "default_user"
+    # LOG-2 fix: session_id phải luôn có giá trị hợp lệ, không gộp tất cả vào "default_user"
+    session_id = req.session_id or f"anon_{hash(req.prompt[:30])}"
+    session_id = session_id.strip() or f"anon_{hash(req.prompt[:30])}"
     
     # Enrich prompt with attachment context if attachment_id, attachment_context, or active session attachments present
     enriched_prompt = _enrich_prompt_with_attachment(

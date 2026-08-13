@@ -46,7 +46,11 @@ TELEGRAM_BOT_TOKEN = os.environ.get(
 )
 
 LUATBOT_API_URL = os.environ.get("LUATBOT_API_URL", "http://localhost:2004")
-LUATBOT_API_KEY = os.environ.get("LUATBOT_API_KEY", "dlvn_testkey")
+LUATBOT_API_KEY = os.environ.get("LUATBOT_API_KEY", "")
+if not LUATBOT_API_KEY:
+    import warnings
+    warnings.warn("⚠️  LUATBOT_API_KEY chưa được thiết lập trong .env — dùng mặc định 'dlvn_testkey' cho môi trường dev.", stacklevel=2)
+    LUATBOT_API_KEY = "dlvn_testkey"
 
 # Danh sách Telegram user_id được phép dùng bot (để trống = ai cũng dùng được)
 ALLOWED_USER_IDS = []  # Ví dụ: [123456789, 987654321]
@@ -574,8 +578,18 @@ def handle_chat(chat_id: int, user_id: int, text: str, message_id: int):
 
 def handle_file_upload(chat_id: int, user_id: int, file_id: str, filename: str, caption: str, message_id: int):
     """Xử lý tải lên tài liệu hoặc ảnh qua Telegram."""
+    allowed_exts = ('.pdf', '.docx', '.doc', '.txt', '.csv', '.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tiff')
+    if not filename.lower().endswith(allowed_exts):
+        send_message(
+            chat_id,
+            f"⚠️ *Định dạng không được hỗ trợ:* <code>{html.escape(filename)}</code>\n\nLan Anh chỉ hỗ trợ phân tích các file tài liệu và hình ảnh: PDF, DOCX, DOC, TXT, CSV, PNG, JPG, WEBP.",
+            parse_mode="HTML",
+            reply_to=message_id
+        )
+        return
+
     send_typing(chat_id)
-    send_message(chat_id, f"📥 *Lan Anh đang tải về và bóc tách tài liệu:* `{filename}`...", parse_mode="HTML")
+    send_message(chat_id, f"📥 *Lan Anh đang tải về và bóc tách tài liệu:* <code>{html.escape(filename)}</code>...", parse_mode="HTML")
     
     file_bytes, err_msg = download_telegram_file(file_id)
     if not file_bytes:

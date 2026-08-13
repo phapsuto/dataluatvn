@@ -141,7 +141,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 if __name__ == "__main__":
     import uvicorn
 
-    reload_opt = os.environ.get("RELOAD", "true").lower() == "true"
+    reload_opt = os.environ.get("RELOAD", "false").lower() == "true"  # Mặc định TẮT trên production
 
     uvicorn.run(
         "server:app",

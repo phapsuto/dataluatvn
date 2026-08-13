@@ -41,20 +41,25 @@ class LLMGateway:
             "api_key": os.environ.get("GEMINI_API_KEY") or "",
         },
         "ollama": {
-            "model": "ollama/llama3.2",
+            "model": f"ollama/{os.environ.get('OLLAMA_MODEL', 'qwen2.5-coder:32b')}",
             "api_base": os.environ.get("OLLAMA_API_BASE") or "http://localhost:11434",
+        },
+        "airllm": {
+            "model": os.environ.get("AIRLLM_MODEL", "Qwen/Qwen2.5-Coder-32B-Instruct"),
+            "api_base": "local",
+            "api_key": "",
         },
     }
     
     # Default fallback path
-    FALLBACK_CHAIN = ["fpt", "ollama"]
+    FALLBACK_CHAIN = ["fpt", "ollama", "airllm"]
 
     @classmethod
     def get_status(cls) -> Dict[str, Any]:
         """Returns the current state and available models."""
         available = []
         for p, config in cls.PROVIDERS.items():
-            if p == "ollama":
+            if p in ("ollama", "airllm"):
                 available.append(p)
             elif config.get("api_key"):
                 available.append(p)
@@ -104,8 +109,8 @@ class LLMGateway:
         for provider in providers_to_try:
             config = cls.PROVIDERS[provider]
             
-            # Skip provider if API key is required but missing (unless it is Ollama)
-            if provider != "ollama" and not config.get("api_key"):
+            # Skip provider if API key is required but missing (unless it is Ollama/AirLLM)
+            if provider not in ("ollama", "airllm") and not config.get("api_key"):
                 continue
                 
             model = custom_model if (custom_model and provider == "fpt") else config["model"]
@@ -116,29 +121,42 @@ class LLMGateway:
             token_count = 0
             
             try:
-                kwargs = {
-                    "model": model,
-                    "messages": payload_messages,
-                    "temperature": temperature,
-                    "stream": True,
-                    "max_tokens": max_tokens,
-                    "request_timeout": 45.0
-                }
-                if api_key:
-                    kwargs["api_key"] = api_key
-                if api_base:
-                    kwargs["api_base"] = api_base
+                if provider == "airllm":
+                    from app.utils.airllm_service import AirLLMService
+                    target_model = custom_model if custom_model else model
+                    async for token in AirLLMService.astream_chat(
+                        messages=messages,
+                        system_prompt=system_prompt,
+                        temperature=temperature,
+                        max_new_tokens=max_tokens,
+                        model_name=target_model
+                    ):
+                        token_count += 1
+                        yield token
+                else:
+                    kwargs = {
+                        "model": model,
+                        "messages": payload_messages,
+                        "temperature": temperature,
+                        "stream": True,
+                        "max_tokens": max_tokens,
+                        "request_timeout": 45.0
+                    }
+                    if api_key:
+                        kwargs["api_key"] = api_key
+                    if api_base:
+                        kwargs["api_base"] = api_base
+                        
+                    # Call litellm streaming completion
+                    response = await litellm.acompletion(**kwargs)
                     
-                # Call litellm streaming completion
-                response = await litellm.acompletion(**kwargs)
-                
-                async for chunk in response:
-                    delta = chunk.choices[0].delta if chunk.choices else None
-                    if delta:
-                        token = delta.content or getattr(delta, "reasoning_content", None)
-                        if token:
-                            token_count += 1
-                            yield token
+                    async for chunk in response:
+                        delta = chunk.choices[0].delta if chunk.choices else None
+                        if delta:
+                            token = delta.content or getattr(delta, "reasoning_content", None)
+                            if token:
+                                token_count += 1
+                                yield token
                         
                 # Log success usage
                 latency = time.time() - start_time
@@ -193,7 +211,7 @@ class LLMGateway:
         for provider in providers_to_try:
             config = cls.PROVIDERS[provider]
             
-            if provider != "ollama" and not config.get("api_key"):
+            if provider not in ("ollama", "airllm") and not config.get("api_key"):
                 continue
                 
             model = custom_model if (custom_model and provider == "fpt") else config["model"]
@@ -203,22 +221,33 @@ class LLMGateway:
             start_time = time.time()
             
             try:
-                kwargs = {
-                    "model": model,
-                    "messages": payload_messages,
-                    "temperature": temperature,
-                    "stream": False,
-                    "max_tokens": max_tokens
-                }
-                if api_key:
-                    kwargs["api_key"] = api_key
-                if api_base:
-                    kwargs["api_base"] = api_base
-                if response_format:
-                    kwargs["response_format"] = response_format
-                    
-                response = await litellm.acompletion(**kwargs)
-                content = response.choices[0].message.content if response.choices else ""
+                if provider == "airllm":
+                    from app.utils.airllm_service import AirLLMService
+                    target_model = custom_model if custom_model else model
+                    content = await AirLLMService.agenerate_chat(
+                        messages=messages,
+                        system_prompt=system_prompt,
+                        temperature=temperature,
+                        max_new_tokens=max_tokens,
+                        model_name=target_model
+                    )
+                else:
+                    kwargs = {
+                        "model": model,
+                        "messages": payload_messages,
+                        "temperature": temperature,
+                        "stream": False,
+                        "max_tokens": max_tokens
+                    }
+                    if api_key:
+                        kwargs["api_key"] = api_key
+                    if api_base:
+                        kwargs["api_base"] = api_base
+                    if response_format:
+                        kwargs["response_format"] = response_format
+                        
+                    response = await litellm.acompletion(**kwargs)
+                    content = response.choices[0].message.content if response.choices else ""
                 
                 latency = time.time() - start_time
                 log_data = {

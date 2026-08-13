@@ -70,10 +70,7 @@ def init_admin_db():
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_key_value ON api_keys(key_value)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON api_keys(is_active)")
-    cursor.execute("""
-        INSERT OR IGNORE INTO api_keys (key_value, name, created_by, created_at, is_active)
-        VALUES (?, ?, ?, ?, 1)
-    """, ('dlvn_portal_default_key', 'Portal Default Key', 'system', time.strftime('%Y-%m-%d %H:%M:%S')))
+    # NOTE: Không tự động tạo default key. Hãy tạo API Key qua /admin sau khi đăng nhập.
     conn.commit()
     conn.close()
     print("✅ Admin database initialized")
