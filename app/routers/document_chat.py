@@ -28,8 +28,16 @@ from app.utils.document_store import (
     get_mindmap,
     update_mindmap,
     delete_mindmap,
+    add_notebook_entity,
+    get_notebook_entities,
     NOTEBOOK_DB,
-    get_db_conn
+    get_db_conn,
+    create_notebook_note,
+    list_notebook_notes,
+    update_notebook_note,
+    delete_notebook_note,
+    add_entity_relationship,
+    get_entity_relationships,
 )
 import sqlite3
 from app.utils.llm_gateway import LLMGateway
@@ -90,6 +98,51 @@ async def api_delete_notebook_messages(notebook_id: str):
     clear_notebook_messages(notebook_id)
     return {"status": "success"}
 
+@router.get("/notebooks/{notebook_id}/entities")
+async def api_get_notebook_entities(notebook_id: str):
+    entities = get_notebook_entities(notebook_id)
+    relationships = get_entity_relationships(notebook_id)
+    return {"status": "success", "entities": entities, "relationships": relationships}
+
+# --- Notebook Notes CRUD ---
+
+class NoteCreate(BaseModel):
+    id: str
+    title: str
+    type: str = 'markdown'
+    content: str = ''
+    icon: str = 'FileTextOutlined'
+    color: str = '#1a73e8'
+
+@router.post("/notebooks/{notebook_id}/notes")
+async def api_create_note(notebook_id: str, req: NoteCreate):
+    note = create_notebook_note(notebook_id, req.id, req.title, req.type, req.content, req.icon, req.color)
+    return {"status": "success", "note": note}
+
+@router.get("/notebooks/{notebook_id}/notes")
+async def api_list_notes(notebook_id: str):
+    notes = list_notebook_notes(notebook_id)
+    return {"status": "success", "notes": notes}
+
+class NoteUpdate(BaseModel):
+    title: str = None
+    content: str = None
+
+@router.put("/notes/{note_id}")
+async def api_update_note(note_id: str, req: NoteUpdate):
+    updates = {k: v for k, v in req.dict().items() if v is not None}
+    if not updates:
+        return {"status": "success"}
+    note = update_notebook_note(note_id, updates)
+    return {"status": "success", "note": note}
+
+@router.delete("/notes/{note_id}")
+async def api_delete_note(note_id: str):
+    success = delete_notebook_note(note_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return {"status": "success"}
+
 # --- Sources CRUD & Upload ---
 
 @router.post("/upload")
@@ -145,6 +198,74 @@ def process_file_background(notebook_id: str, source_id: str, filename: str, fil
                         print(f"[Auto-Summary] {filename}: {summary.strip()[:80]}...")
                 except Exception as e:
                     print(f"[Auto-Summary] Skipped for {filename}: {e}")
+                    
+                # Auto-Extract Entities + Relationships
+                try:
+                    entity_prompt = (
+                        "Trích xuất danh sách các thực thể quan trọng từ tài liệu pháp lý sau. "
+                        "Chỉ lấy: Bị can (bị cáo), Bị hại, Người liên quan, Vật chứng, Thời gian, Địa điểm, Tội danh. "
+                        "Trả về CHUẨN JSON format:\n"
+                        "{\n"
+                        '  "entities": [{"type": "loại", "name": "tên thực thể", "context": "đoạn trích ngắn gọn liên quan"}],\n'
+                        '  "relationships": [{"source": "tên thực thể nguồn", "target": "tên thực thể đích", "type": "quan hệ", "description": "mô tả ngắn"}]\n'
+                        "}\n"
+                        "KHÔNG giải thích thêm. NẾU KHÔNG CÓ THỰC THỂ NÀO, TRẢ VỀ entities: [], relationships: []."
+                    )
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    entities_json = loop.run_until_complete(
+                        LLMGateway.call_async(
+                            messages=[{"role": "user", "content": summary_text}],
+                            system_prompt=entity_prompt,
+                            temperature=0.1,
+                            max_tokens=2000
+                        )
+                    )
+                    loop.close()
+                    
+                    if entities_json:
+                        # Clean JSON block
+                        cleaned_json = entities_json.replace("```json", "").replace("```", "").strip()
+                        # Try object format first (new)
+                        import re as _re
+                        cleaned_json = _re.sub(r"<think>[\s\S]*?</think>", "", cleaned_json, flags=_re.IGNORECASE).strip()
+                        obj_match = _re.search(r"\{[\s\S]*\}", cleaned_json)
+                        if obj_match:
+                            try:
+                                parsed = json.loads(obj_match.group())
+                                entities_list = parsed.get("entities", [])
+                                relationships_list = parsed.get("relationships", [])
+                            except json.JSONDecodeError:
+                                entities_list = []
+                                relationships_list = []
+                                # Fallback: try array format (old)
+                                arr_match = _re.search(r"\[[\s\S]*\]", cleaned_json)
+                                if arr_match:
+                                    try:
+                                        entities_list = json.loads(arr_match.group())
+                                    except json.JSONDecodeError:
+                                        pass
+                        else:
+                            entities_list = []
+                            relationships_list = []
+                        
+                        # Save entities and build name→id map
+                        entity_name_to_id = {}
+                        for ent in entities_list:
+                            result = add_notebook_entity(notebook_id, ent.get("type", "Khác"), ent.get("name", ""), ent.get("context", ""))
+                            if "entity_id" in result:
+                                entity_name_to_id[ent.get("name", "")] = result["entity_id"]
+                        
+                        # Save relationships
+                        for rel in relationships_list:
+                            src_id = entity_name_to_id.get(rel.get("source", ""))
+                            tgt_id = entity_name_to_id.get(rel.get("target", ""))
+                            if src_id and tgt_id:
+                                add_entity_relationship(notebook_id, src_id, tgt_id, rel.get("type", "liên quan"), rel.get("description", ""))
+                        
+                        print(f"[Auto-Entities] {filename}: Extracted {len(entities_list)} entities, {len(relationships_list)} relationships.")
+                except Exception as e:
+                    print(f"[Auto-Entities] Skipped/Error for {filename}: {e}")
         except Exception as e:
             update_source_progress(source_id, "error")
             print(f"[Background Task Error] {e}")
@@ -463,7 +584,9 @@ Quy tắc:
 - description là tóm tắt chi tiết (có thể dài hơn label)
 - TRỌNG TÂM: Mỗi node chi tiết (tầng 3+) PHẢI có trường "sourceRef" = chính xác ID tài liệu chứa thông tin (vd: "src_123")
 - Trả về CHỈ JSON, không markdown, không giải thích
-- Tạo NHIỀU node chi tiết — bản đồ tư duy phải ĐẦY ĐỦ và TOÀN DIỆN"""
+- Tạo NHIỀU node chi tiết — bản đồ tư duy phải ĐẦY ĐỦ và TOÀN DIỆN
+- Mỗi nhánh chính NÊN có 3-5 node con chi tiết. Nếu thông tin nhiều, ưu tiên tạo NHIỀU node hơn là gộp vào 1 node dài
+- Nếu nhánh có quá nhiều thông tin, thêm field "expandable": true vào node nhánh đó để frontend biết cần mở rộng thêm"""
 
 @router.post("/mindmap-generate")
 async def generate_mindmap(request: Request):
@@ -529,7 +652,7 @@ async def generate_mindmap(request: Request):
 
     if total_chunks <= DIRECT_THRESHOLD:
         # ──── DIRECT: Single-pass generation ────
-        combined_text = "\n\n---\n\n".join([f"[Tài liệu ID: {c['source_id']}]\n{c['text']}" for c in all_chunks])[:30000]
+        combined_text = "\n\n---\n\n".join([f"[Tài liệu ID: {c['source_id']}]\n{c['text']}" for c in all_chunks])[:60000]
         
         messages = [
             {"role": "user", "content": f"Tiêu đề: {case_title}\n\nNội dung tài liệu:\n{combined_text}\n\nHãy tạo bản đồ tư duy JSON cho tài liệu này. Nhớ chú thích sourceRef cho từng thông tin."}
@@ -564,7 +687,7 @@ Trả lời ngắn gọn dạng bullet points, tối đa 300 từ. TUYỆT ĐỐ
                     messages=[{"role": "user", "content": f"Đoạn {batch_idx + 1}:\n{text[:8000]}"}],
                     system_prompt=SUMMARY_PROMPT,
                     temperature=0.1,
-                    max_tokens=800
+                    max_tokens=1500
                 )
                 # Strip thinking tags
                 result = re.sub(r"<think>[\s\S]*?</think>", "", result, flags=re.IGNORECASE).strip()
@@ -597,7 +720,7 @@ Trả lời ngắn gọn dạng bullet points, tối đa 300 từ. TUYỆT ĐỐ
             messages=messages,
             system_prompt=MINDMAP_SYSTEM_PROMPT,
             temperature=0.3,
-            max_tokens=8192
+            max_tokens=16384
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"LLM error: {str(e)}")
@@ -614,6 +737,234 @@ Trả lời ngắn gọn dạng bullet points, tối đa 300 từ. TUYỆT ĐỐ
         return parsed
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Invalid JSON in AI response")
+
+
+# --- Mind Map Branch Expansion ---
+
+BRANCH_EXPAND_PROMPT = """Bạn là trợ lý pháp lý chuyên phân tích hồ sơ vụ án tại Việt Nam.
+
+Nhiệm vụ: Đọc tài liệu và tạo DANH SÁCH CHI TIẾT các node con cho nhánh "{branch_label}" (loại: {branch_type}) trong bản đồ tư duy vụ án.
+
+Nhánh hiện tại đã có các node con sau:
+{existing_children}
+
+Hãy bổ sung THÊM các node con MỚI mà chưa có trong danh sách trên.
+
+QUY TẮC:
+1. CHỈ trích xuất thông tin CÓ trong tài liệu, KHÔNG bịa
+2. Mỗi node phải có: id (duy nhất, format: "{branch_id}_exp_1"), label (ngắn gọn <50 ký tự), type "detail"
+3. Thêm description chi tiết cho mỗi node
+4. BẮT BUỘC thêm sourceRef = ID tài liệu gốc
+5. Trả về JSON array, mỗi phần tử là 1 node. KHÔNG trả về object bao ngoài
+6. Tạo TỐI THIỂU 5 node, TỐI ĐA 15 node
+7. Nếu node có thông tin phụ, tạo children bên trong node đó
+
+Format:
+[
+  {{
+    "id": "{branch_id}_exp_1",
+    "label": "Nội dung cụ thể",
+    "type": "detail",
+    "description": "Chi tiết đầy đủ...",
+    "sourceRef": "src_xxx",
+    "children": [
+      {{"id": "{branch_id}_exp_1_1", "label": "...", "type": "detail", "sourceRef": "src_xxx"}}
+    ]
+  }}
+]
+
+Trả về CHỈ JSON array, không markdown, không giải thích."""
+
+
+@router.post("/mindmap-expand-branch")
+async def expand_mindmap_branch(request: Request):
+    """
+    Expand a specific branch of a mind map with more detailed nodes.
+    Uses RAG search (FAISS+BM25) to find relevant chunks for the branch topic.
+    """
+    import re
+
+    req = await request.json()
+    notebook_id = req.get("notebook_id")
+    branch_id = req.get("branch_id")
+    branch_label = req.get("branch_label")
+    branch_type = req.get("branch_type", "detail")
+    existing_children = req.get("existing_children", [])
+    selected_source_ids = req.get("selected_source_ids")
+
+    if not notebook_id or not branch_label:
+        raise HTTPException(status_code=400, detail="Missing notebook_id or branch_label")
+
+    # 1. Use EXISTING hybrid search (FAISS + BM25 + RRF) to find relevant chunks
+    search_query = branch_label
+    if branch_type == "parties":
+        search_query = f"các bên liên quan bị can bị cáo bị hại nhân chứng {branch_label}"
+    elif branch_type == "evidence":
+        search_query = f"chứng cứ vật chứng lời khai giám định {branch_label}"
+    elif branch_type == "crime":
+        search_query = f"cấu thành tội phạm hành vi khách thể chủ thể {branch_label}"
+    elif branch_type == "procedure":
+        search_query = f"quy trình tố tụng khởi tố điều tra truy tố xét xử {branch_label}"
+    elif branch_type == "legal":
+        search_query = f"căn cứ pháp lý điều luật tình tiết {branch_label}"
+    elif branch_type == "info":
+        search_query = f"thông tin chung vụ án số quyết định tội danh {branch_label}"
+
+    docs = search_notebook_docs(notebook_id, search_query, top_k=25)
+
+    # Filter by selected sources if specified
+    if selected_source_ids:
+        docs = [d for d in docs if d['source_id'] in selected_source_ids]
+
+    if not docs:
+        return {"children": [], "message": "Không tìm thấy tài liệu liên quan"}
+
+    # 2. Build context from search results
+    doc_context = "\n\n".join([
+        f"--- [Tài liệu: {d.get('filename', 'Unknown')}, ID: {d['source_id']}, Đoạn {d.get('chunk_index', 0)+1}] ---\n{d['text']}"
+        for d in docs[:20]
+    ])
+
+    # 3. Format existing children for the prompt
+    existing_text = "\n".join([f"- {c}" for c in existing_children]) if existing_children else "(Chưa có node con nào)"
+
+    # 4. Call LLM with branch-specific prompt
+    system_prompt = BRANCH_EXPAND_PROMPT.format(
+        branch_label=branch_label,
+        branch_type=branch_type,
+        branch_id=branch_id or "branch",
+        existing_children=existing_text
+    )
+
+    print(f"[MindMap Expand] Branch '{branch_label}' ({branch_type}): {len(docs)} docs found")
+
+    try:
+        content = await LLMGateway.call_async(
+            messages=[{
+                "role": "user",
+                "content": f"Nhánh cần mở rộng: {branch_label}\n\nTài liệu liên quan ({len(docs)} đoạn trích):\n\n{doc_context}"
+            }],
+            system_prompt=system_prompt,
+            temperature=0.3,
+            max_tokens=8192
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LLM error: {str(e)}")
+
+    # 5. Parse JSON response
+    content = re.sub(r"<think>[\s\S]*?</think>", "", content, flags=re.IGNORECASE).strip()
+
+    json_match = re.search(r"\[[\s\S]*\]", content)
+    if not json_match:
+        # Try object wrapper
+        json_match = re.search(r"\{[\s\S]*\}", content)
+        if json_match:
+            try:
+                parsed = json.loads(json_match.group())
+                children = parsed.get("children", [parsed])
+                return {"children": children, "source_count": len(docs)}
+            except json.JSONDecodeError:
+                pass
+        raise HTTPException(status_code=500, detail="AI did not return valid JSON")
+
+    try:
+        children = json.loads(json_match.group())
+        return {"children": children, "source_count": len(docs)}
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON in AI response")
+class StudyToolsRequest(BaseModel):
+    notebook_id: str
+    tool_type: str  # "flashcards" or "quizzes"
+    selected_source_ids: list[str] = []
+    case_title: str = ""
+
+FLASHCARDS_PROMPT = """Bạn là trợ lý pháp lý. Nhiệm vụ: Tạo bộ Thẻ ghi nhớ (Flashcards) từ tài liệu vụ án.
+Yêu cầu:
+- Trích xuất 10-15 câu hỏi và đáp án quan trọng nhất (tên nhân vật, ngày tháng, quyết định, bằng chứng cốt lõi).
+- Trả về ĐÚNG 1 MẢNG JSON ARRAY. KHÔNG có text giải thích, KHÔNG có markdown, CHỈ CÓ JSON ARRAY.
+Format bắt buộc:
+[
+  {
+    "q": "Nội dung câu hỏi ngắn gọn",
+    "a": "Câu trả lời ngắn gọn",
+    "ref": "ID tài liệu (ví dụ: src_123)"
+  }
+]"""
+
+QUIZZES_PROMPT = """Bạn là trợ lý pháp lý. Nhiệm vụ: Tạo Bài kiểm tra trắc nghiệm (Quizzes) từ tài liệu vụ án.
+Yêu cầu:
+- Tạo 5-10 câu hỏi trắc nghiệm kiểm tra kiến thức về vụ án.
+- Mỗi câu có chính xác 4 lựa chọn (options), và 1 đáp án đúng (answerIndex từ 0 đến 3).
+- Có lời giải thích (explanation).
+- Trả về ĐÚNG 1 MẢNG JSON ARRAY. KHÔNG có text giải thích, KHÔNG có markdown, CHỈ CÓ JSON ARRAY.
+Format bắt buộc:
+[
+  {
+    "question": "Nội dung câu hỏi?",
+    "options": ["Lựa chọn 1", "Lựa chọn 2", "Lựa chọn 3", "Lựa chọn 4"],
+    "answerIndex": 0,
+    "explanation": "Giải thích ngắn gọn tại sao...",
+    "ref": "ID tài liệu (ví dụ: src_123)"
+  }
+]"""
+
+@router.post("/study-tools-generate")
+async def generate_study_tools(req: StudyToolsRequest):
+    import re
+    from app.database import get_db_conn
+    from app.config import NOTEBOOK_DB
+    
+    conn = get_db_conn(NOTEBOOK_DB)
+    c = conn.cursor()
+    
+    if req.selected_source_ids:
+        placeholders = ",".join(["?"] * len(req.selected_source_ids))
+        c.execute(
+            f"SELECT source_id, text FROM notebook_chunks WHERE notebook_id = ? AND source_id IN ({placeholders}) ORDER BY chunk_index LIMIT 80",
+            [req.notebook_id] + req.selected_source_ids
+        )
+    else:
+        c.execute(
+            "SELECT source_id, text FROM notebook_chunks WHERE notebook_id = ? ORDER BY chunk_index LIMIT 80",
+            (req.notebook_id,)
+        )
+    
+    rows = c.fetchall()
+    conn.close()
+    
+    if not rows:
+        return []
+
+    combined_text = "\n\n---\n\n".join([f"[Tài liệu ID: {r[0]}]\n{r[1]}" for r in rows if r[1]])[:60000]
+    
+    system_prompt = FLASHCARDS_PROMPT if req.tool_type == "flashcards" else QUIZZES_PROMPT
+    
+    messages = [
+        {"role": "user", "content": f"Tiêu đề vụ án: {req.case_title}\n\nNội dung tài liệu:\n{combined_text}\n\nHãy tạo {req.tool_type} dựa trên nội dung trên."}
+    ]
+    
+    try:
+        content = await LLMGateway.call_async(
+            messages=messages,
+            system_prompt=system_prompt,
+            temperature=0.3,
+            max_tokens=8192
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LLM error: {str(e)}")
+
+    content = re.sub(r"<think>[\s\S]*?</think>", "", content, flags=re.IGNORECASE).strip()
+    json_match = re.search(r"\[[\s\S]*\]", content)
+    
+    if not json_match:
+        raise HTTPException(status_code=500, detail="AI did not return valid JSON Array")
+
+    try:
+        parsed = json.loads(json_match.group())
+        return parsed
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON in AI response")
+
 
 # --- Mindmaps CRUD ---
 
@@ -657,3 +1008,113 @@ async def api_delete_mindmap(mindmap_id: str):
     if not success:
         raise HTTPException(status_code=404, detail="Mindmap not found")
     return {"status": "success"}
+
+
+# --- Giai đoạn 2: Tự động hóa Văn bản Tố tụng & Cây Suy luận ---
+
+class GenerateDraftRequest(BaseModel):
+    notebook_id: str = None
+    context_text: str = None
+    doc_type: str  # "cao_trang", "luan_toi", "xet_hoi"
+
+@router.post("/generate-draft")
+async def api_generate_draft(req: GenerateDraftRequest):
+    """Sinh dự thảo văn bản tố tụng qua SSE Stream"""
+    entities_text = ""
+    summary_text = ""
+    
+    if req.notebook_id:
+        notebook = get_notebook(req.notebook_id)
+        if not notebook:
+            raise HTTPException(status_code=404, detail="Notebook not found")
+        
+        # Lấy toàn bộ entities
+        entities = get_notebook_entities(req.notebook_id)
+        entities_text = json.dumps([{"type": e["type"], "name": e["name"], "context": e["context"]} for e in entities], ensure_ascii=False)
+        
+        # Lấy các summary của tài liệu
+        sources = list_sources(req.notebook_id)
+        summaries = [s.get("summary", "") for s in sources if s.get("summary")]
+        summary_text = "\n\n".join(summaries)
+    else:
+        summary_text = req.context_text or ""
+        
+    # Xây dựng prompt tùy theo doc_type
+    if req.doc_type == "cao_trang":
+        prompt = (
+            "Dựa trên thông tin hồ sơ dưới đây, hãy VIẾT DỰ THẢO CÁO TRẠNG (Mẫu số 156/HS). "
+            "TRÌNH BÀY DƯỚI DẠNG MARKDOWN, sử dụng Markdown headers (#, ##), in đậm, in nghiêng phù hợp. "
+            "Nội dung cần có các phần: Diễn biến vụ án, Lý lịch bị can, Kết luận.\n\n"
+        )
+    elif req.doc_type == "luan_toi":
+        prompt = (
+            "Dựa trên thông tin hồ sơ dưới đây, hãy VIẾT DỰ THẢO BẢN LUẬN TỘI. "
+            "TRÌNH BÀY DƯỚI DẠNG MARKDOWN, sử dụng Markdown headers (#, ##), in đậm, in nghiêng phù hợp. "
+            "Cần có các phần: Đánh giá chứng cứ, Nhận định về hành vi, Đề nghị hình phạt.\n\n"
+        )
+    else:
+        prompt = (
+            "Dựa trên thông tin hồ sơ dưới đây, hãy LẬP KẾ HOẠCH XÉT HỎI tại phiên tòa. "
+            "Ghi rõ câu hỏi cho Bị cáo, Bị hại, và dự kiến câu trả lời hoặc điểm cần làm rõ. "
+            "TRÌNH BÀY DƯỚI DẠNG MARKDOWN.\n\n"
+        )
+        
+    prompt += f"--- THỰC THỂ ---\n{entities_text}\n\n--- HỒ SƠ/TÓM TẮT ---\n{summary_text}"
+    
+    async def event_generator():
+        try:
+            async for token in LLMGateway.call_stream([{"role": "user", "content": prompt}], "Bạn là Kiểm sát viên dày dạn kinh nghiệm. Hãy soạn thảo văn bản chính xác, chuyên nghiệp."):
+                yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+            yield f"data: {json.dumps({'type': 'status', 'status': 'done'})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+class AnalyzeReasoningRequest(BaseModel):
+    notebook_id: str
+    toi_danh: str
+
+@router.post("/analyze-reasoning")
+async def api_analyze_reasoning(req: AnalyzeReasoningRequest):
+    """Phân tích cấu thành tội phạm bằng LLM thật"""
+    import re
+
+    system_prompt = (
+        "Bạn là chuyên gia pháp lý Việt Nam. Người dùng bôi đen một đoạn text từ hồ sơ vụ án. "
+        "Hãy phân tích pháp lý cho đoạn text đó.\n\n"
+        "Trả về JSON với format:\n"
+        '{\n'
+        '  "toi_danh": "Tội danh / Nhận định chính",\n'
+        '  "nhan_dinh": "Nhận định pháp lý ngắn gọn",\n'
+        '  "dieu": "Số điều luật áp dụng (nếu có)",\n'
+        '  "khoan": "Số khoản (nếu có)",\n'
+        '  "hinh_phat": "Khung hình phạt (nếu là tội phạm)",\n'
+        '  "cau_thanh": ["Yếu tố 1", "Yếu tố 2", ...]\n'
+        '}\n\n'
+        "NẾU không phải tội phạm hoặc không xác định được, vẫn trả về JSON với nhận định phù hợp.\n"
+        "CHỈ TRẢ VỀ JSON, KHÔNG giải thích thêm."
+    )
+
+    try:
+        result = await LLMGateway.call_async(
+            messages=[{"role": "user", "content": f"Đoạn text cần phân tích pháp lý:\n\n\"{req.toi_danh}\""}],
+            system_prompt=system_prompt,
+            temperature=0.1,
+            max_tokens=1000
+        )
+
+        result = re.sub(r"<think>[\s\S]*?</think>", "", result, flags=re.IGNORECASE).strip()
+        json_match = re.search(r"\{[\s\S]*\}", result)
+        if json_match:
+            parsed = json.loads(json_match.group())
+            return parsed
+        return {"toi_danh": req.toi_danh, "nhan_dinh": result, "cau_thanh": []}
+    except Exception as e:
+        return {
+            "error": f"Lỗi phân tích: {str(e)}",
+            "toi_danh": req.toi_danh,
+            "nhan_dinh": "Không thể phân tích do lỗi kết nối AI",
+            "cau_thanh": []
+        }

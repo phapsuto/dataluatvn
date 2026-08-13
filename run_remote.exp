@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout -1
+set cmd [lindex $argv 0]
+spawn ssh -o StrictHostKeyChecking=no root@14.225.211.136 $cmd
+expect "*?assword:*"
+send "Nba2t1aYhOle6gIO2JDz\r"
+expect eof

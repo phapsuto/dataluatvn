@@ -104,6 +104,55 @@ def init_notebook_db():
             FOREIGN KEY (notebook_id) REFERENCES notebooks (id) ON DELETE CASCADE
         )
     ''')
+    # Notebook Entities
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS notebook_entities (
+            id TEXT PRIMARY KEY,
+            notebook_id TEXT,
+            entity_type TEXT,
+            entity_name TEXT,
+            context TEXT,
+            created_at TEXT,
+            FOREIGN KEY (notebook_id) REFERENCES notebooks (id) ON DELETE CASCADE
+        )
+    ''')
+    # Notebook Notes (persisted Studio Panel notes)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS notebook_notes (
+            id TEXT PRIMARY KEY,
+            notebook_id TEXT,
+            title TEXT,
+            type TEXT DEFAULT 'markdown',
+            content TEXT,
+            icon TEXT DEFAULT 'FileTextOutlined',
+            color TEXT DEFAULT '#1a73e8',
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (notebook_id) REFERENCES notebooks (id) ON DELETE CASCADE
+        )
+    ''')
+    # Entity Relationships (edges for Entity Graph)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS entity_relationships (
+            id TEXT PRIMARY KEY,
+            notebook_id TEXT,
+            source_entity_id TEXT,
+            target_entity_id TEXT,
+            relation_type TEXT,
+            description TEXT,
+            created_at TEXT,
+            FOREIGN KEY (notebook_id) REFERENCES notebooks (id) ON DELETE CASCADE
+        )
+    ''')
+    # Notebook Extractions
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS notebook_extractions (
+            notebook_id TEXT PRIMARY KEY,
+            data_json TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (notebook_id) REFERENCES notebooks (id) ON DELETE CASCADE
+        )
+    ''')
     # Migrate new columns if they don't exist
     try:
         c.execute("ALTER TABLE notebook_sources ADD COLUMN total_pages INTEGER DEFAULT 0")
@@ -479,6 +528,35 @@ def add_source_chunks(notebook_id: str, source_id: str, text: str) -> dict:
     
     return {"status": "success", "source_id": source_id, "chunks": len(chunks)}
 
+# --- Entities ---
+def add_notebook_entity(notebook_id: str, entity_type: str, entity_name: str, context: str = "") -> dict:
+    import uuid
+    entity_id = f"ent_{uuid.uuid4().hex[:8]}"
+    created_at = datetime.now().isoformat()
+    conn = get_db_conn()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO notebook_entities (id, notebook_id, entity_type, entity_name, context, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (entity_id, notebook_id, entity_type, entity_name, context, created_at)
+        )
+        conn.commit()
+        return {"status": "success", "entity_id": entity_id}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+def get_notebook_entities(notebook_id: str) -> List[dict]:
+    conn = get_db_conn()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, entity_type, entity_name, context, created_at FROM notebook_entities WHERE notebook_id = ? ORDER BY created_at ASC", (notebook_id,))
+        rows = c.fetchall()
+        return [{"id": r[0], "type": r[1], "name": r[2], "context": r[3], "created_at": r[4]} for r in rows]
+    finally:
+        conn.close()
+
 def add_source_text(notebook_id: str, source_id: str, text: str, filename: str = "text_upload") -> dict:
     chunks = chunk_text(text)
     if not chunks:
@@ -755,6 +833,44 @@ def search_notebook_docs(notebook_id: str, query: str, top_k: int = 5) -> List[D
 
 # --- Mindmaps ---
 
+def add_entity_relationship(notebook_id: str, source_id: str, target_id: str, rel_type: str, desc: str = "") -> str:
+    conn = get_db_conn()
+    c = conn.cursor()
+    rel_id = str(uuid.uuid4())
+    now = datetime.now().isoformat()
+    c.execute(
+        "INSERT INTO entity_relationships (id, notebook_id, source_entity_id, target_entity_id, relation_type, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (rel_id, notebook_id, source_id, target_id, rel_type, desc, now)
+    )
+    conn.commit()
+    conn.close()
+    return rel_id
+
+def save_notebook_extraction(notebook_id: str, data_json: str):
+    conn = get_db_conn()
+    c = conn.cursor()
+    now = datetime.utcnow().isoformat()
+    # Upsert logic (SQLite >= 3.24)
+    c.execute("""
+        INSERT INTO notebook_extractions (notebook_id, data_json, updated_at) 
+        VALUES (?, ?, ?)
+        ON CONFLICT(notebook_id) DO UPDATE SET 
+            data_json=excluded.data_json, 
+            updated_at=excluded.updated_at
+    """, (notebook_id, data_json, now))
+    conn.commit()
+    conn.close()
+
+def get_notebook_extraction(notebook_id: str) -> Optional[str]:
+    conn = get_db_conn()
+    c = conn.cursor()
+    c.execute("SELECT data_json FROM notebook_extractions WHERE notebook_id = ?", (notebook_id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return row[0]
+    return None
+
 def create_mindmap(mindmap_id: str, notebook_id: str, title: str, data: str = "{}") -> dict:
     conn = get_db_conn()
     c = conn.cursor()
@@ -812,4 +928,93 @@ def delete_mindmap(mindmap_id: str) -> bool:
     conn.commit()
     conn.close()
     return deleted
+
+
+# ── Notebook Notes CRUD ──
+
+def create_notebook_note(notebook_id: str, note_id: str, title: str, note_type: str = 'markdown',
+                         content: str = '', icon: str = 'FileTextOutlined', color: str = '#1a73e8') -> dict:
+    conn = get_db_conn()
+    try:
+        c = conn.cursor()
+        now = datetime.utcnow().isoformat()
+        c.execute(
+            "INSERT OR REPLACE INTO notebook_notes (id, notebook_id, title, type, content, icon, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (note_id, notebook_id, title, note_type, content, icon, color, now, now)
+        )
+        conn.commit()
+        return {"id": note_id, "notebook_id": notebook_id, "title": title, "type": note_type,
+                "content": content, "icon": icon, "color": color, "created_at": now, "updated_at": now}
+    finally:
+        conn.close()
+
+def list_notebook_notes(notebook_id: str) -> List[dict]:
+    conn = get_db_conn()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, title, type, content, icon, color, created_at, updated_at FROM notebook_notes WHERE notebook_id = ? ORDER BY created_at DESC", (notebook_id,))
+        rows = c.fetchall()
+        return [{"id": r[0], "title": r[1], "type": r[2], "content": r[3], "icon": r[4], "color": r[5], "created_at": r[6], "updated_at": r[7]} for r in rows]
+    finally:
+        conn.close()
+
+def update_notebook_note(note_id: str, updates: dict) -> Optional[dict]:
+    conn = get_db_conn()
+    try:
+        c = conn.cursor()
+        now = datetime.utcnow().isoformat()
+        updates['updated_at'] = now
+        set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
+        values = list(updates.values()) + [note_id]
+        c.execute(f"UPDATE notebook_notes SET {set_clause} WHERE id = ?", values)
+        conn.commit()
+        c.execute("SELECT id, notebook_id, title, type, content, icon, color, created_at, updated_at FROM notebook_notes WHERE id = ?", (note_id,))
+        row = c.fetchone()
+        if row:
+            return {"id": row[0], "notebook_id": row[1], "title": row[2], "type": row[3],
+                    "content": row[4], "icon": row[5], "color": row[6], "created_at": row[7], "updated_at": row[8]}
+        return None
+    finally:
+        conn.close()
+
+def delete_notebook_note(note_id: str) -> bool:
+    conn = get_db_conn()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM notebook_notes WHERE id = ?", (note_id,))
+        deleted = c.rowcount > 0
+        conn.commit()
+        return deleted
+    finally:
+        conn.close()
+
+
+# ── Entity Relationships CRUD ──
+
+def add_entity_relationship(notebook_id: str, source_entity_id: str, target_entity_id: str,
+                            relation_type: str, description: str = "") -> dict:
+    import uuid
+    rel_id = f"rel_{uuid.uuid4().hex[:8]}"
+    created_at = datetime.now().isoformat()
+    conn = get_db_conn()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO entity_relationships (id, notebook_id, source_entity_id, target_entity_id, relation_type, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (rel_id, notebook_id, source_entity_id, target_entity_id, relation_type, description, created_at)
+        )
+        conn.commit()
+        return {"id": rel_id, "source": source_entity_id, "target": target_entity_id, "type": relation_type}
+    finally:
+        conn.close()
+
+def get_entity_relationships(notebook_id: str) -> List[dict]:
+    conn = get_db_conn()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, source_entity_id, target_entity_id, relation_type, description FROM entity_relationships WHERE notebook_id = ?", (notebook_id,))
+        rows = c.fetchall()
+        return [{"id": r[0], "source": r[1], "target": r[2], "type": r[3], "description": r[4]} for r in rows]
+    finally:
+        conn.close()
 
