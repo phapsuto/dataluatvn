@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import DB_NAME, API_PORT, DESCRIPTION, TAGS_METADATA
 from app.database import init_admin_db, init_memory_db
-from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage, assistant_memory, chatbot
+from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage, assistant_memory, chatbot, nghiep_vu
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -128,6 +128,8 @@ app.include_router(admin_crud.router)
 app.include_router(lineage.router)
 app.include_router(assistant_memory.router)
 app.include_router(chatbot.router)
+# Kho học liệu nghiệp vụ Kiểm sát — bốn tính năng bên dự án Kiểm sát gọi vào đây.
+app.include_router(nghiep_vu.router)
 
 # Mount static files (portal.html, css, js)
 app.mount("/static", StaticFiles(directory="static"), name="static")
