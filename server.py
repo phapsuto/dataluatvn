@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import DB_NAME, API_PORT, DESCRIPTION, TAGS_METADATA
 from app.database import init_admin_db, init_memory_db
-from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage, assistant_memory, chatbot, document_chat, extract_api
+from app.routers import general, auth, api_keys, laws, anle, phapdien, admin_pages, dashboard_api, admin_crud, lineage, assistant_memory, chatbot
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -128,8 +128,6 @@ app.include_router(admin_crud.router)
 app.include_router(lineage.router)
 app.include_router(assistant_memory.router)
 app.include_router(chatbot.router)
-app.include_router(document_chat.router)
-app.include_router(extract_api.router, prefix="/doc-assistant", tags=["doc-assistant"])
 
 # Mount static files (portal.html, css, js)
 app.mount("/static", StaticFiles(directory="static"), name="static")
