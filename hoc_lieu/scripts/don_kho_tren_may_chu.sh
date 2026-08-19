@@ -22,15 +22,23 @@ CHI_THU=0
 [ "${1:-}" = "--thu" ] && CHI_THU=1
 
 GOC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CHEBIEN="$GOC/hoc_lieu/chebien"
-DB="$CHEBIEN/nghiep_vu_corpus.db"
+
+# Đường dẫn kho KHÁC NHAU giữa máy lập trình và máy chủ: ở máy là hoc_lieu/chebien/,
+# trên máy chủ lại nằm thẳng ở thư mục gốc dự án. Tự dò thay vì bắt người chạy nhớ.
+DB=""
+for thu in "$GOC/hoc_lieu/chebien/nghiep_vu_corpus.db" "$GOC/nghiep_vu_corpus.db" "./nghiep_vu_corpus.db"; do
+  [ -f "$thu" ] && { DB="$(cd "$(dirname "$thu")" && pwd)/$(basename "$thu")"; break; }
+done
+[ -n "$DB" ] || { echo "KHÔNG TÌM THẤY nghiep_vu_corpus.db — chạy lại kèm: --db <đường dẫn>"; exit 1; }
+CHEBIEN="$(dirname "$DB")"
 IDX="$CHEBIEN/nghiep_vu_faiss.index"
 IDS="$CHEBIEN/nghiep_vu_faiss_ids.npy"
 HAU_TO="truoc-khi-don-$(date +%Y%m%d-%H%M%S)"
 
 echo "== KHO: $CHEBIEN"
-for f in "$DB" "$IDX" "$IDS"; do
-  [ -f "$f" ] || { echo "THIẾU TỆP: $f"; exit 1; }
+[ -f "$DB" ] || { echo "THIẾU TỆP: $DB"; exit 1; }
+for f in "$IDX" "$IDS"; do
+  [ -f "$f" ] || { echo "THIẾU CHỈ MỤC: $f"; echo "   (dọn SQLite mà không đồng bộ được FAISS là hỏng tìm kiếm — dừng)"; exit 1; }
 done
 df -h "$CHEBIEN" | tail -1
 
