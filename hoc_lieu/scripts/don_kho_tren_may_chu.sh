@@ -19,7 +19,14 @@
 set -euo pipefail
 
 CHI_THU=0
-[ "${1:-}" = "--thu" ] && CHI_THU=1
+KHONG_FAISS=0
+for a in "$@"; do
+  [ "$a" = "--thu" ] && CHI_THU=1
+  # Dùng khi máy chủ KHÔNG có chỉ mục FAISS (tìm kiếm chạy bằng FTS của SQLite).
+  # Phải tự tay truyền cờ này, không tự đoán: đoán sai mà kho có chỉ mục thật thì dọn
+  # xong chỉ mục lệch, tìm kiếm ngữ nghĩa trả về id không còn tồn tại.
+  [ "$a" = "--khong-faiss" ] && KHONG_FAISS=1
+done
 
 GOC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
@@ -37,16 +44,26 @@ HAU_TO="truoc-khi-don-$(date +%Y%m%d-%H%M%S)"
 
 echo "== KHO: $CHEBIEN"
 [ -f "$DB" ] || { echo "THIẾU TỆP: $DB"; exit 1; }
-for f in "$IDX" "$IDS"; do
-  [ -f "$f" ] || { echo "THIẾU CHỈ MỤC: $f"; echo "   (dọn SQLite mà không đồng bộ được FAISS là hỏng tìm kiếm — dừng)"; exit 1; }
-done
+if [ "$KHONG_FAISS" = "0" ]; then
+  for f in "$IDX" "$IDS"; do
+    [ -f "$f" ] || {
+      echo "THIẾU CHỈ MỤC: $f"
+      echo "   Dọn SQLite mà không đồng bộ được FAISS là hỏng tìm kiếm ngữ nghĩa."
+      echo "   Nếu máy này KHÔNG dùng FAISS (tìm bằng FTS của SQLite) thì chạy lại kèm cờ:"
+      echo "       bash \$0 --khong-faiss"
+      exit 1
+    }
+  done
+else
+  echo "== BỎ QUA FAISS theo cờ --khong-faiss (kho này tìm bằng FTS của SQLite) =="
+fi
 df -h "$CHEBIEN" | tail -1
 
 echo
 echo "== BƯỚC 0 — chạy thử, chỉ đếm =="
 python3 "$GOC/hoc_lieu/scripts/cat_dau_trang_ban_an.py"    --db "$DB" --thu
 python3 "$GOC/hoc_lieu/scripts/gan_lai_nhan_quyet_dinh.py" --db "$DB" --thu
-python3 "$GOC/hoc_lieu/scripts/dong_bo_faiss_theo_sqlite.py" --db "$DB" --index "$IDX" --thu
+[ "$KHONG_FAISS" = "1" ] || python3 "$GOC/hoc_lieu/scripts/dong_bo_faiss_theo_sqlite.py" --db "$DB" --index "$IDX" --thu
 
 if [ "$CHI_THU" = "1" ]; then
   echo
@@ -56,7 +73,9 @@ fi
 
 echo
 echo "== BƯỚC 1 — sao lưu =="
-for f in "$DB" "$IDX" "$IDS"; do
+TEP_SAO_LUU="$DB"
+[ "$KHONG_FAISS" = "0" ] && TEP_SAO_LUU="$DB $IDX $IDS"
+for f in $TEP_SAO_LUU; do
   cp -p "$f" "$f.$HAU_TO"
   echo "   $(basename "$f").$HAU_TO  ($(du -h "$f.$HAU_TO" | cut -f1))"
 done
